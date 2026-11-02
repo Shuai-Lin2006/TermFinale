@@ -149,6 +149,15 @@ def migrate_legacy() -> dict:
         except OSError as exc:
             report["db"] = f"failed: {exc}"
 
+    src_cfg = src_root / "user_config.json"
+    dst_cfg = data_dir() / "user_config.json"
+    if src_cfg.exists() and not dst_cfg.exists():
+        try:
+            shutil.copy2(src_cfg, dst_cfg)
+            report["config"] = "copied user_config.json"
+        except OSError as exc:
+            report["config"] = f"failed: {exc}"
+
     src_assets = src_root / "assets_images"
     dst_assets = assets_dir()
     if src_assets.is_dir():

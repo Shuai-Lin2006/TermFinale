@@ -150,7 +150,9 @@ TRANSLATIONS = {
     }
 }
 
-CONFIG_FILE = "user_config.json"
+# 打包后 CWD 是 "/"，写相对路径会 PermissionError → 必须落用户数据目录
+CONFIG_FILE = str(paths.data_dir() / "user_config.json")
+LEGACY_CONFIG_FILES = [str(paths.project_root() / "user_config.json")]
 
 
 class TermFinaleApp(ctk.CTk):
@@ -207,13 +209,16 @@ class TermFinaleApp(ctk.CTk):
         self.show_dashboard() if self.user_name else self.show_onboarding_1()
 
     def load_user_config(self):
-        if os.path.exists(CONFIG_FILE):
+        """读用户配置：优先用户数据目录，其次兼容源码目录（开发期）。"""
+        for path in [CONFIG_FILE, *LEGACY_CONFIG_FILES]:
+            if not os.path.exists(path):
+                continue
             try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                with open(path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    return cfg.get("name", cfg.get("username", ""))
-            except:
-                pass
+                return cfg.get("name", cfg.get("username", ""))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("读取用户配置失败 {}: {}", path, exc)
         return ""
 
     def load_user_motto(self):
@@ -264,10 +269,21 @@ class TermFinaleApp(ctk.CTk):
 
         def next_step():
             name = entry_name.get().strip()
-            if not name: entry_name.configure(border_color=DANGER_COLOR); return
+            if not name:
+                entry_name.configure(border_color=DANGER_COLOR)
+                return
             self.user_name = name
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f: json.dump({"name": name}, f, ensure_ascii=False)
+            saved = True
+            try:
+                os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump({"name": name}, f, ensure_ascii=False)
+            except OSError as exc:
+                saved = False
+                logger.error("保存用户名失败 {}: {}", CONFIG_FILE, exc)
             self.show_onboarding_3()
+            if not saved:
+                Toast.show(self, "名字本次有效，但保存失败，下次启动需要重填", "warning", 5000)
 
         ctk.CTkButton(center, text=self.t("next"), font=FONT_H1, width=350, height=50, fg_color=ACCENT_COLOR,
                       command=next_step).pack()
@@ -879,7 +895,7 @@ class TermFinaleApp(ctk.CTk):
                     side="right", padx=15)
 
     def start_generation(self, course, index, mode, persona, lang="中文"):
-        config_file = "user_config.json"
+        config_file = CONFIG_FILE
         today_str = datetime.datetime.now().strftime("%Y-%m-%d")
         daily_limit = 20
         cfg = {}
