@@ -89,8 +89,9 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 
     html_content = markdown.markdown(processed_md, extensions=['fenced_code', 'tables'])
 
-    from core.database import BASE_DIR
-    img_dir = os.path.join(BASE_DIR, "assets_images")
+    from core.paths import assets_dir
+
+    img_dir = str(assets_dir())
 
     for i, kw in enumerate(keyword_blocks):
         html_content = html_content.replace(f"@@KEYWORD{i}@@", kw)

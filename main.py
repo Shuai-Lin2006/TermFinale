@@ -17,6 +17,8 @@ from core.exam_engine import generate_logic_analysis, generate_extraction, gener
 from core.exporter import export_to_html
 from core.database import init_db, get_db_session, Course as DBCourse, GeneratedFile as DBGeneratedFile, \
     Material as DBMaterial, UserConfig as DBUserConfig
+from core import paths
+from core.logger import setup_logging, install_exception_hooks
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
@@ -159,6 +161,10 @@ class TermFinaleApp(ctk.CTk):
         self.minsize(1000, 700)
         self.configure(fg_color=BG_COLOR)
 
+        setup_logging()
+        migration = paths.migrate_legacy()
+        install_exception_hooks(self)
+        logger.info("启动 | {} | 迁移={}", paths.describe(), migration)
         init_db()
         self.current_lang = "zh"
         self.user_name = self.load_user_config()

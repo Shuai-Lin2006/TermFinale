@@ -1,12 +1,30 @@
-import os
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import create_engine, event, Column, Integer, String, Float, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from loguru import logger
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, 'term_finale_pro.db')
+from core import paths
 
-engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
+# 数据落用户目录（macOS/Windows/Linux 统一），打包后不再写入临时解压目录
+paths.ensure_dirs()
+BASE_DIR = str(paths.project_root())  # 兼容旧引用：仅指向源码资源，禁止用于存数据
+DB_PATH = str(paths.db_path())
+
+# timeout=15：并发写入时等待而不是立刻 database is locked
+engine = create_engine(f'sqlite:///{DB_PATH}', echo=False, connect_args={"timeout": 15})
+
+
+@event.listens_for(engine, "connect")
+def _sqlite_pragmas(dbapi_conn, _record):
+    """WAL 提升读写并发；NORMAL 在 WAL 下兼顾安全与速度。"""
+    cur = dbapi_conn.cursor()
+    try:
+        cur.execute("PRAGMA journal_mode=WAL")
+        cur.execute("PRAGMA synchronous=NORMAL")
+        cur.execute("PRAGMA foreign_keys=ON")
+    finally:
+        cur.close()
+
+
 Base = declarative_base()
 
 

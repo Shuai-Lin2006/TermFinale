@@ -7,10 +7,10 @@ import io
 from pptx import Presentation
 from loguru import logger
 from core.ai_vision import analyze_image_with_ai
-from core.database import BASE_DIR
+from core import paths
 
-IMG_DIR = os.path.join(BASE_DIR, "assets_images")
-if not os.path.exists(IMG_DIR): os.makedirs(IMG_DIR)
+IMG_DIR = str(paths.assets_dir())
+paths.ensure_dirs()
 
 
 def clean_text_lines(slide_text: str) -> list:
