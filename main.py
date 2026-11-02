@@ -1064,7 +1064,7 @@ class TermFinaleApp(ctk.CTk):
             self.run_generation_task(course, index, "analysis", text, mode="bundle")
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(anchor="e", pady=40, padx=10)
+                      command=start).pack(anchor="e", pady=30, padx=60)
 
     def show_extract(self, course, index):
         self.current_view = "extract"
@@ -1094,7 +1094,7 @@ class TermFinaleApp(ctk.CTk):
                                      with_answer=ans_var.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(anchor="e", pady=40, padx=10)
+                      command=start).pack(anchor="e", pady=30, padx=60)
 
     def show_training(self, course, index):
         self.current_view = "training"
@@ -1252,7 +1252,7 @@ class TermFinaleApp(ctk.CTk):
                                      user_context=u_ctx, lang=train_lang_menu.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(anchor="e", pady=40, padx=10)
+                      command=start).pack(anchor="e", pady=30, padx=60)
 
     def run_generation_task(self, course, index, task_type, text, **kwargs):
         """线程入口：调用复习服务，UI 只负责展示进度。"""
