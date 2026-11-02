@@ -22,3 +22,6 @@ docs/probe/
 # 构建产物
 build/
 dist/
+
+# 旧日志
+core/app.log

@@ -91,6 +91,8 @@ python -m tests.test_maintenance
 
 ## 文档
 
+- [`docs/CHANGES_v2.md`](docs/CHANGES_v2.md)：v2 重构改了什么、证据在哪
+- [`docs/HANDOVER.md`](docs/HANDOVER.md)：交接清单（怎么跑、怎么验、别做什么）
 - [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md)：功能规格与质量验收标准
 - [`ROADMAP.md`](ROADMAP.md)：分阶段施工计划与验收记录
 - [`PROJECT_NOTES.md`](PROJECT_NOTES.md)：架构、隐形协议、已知问题清单

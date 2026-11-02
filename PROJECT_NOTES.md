@@ -1,9 +1,10 @@
 # TermFinale 项目笔记（AI 协作前必读）
 
 > 生成时间：2026-11-02　基于当时工作区代码逐行通读
-> 覆盖：`main.py`(1395) / `ui_main.py`(374) / `core/*`(8 文件) / `models/user_profile.py` / `test_*.py` / 数据库结构 / 依赖
-> 校验：`py_compile` 全部通过；本文所有结论均来自实际代码，未凭文件名猜测。
-> 用途：优化改动前的“地图”。**改动任何代码前先读第 7 节（隐形协议）和第 8 节（已知问题）。**
+> **状态：v2 重构已落地**（见 [`docs/CHANGES_v2.md`](docs/CHANGES_v2.md)）。
+> 第 1–11 节记录的是**重构前**的代码与问题，保留作为"为什么这么改"的依据；**第 12 节是重构后现状**。
+> 行号以 `v2` 分支为准；若对不上，以实际代码为准（本文件是地图，不是法律）。
+> 用途：**改动任何代码前先读第 7 节（隐形协议）和第 8 节（已知问题，多数已修）。**
 
 ---
 
@@ -259,3 +260,59 @@ parser 判定尺寸>50px 且长宽比<10 → 存字节到 assets_images/{name}
 | U14 | 两处"历史记录"区块内容重复（讲义页 2 条 / 复习页 7 条） | 模式选择/复习中心 | 分区查询未去重 |
 
 **正面**：配色克制、留白充足、PingFang 渲染清晰、圆角统一（12）、边框统一。问题集中在"控件默认样式没收敛"+"信息层级缺失"，不是审美取向错误。**U1/U4/U5/U6/U8 是半小时级修复**，能立刻去掉大半"廉价感"。
+
+
+---
+
+## 12. v2 重构后的现状（2026-11-02）
+
+### 12.1 新结构
+
+```
+main.py                 只剩 UI（约 1400 行），通过 services 调用业务
+launcher.py             打包入口（崩溃日志兜底）
+app/desktop/            theme.py（设计 token） + components.py（9 个组件）
+services/               task.py / guide_service.py / review_service.py（零 tkinter）
+core/
+  paths.py config.py logger.py maintenance.py platform_utils.py personas.py
+  parsing/figures.py    图形区域检测与渲染
+  generate/             outline.py（大纲） exam_builder.py（组卷+验卷）
+  quality/qa.py         10 项生成质量校验
+  parser.py exporter.py database.py ai_engine.py exam_engine.py ai_vision.py
+models/user_profile.py  压力模型（含 advice）
+tests/                  test_weights / test_maintenance / test_config
+tools/                  build.py / smoke.py
+legacy/                 归档的旧实现（ui_main_v0 / text_exporter_v1 / test_api_zhipu）
+```
+
+### 12.2 旧问题对照（第 8 节那批）
+
+| 编号 | 旧问题 | 状态 |
+|---|---|---|
+| A1 | 删科目真删桌面原件 | ⚠️ 仍未改（服务层已就绪，但删除逻辑还在 `main.py:delete_course`） |
+| A2 | 停止生成是假停止 | 🟡 部分：进度回调已做控件存活判断，工作线程仍靠 stop_event 轮询 |
+| B1–B6 | 人设 key / 视觉模型名 / Edge 打开 / 重复材料 / 标题双前缀 / 补图位置 | ✅ 全部修复并验证 |
+| C1–C7 | 内容不稳定 / 精简无效 / 2页一章 / 解析丢结构 / 4096 截断 / 无评测 / 矢量图 | 🟡 C1/C2/C3/C5 已在 P3 重构；C4（标题/表格结构化）留在 P8；C6 已加 debug 与 QA；C7 已修 |
+| D1–D8 | UI 粗糙 | 🟡 D1/D2（token、组件）已做；D3（字体栈）已做；D4 emoji、D5 messagebox、D6 深色、D7/D8 部分完成 |
+| E1–E7 | 工程债 | ✅ requirements / 日志 / 缓存 / 死代码 / WAL 完成；E6（拆 main.py）部分；E7 打包已完成 |
+
+### 12.3 新增的隐形协议（务必与第 7 节一起看）
+
+| 协议 | 位置 | 说明 |
+|---|---|---|
+| `on_progress(ProgressEvent)` | `services/task.py` | 服务层只上报进度，不碰控件；UI 用 `_on_service_progress` 桥到主线程 |
+| `[[[IMAGE: 文件名 \| 图注: xxx]]]` | `core/parsing/figures.py` → `exporter.py` | 图由解析器锚定，AI 只负责写讲解 |
+| `Outline` / `Chapter` | `core/generate/outline.py` | 章节/必考点/篇幅；AI 失败自动退回启发式 |
+| `Blueprint` | `core/generate/exam_builder.py` | 组卷先定题型×数量×分值，再验卷 |
+| `paths.*` | `core/paths.py` | **禁止再出现** `os.path.dirname(__file__)` 存数据 |
+| `theme.*` | `app/desktop/theme.py` | **禁止再写裸色值**，新代码一律取 token |
+
+### 12.4 回归方式
+
+```bash
+python tools/smoke.py          # 6 项离线冒烟（不联网）
+python -m tests.test_weights   # 权重模型单调性
+python tools/build.py          # 打包（会检查 Python 版本）
+```
+
+界面回归：`/tmp/ui_regress.py` 那类脚本（截图 8 页）已多次使用；需要时按 `docs/HANDOVER.md` 重建。
