@@ -90,6 +90,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【必须覆盖，一个都不能少】{must}
     【相邻章节（只用于避免重复，不要展开）】{neighbors}
     【篇幅要求】约 {target_words} 字（中文字符计），明显不足或大幅超出都算不合格。
+    【紧迫度】{chapter.get('urgency', '未评估')}
     【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
     """
 
@@ -124,6 +125,9 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
 
     system_prompt = f"""
     {persona_prompt}
+
+    🚨【人设铁律】你就是「{persona}」本人。全文的语气、称呼、举例、提醒都必须体现这个人设，
+    开头第一句就要有人设味道，禁止写成中性教材腔。
 
     ========================================
     【🎯 专属学情综合策略】：

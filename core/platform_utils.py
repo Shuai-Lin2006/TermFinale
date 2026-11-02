@@ -27,6 +27,12 @@ def open_path(path: str | Path) -> bool:
 
     uri = to_uri(target)
 
+    # macOS：装了 Edge 就优先用它（用户习惯），否则回退默认浏览器
+    if sys.platform == "darwin" and Path("/Applications/Microsoft Edge.app").exists():
+        proc = subprocess.run(["open", "-a", "Microsoft Edge", uri], capture_output=True, timeout=15)
+        if proc.returncode == 0:
+            return True
+
     # 首选：交给系统默认处理器（三端一致，html 会用默认浏览器）
     try:
         if webbrowser.open(uri):

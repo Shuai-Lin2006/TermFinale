@@ -65,7 +65,6 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 
         def add_chapter_num(match):
             nonlocal chapter_counter
-            chapter_counter += 1
             title = match.group(1).strip()
             clean_title = re.sub(r'@@KEYWORD\d+@@|@@MERMAIDBLOCK\d+@@|@@IMAGEBLOCK\d+@@', '图表', title).strip()
             # 去掉 AI 自带的编号/前缀，避免出现「第 1 章：核心考点：xxx」这种双前缀
@@ -76,7 +75,8 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
                                      clean_title, flags=re.IGNORECASE).strip()
 
             if clean_title.endswith("（续）") or clean_title.endswith("(cont.)"):
-                return f"### {clean_title}"
+                return f"### {clean_title}"  # 续块不占章节号
+            chapter_counter += 1
             if lang == "English":
                 return f"## Chapter {chapter_counter}: {clean_title if clean_title else 'Core Concepts'}"
             return f"## 第 {chapter_counter} 章：{clean_title if clean_title else '核心考点解析'}"
@@ -295,8 +295,8 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     li {{ background: #ffffff; border: 1px solid #E5E5E5; border-radius: 8px; padding: 15px; margin-bottom: 12px; line-height: 1.8; }}
     li strong {{ color: #007AFF; font-size: 16px; }}
     p {{ margin-bottom: 16px; line-height: 1.8; white-space: pre-wrap; }}
-    .img-container {{ text-align: center; margin: 25px auto; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; max-width: 95%; }}
-    .img-responsive {{ max-width: 100%; height: auto; max-height: 500px; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }}
+    .img-container {{ text-align: center; margin: 20px auto; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee; max-width: 95%; }}
+    .img-responsive {{ max-width: 92%; height: auto; max-height: 420px; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }}
     .img-caption {{ color: #666; font-size: 14px; margin-top: 10px; font-weight: 500; }}
 
     /* 🚨 防止白屏：如果渲染失败，至少有个虚线框提示 */

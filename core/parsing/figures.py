@@ -225,7 +225,7 @@ def extract_figures(
                     and _dense_text_blocks(rect, text_blocks) == 0 and not caption:
                 continue
 
-            clip = fitz.Rect(rect.x0 - 4, rect.y0 - 4, rect.x1 + 4, rect.y1 + 4) & page.rect
+            clip = fitz.Rect(rect.x0 - 10, rect.y0 - 10, rect.x1 + 10, rect.y1 + 10) & page.rect
             try:
                 pix = page.get_pixmap(clip=clip, dpi=dpi)
                 img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)

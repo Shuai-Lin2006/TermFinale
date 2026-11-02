@@ -211,6 +211,9 @@ def run_guide(
 
     generator = guide_generator or generate_super_guide
     info = build_course_info(course)
+    evaluation = info.evaluate()
+    urgency_text = (f"紧迫度 {evaluation['final_priority_weight']:.0f}/100（{evaluation['status']}），"
+                    f"建议每天 {evaluation['suggested_daily_hours']:g} 小时")
     chapter_mds: list[tuple[str, str]] = []
     images_expected = images_reinjected = 0
     empty_calls = 0
@@ -229,6 +232,7 @@ def run_guide(
                 "must_know": chapter.must_know if bi == 0 else [],
                 "neighbors": _neighbors(outline, ci),
                 "target_words": max(400, target_words // max(1, len(blocks))),
+                "urgency": urgency_text,
             }
             jobs.append((ci, bi, content, tags, context))
             tags_map[(ci, bi)] = tags

@@ -292,8 +292,7 @@ class TermFinaleApp(ctk.CTk):
         self.current_view = "onboarding_3"
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=self.show_onboarding_2)
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        scroll = self._page_scroll()
         ctk.CTkLabel(scroll, text=self.t("manual_title"), font=FONT_H1, text_color=TEXT_COLOR).pack(pady=(10, 20))
         manual_box = ctk.CTkFrame(scroll, fg_color=CARD_COLOR, corner_radius=16, border_width=1, border_color="#E5E5E5")
         manual_box.pack(pady=(0, 30), fill="x", ipadx=30, ipady=30)
@@ -633,8 +632,7 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"is_edit": is_edit, "index": index, "course_data": course_data}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=self.show_dashboard)
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        scroll = self._page_scroll()
         form = ctk.CTkFrame(scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=1, border_color="#E5E5E5")
         form.pack(fill="x", pady=10, ipadx=20, ipady=20)
 
@@ -707,7 +705,7 @@ class TermFinaleApp(ctk.CTk):
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=lambda: self.show_course_setup(is_edit, index, course))
         self.upload_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.upload_scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        self.upload_scroll.pack(fill="both", expand=True, padx=60, pady=10)
 
         self.core_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=2, height=10,
                                       border_color=ACCENT_COLOR)
@@ -846,8 +844,7 @@ class TermFinaleApp(ctk.CTk):
         ev = info.evaluate()
         is_danger = ev['final_priority_weight'] >= 75 or ev['status'] == "极度危险"
 
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        scroll = self._page_scroll()
 
         ctk.CTkLabel(scroll, text=self.t("persona_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
         persona_menu = StyledOptionMenu(scroll, values=list(PERSONA_LABELS.keys()),
@@ -976,6 +973,9 @@ class TermFinaleApp(ctk.CTk):
         self.time_label = ctk.CTkLabel(center, text=self.t("time_est").format("计算中..."),
                                        font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR)
         self.time_label.pack(pady=(0, 10))
+        self._progress_started = time.time()
+        self._eta_seconds = None
+        self._tick_progress()
         self.progressbar = ctk.CTkProgressBar(center, width=400)
         self.progressbar.pack(pady=20)
         self.progressbar.set(0)
@@ -983,6 +983,23 @@ class TermFinaleApp(ctk.CTk):
                      text_color=DANGER_COLOR).pack(pady=(10, 10))
         ctk.CTkButton(center, text=self.t("stop_btn"), font=FONT_H2, fg_color=DANGER_COLOR,
                       command=self.stop_generation).pack(pady=10)
+
+    def _tick_progress(self):
+        """每秒刷新计时，避免长时间只有"计算中..."像卡死。"""
+        label = getattr(self, "time_label", None)
+        try:
+            if label is None or not label.winfo_exists():
+                return
+        except Exception:
+            return
+        elapsed = int(time.time() - getattr(self, "_progress_started", time.time()))
+        eta = getattr(self, "_eta_seconds", None)
+        remain = "估算中" if eta is None else f"{eta // 60:02d}:{eta % 60:02d}"
+        try:
+            label.configure(text=f"已用 {elapsed // 60:02d}:{elapsed % 60:02d} · 预计剩余 {remain}")
+        except Exception:
+            return
+        self.after(1000, self._tick_progress)
 
     def _on_service_progress(self, event):
         """服务层回调（工作线程）→ 通过 after 回到主线程；控件已销毁时静默跳过。"""
@@ -994,14 +1011,20 @@ class TermFinaleApp(ctk.CTk):
                 bar = getattr(self, "progressbar", None)
                 if bar is not None and bar.winfo_exists():
                     bar.set(max(0.0, min(1.0, event.value)))
-                eta = getattr(self, "time_label", None)
-                if event.eta_seconds is not None and eta is not None and eta.winfo_exists():
-                    seconds = event.eta_seconds
-                    eta.configure(text=self.t("time_est").format(f"{seconds // 60}分{seconds % 60}秒"))
+                if event.eta_seconds is not None:
+                    self._eta_seconds = event.eta_seconds
             except Exception:  # 控件销毁/窗口关闭，属正常竞态
                 pass
 
         self.after(0, apply)
+
+    def _page_scroll(self, width: int = 860):
+        """居中定宽的页面容器：宽屏下内容不会全挤在左侧。"""
+        holder = ctk.CTkFrame(self, fg_color="transparent")
+        holder.pack(fill="both", expand=True)
+        scroll = ctk.CTkScrollableFrame(holder, fg_color="transparent", width=width)
+        scroll.pack(fill="y", expand=True, pady=10)
+        return scroll
 
     def _action_card(self, parent, title: str, desc: str, command):
         """整行可点的功能卡：标题 + 说明 + 进入按钮（修掉窄卡片文字被裁）。"""
@@ -1020,8 +1043,7 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=self.show_dashboard)
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        scroll = self._page_scroll()
         ctk.CTkLabel(scroll, text=self.t("review_menu_title"), font=FONT_H1).pack(anchor="w", pady=(10, 30))
         self._action_card(scroll, self.t("review_ai_analysis"), self.t("review_ai_analysis_desc"),
                           lambda: self.show_ai_analysis(course, index))
@@ -1075,9 +1097,8 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=lambda: self.show_review_menu(course, index))
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
-        ctk.CTkLabel(scroll, text=self.t("review_ai_analysis"), font=FONT_H1).pack(anchor="w", pady=(10, 20))
+        scroll = self._page_scroll()
+        SectionTitle(scroll, self.t("review_ai_analysis"), "一次生成：知识图谱 + 因果链 + 对照表").pack(fill="x", pady=(10, 8))
         self.render_material_checkboxes(scroll, course["id"])
         ctk.CTkLabel(scroll, text="一次生成：知识图谱 + 因果链 + 概念对照表（图与文在同一页，互补而非二选一）",
                      font=FONT_BODY, text_color=SUB_TEXT_COLOR, wraplength=780,
@@ -1096,9 +1117,8 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=lambda: self.show_review_menu(course, index))
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
-        ctk.CTkLabel(scroll, text=self.t("review_extract"), font=FONT_H1).pack(anchor="w", pady=(10, 20))
+        scroll = self._page_scroll()
+        SectionTitle(scroll, self.t("review_extract"), "按页提取，自动去重并报告覆盖率").pack(fill="x", pady=(10, 8))
         self.render_material_checkboxes(scroll, course["id"])
         ctk.CTkLabel(scroll, text="提取内容：", font=FONT_H2).pack(anchor="w", pady=(20, 5))
         type_var = ctk.StringVar(value="nouns")
@@ -1126,9 +1146,8 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=lambda: self.show_review_menu(course, index))
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
-        ctk.CTkLabel(scroll, text=self.t("review_train"), font=FONT_H1).pack(anchor="w", pady=(10, 20))
+        scroll = self._page_scroll()
+        SectionTitle(scroll, self.t("review_train"), "按目标分出卷，生成后自动验卷").pack(fill="x", pady=(10, 8))
         self.render_material_checkboxes(scroll, course["id"])
 
         is_exam_paper_var = ctk.BooleanVar(value=False)
@@ -1319,7 +1338,7 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=self.show_dashboard)
-        ctk.CTkLabel(self, text=self.t("note_title"), font=FONT_H1).pack(anchor="w", padx=100, pady=(20, 10))
+        ctk.CTkLabel(self, text=self.t("note_title"), font=FONT_H1).pack(anchor="w", padx=60, pady=(20, 10))
         db = get_db_session()
         note_record = db.query(DBGeneratedFile).filter(DBGeneratedFile.course_id == course["id"],
                                                        DBGeneratedFile.file_type == "note").first()
@@ -1329,7 +1348,7 @@ class TermFinaleApp(ctk.CTk):
             with open(note_record.file_path, "r", encoding="utf-8") as f: initial_text = f.read()
         self.textbox = ctk.CTkTextbox(self, font=FONT_BODY, width=800, height=500, fg_color=CARD_COLOR,
                                       text_color=TEXT_COLOR)
-        self.textbox.pack(padx=100, pady=10, fill="both", expand=True)
+        self.textbox.pack(padx=60, pady=10, fill="both", expand=True)
         self.textbox.insert("1.0", initial_text)
 
         def save_note():
@@ -1361,8 +1380,7 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index}
         self.clear_ui()
         self.build_top_nav(show_back=True, back_command=self.show_dashboard)
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=100, pady=10)
+        scroll = self._page_scroll()
         ctk.CTkLabel(scroll, text=self.t("all_files_title"), font=FONT_H1).pack(anchor="w", pady=(10, 30))
         db = get_db_session()
         files = db.query(DBGeneratedFile).filter(DBGeneratedFile.course_id == course["id"]).order_by(
