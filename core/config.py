@@ -72,12 +72,12 @@ def save_key(name: str, value: str) -> Path:
 
 
 def text_model() -> str:
-    """文本模型默认 deepseek-chat。
+    """文本模型默认 deepseek-flash（推理模型）。
 
-    实测 deepseek-flash / v4-pro 属推理模型：复杂 prompt 会把预算全耗在思考上，
-    正文返回空字符串（finish=length, content=""），不适合长输出任务。
+    必须配合 model_extra() 关闭思考，否则复杂 prompt 会把 8192 预算全耗在思考上、
+    正文返回空字符串；实测关闭后 8192 即可完整写出整套试卷。
     """
-    return get_key("DEEPSEEK_MODEL", "deepseek-chat")
+    return get_key("DEEPSEEK_MODEL", "deepseek-flash")
 
 
 def max_tokens() -> int:
@@ -89,5 +89,16 @@ def max_tokens() -> int:
 
 
 def vision_model() -> str:
-    """视觉模型：默认 qwen3-vl-plus（qwen-vl-max 在本账号 404），可用 QWEN_VL_MODEL 覆盖。"""
-    return get_key("QWEN_VL_MODEL", "qwen3-vl-plus")
+    """视觉模型默认 qwen3.8-max（实测可识图）；可用 QWEN_VL_MODEL 覆盖。"""
+    return get_key("QWEN_VL_MODEL", "qwen3.8-max")
+
+
+def model_extra() -> dict:
+    """推理模型默认关闭思考：否则长输出会被思考过程吃光预算，返回空正文。
+
+    可用 TERMFINALE_THINKING=on 打开；换非推理模型时也应设为 on 以免传未知参数。
+    """
+    mode = get_key("TERMFINALE_THINKING", "disabled").lower()
+    if mode in ("on", "enabled", "1", "true"):
+        return {}
+    return {"extra_body": {"thinking": {"type": "disabled"}}}

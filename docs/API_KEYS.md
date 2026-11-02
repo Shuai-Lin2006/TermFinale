@@ -29,8 +29,8 @@ DASHSCOPE_API_KEY=sk-xxxxxxxx
 
 | 用途 | 默认 | 说明 | 覆盖变量 |
 |---|---|---|---|
-| 文本 | `deepseek-chat` | 实测稳定；`deepseek-flash` / `deepseek-v4-pro` 是推理模型，复杂 prompt 会把预算耗在思考上导致正文为空 | `DEEPSEEK_MODEL` |
-| 视觉 | `qwen3-vl-plus` | 实测图注准确 | `QWEN_VL_MODEL` |
+| 文本 | `deepseek-flash` | 推理模型；默认关闭思考模式，8192 预算可完整出卷（实测 8s/章） | `DEEPSEEK_MODEL` |
+| 视觉 | `qwen3.8-max` | 实测可识图（另有 `qwen3-vl-plus` 可切换） | `QWEN_VL_MODEL` |
 
 **踩过的坑**：`qwen-vl-max` 在本账号返回 404，`cmaas-qwen3.8-flash` 返回 403 无权限，
 `deepseek-chat` 仍可用但属于旧别名。代码已默认切到实测可用的模型，并支持用环境变量覆盖。
@@ -45,9 +45,13 @@ DASHSCOPE_API_KEY=sk-xxxxxxxx
 并发度可用 `TERMFINALE_CONCURRENCY=1~4` 调整；如果遇到限流可调回 1。
 大纲默认缓存（同一份资料重复生成结构一致），需要重算时设 `TERMFINALE_REFRESH_OUTLINE=1`。
 
-### 关于推理模型（重要）
+### 推理模型与思考开关（重要）
 
-实测 `deepseek-flash` 在「出整套试卷」这类长输出任务上会返回空字符串：
-`finish_reason=length`、`completion_tokens=8192`、`content=""` —— token 全被思考过程消耗。
-因此默认模型是 `deepseek-chat`，输出预算 `DEEPSEEK_MAX_TOKENS` 默认 8192。
-如果确实要用推理模型，请把它调大到 16384 并接受更慢的响应。
+`deepseek-flash` / `deepseek-v4-pro` 是推理模型。**不关思考时**，复杂 prompt 会把 8192 预算
+全部耗在思考上，正文返回空字符串（`finish_reason=length`、`content=""`），表现为"生成结果为空"。
+
+代码默认发送 `thinking: {"type": "disabled"}`：
+- 8192 预算即可完整写出整套试卷（实测 10,808 字 / 100 分 / 20 题）；
+- 比 16384 预算更快、更省（思考 token 不计入正文）。
+
+需要打开思考时设 `TERMFINALE_THINKING=on`；换成非推理模型时也应设为 `on`，避免传未知参数。

@@ -1,7 +1,7 @@
 import os
 import time
 from openai import OpenAI
-from core.config import get_key, load_env, max_tokens, text_model
+from core.config import get_key, load_env, max_tokens, model_extra, text_model
 from loguru import logger
 
 load_env()
@@ -19,7 +19,7 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
                     model=text_model(),
                     messages=[{"role": "system", "content": sys_prompt},
                               {"role": "user", "content": user_content}],
-                    temperature=temp, max_tokens=budget, timeout=120,
+                    temperature=temp, max_tokens=budget, timeout=120, **model_extra(),
                 )
                 choice = response.choices[0]
                 content = choice.message.content or ""
