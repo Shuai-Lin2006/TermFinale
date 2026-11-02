@@ -57,6 +57,12 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
             chapter_counter += 1
             title = match.group(1).strip()
             clean_title = re.sub(r'@@KEYWORD\d+@@|@@MERMAIDBLOCK\d+@@|@@IMAGEBLOCK\d+@@', '图表', title).strip()
+            # 去掉 AI 自带的编号/前缀，避免出现「第 1 章：核心考点：xxx」这种双前缀
+            for _ in range(2):
+                clean_title = re.sub(r'^\s*(第\s*\d+\s*章|Chapter\s*\d+)\s*[:：、.]?\s*', '',
+                                     clean_title, flags=re.IGNORECASE).strip()
+                clean_title = re.sub(r'^\s*(核心考点|章节导览|Core Concept)\s*[:：]\s*', '',
+                                     clean_title, flags=re.IGNORECASE).strip()
 
             if lang == "English":
                 return f"## Chapter {chapter_counter}: {clean_title if clean_title else 'Core Concepts'}"

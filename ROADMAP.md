@@ -37,22 +37,26 @@
 
 ## P1 拆解（本轮开工）
 
-### P1a 路径与日志
+### P1a 路径与日志 ✅ 已完成（2026-11-02，commit 541c8e2）
+
 1. `core/paths.py`：统一数据目录
    - macOS `~/Library/Application Support/TermFinale`
    - Windows `%APPDATA%\TermFinale`
    - Linux `~/.local/share/TermFinale`
    - 可用 `TERMFINALE_HOME` 覆盖（测试/绿色版）
    - 首次运行从源码目录**复制**旧 DB 与 `assets_images`（不移动、不删除）
-   - 子目录：`db/`、`assets/`、`logs/`、`debug/`、`outputs/`
-2. `core/logger.py`：UTF-8 文件日志 + 5MB 轮转 + 全局/线程/Tk 回调异常钩子
-3. 接线：`database.py`、`parser.py`、`exporter.py`、`main.py`
+   - 子目录：`assets/`、`logs/`、`debug/`、`outputs/`；DB 在根目录
+   - 用户目录不可写时自动回退到项目内 `.termfinale_home`（不崩溃）
+2. `core/logger.py`：UTF-8 文件日志 + 5MB 轮转 + sys/threading/Tk 回调异常钩子
+3. 接线：`database.py`（WAL + timeout=15）、`parser.py`、`exporter.py`、`main.py`
 
-**验收**
-- [ ] 启动后课程数据仍在（迁移成功）
-- [ ] `logs/app_YYYY-MM-DD.log` 有内容
-- [ ] 打包模拟（`sys.frozen=True` 单测）路径落用户目录
-- [ ] 11 页截图无异常
+**验收结果（实测）**
+- [x] 迁移成功：DB 复制 1 个 + assets 复制 290 个文件，3 门课程完整
+- [x] `logs/app_2026-11-02.log` 正常落盘（含启动日志与 init_db）
+- [x] SQLite 实测 `journal_mode=wal`
+- [x] 启动冒烟测试通过：UI 正常、课程列表 3 条
+- [ ] 打包模拟（`sys.frozen=True` 单测）留待 P7
+- [ ] 11 页截图回归留待 P1b 一起做
 
 ### P1b 服务层抽离 + 已知 bug
 1. `services/task.py`：`Task(id, kind, status, progress, artifacts, metrics)`

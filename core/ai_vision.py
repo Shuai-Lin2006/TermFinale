@@ -21,9 +21,9 @@ def analyze_image_with_ai(image_path: str) -> str:
         ext = image_path.split('.')[-1].lower()
         if ext == 'jpg': ext = 'jpeg'
 
-        # 🚨 如果你截图里的模型确实叫 qwen3.8-max，就保留；如果报错 404，请换成 qwen-vl-max
+        # 可用 QWEN_VL_MODEL 覆盖；默认 qwen-vl-max（旧值 qwen3.8-max 会 404）
         response = client.chat.completions.create(
-            model="qwen3.8-max",
+            model=os.getenv("QWEN_VL_MODEL", "qwen-vl-max"),
             messages=[
                 {
                     "role": "user",

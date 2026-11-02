@@ -4,7 +4,6 @@ import os
 import re
 import threading
 import time
-import subprocess
 import datetime
 from tkinter import filedialog
 import tkinter.messagebox as messagebox
@@ -19,6 +18,9 @@ from core.database import init_db, get_db_session, Course as DBCourse, Generated
     Material as DBMaterial, UserConfig as DBUserConfig
 from core import paths
 from core.logger import setup_logging, install_exception_hooks
+from core.personas import OUTROS, PERSONA_LABELS, persona_from_label
+from core.platform_utils import open_path
+from services import guide_service, review_service
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
@@ -40,22 +42,7 @@ DANGER_COLOR = "#FF3B30"
 SUCCESS_COLOR = "#34C759"
 WARNING_COLOR = "#FF9500"
 
-OUTROS = {
-    "zh": {
-        "老师": "## 🎓 结语\n同学们，书山有路勤为径。这份讲义里浓缩了期末最核心的考点，老师能帮你们的就到这里了。剩下的路，需要你们自己去考场上走。不要怕，深呼吸，把这几天背的公式稳稳地写在卷子上。祝你们旗开得胜，老师等你们的好消息！",
-        "学术AI": "## 🎓 结语\n数据解析完毕。当前讲义已包含通过最优算法提取的核心知识拓扑。请考生按照既定逻辑执行复习，避免非必要的情绪波动。预祝在即将到来的期末考试中，运算无误，得分最大化。",
-        "暴力极客": "## 🎓 结语\n行了，能教的都教了！别再搁这儿磨叽了，赶紧把这些公式给我死死刻在脑子里！考场上遇到不会的，也给我把公式列上去蹭步骤分！少废话，滚去复习，明天干翻那张卷子！听懂没有？！",
-        "温柔小姐姐": "## 🎓 结语\n宝宝，看到这里你真的已经很棒啦，辛苦了呢~🥺 复习是一件很枯燥的事情，但你一直坚持到了现在，姐姐真的很为你骄傲。今晚不要再熬夜啦，乖乖早点睡，把讲义里姐姐划的重点再看最后一眼。明天考试别紧张，你那么聪明，一定没问题的。姐姐会一直在你身后陪着你，等你的好消息哦~抱抱~🌸✨",
-        "阳光小哥哥": "## 🎓 结语\n兄弟，能坚持看完这份讲义，你已经击败了80%的人。复习确实很累，但你要相信，你熬过的夜、刷过的题，都会变成卷子上的分数。别给自己太大压力，按我给你的步骤和套路来，稳扎稳打就行。去考场上放手一搏吧，别怕，有我在，你一定能行。祝你逢考必过！"
-    },
-    "en": {
-        "老师": "## 🎓 Conclusion\nStudents, there is no royal road to learning. This guide contains the core exam points. I've done what I can. The rest is up to you. Don't be afraid, take a deep breath, and write those formulas steadily. Good luck!",
-        "学术AI": "## 🎓 Conclusion\nData analysis complete. Core knowledge topology extracted. Proceed with your review as scheduled. Emotional fluctuations are unnecessary. Maximize your score. End of transmission.",
-        "暴力极客": "## 🎓 Conclusion\nAlright, that's all I got! Stop dawdling and memorize these formulas! Even if you don't know the answer, write down the formulas for partial credit! Stop whining and go crush that exam!",
-        "温柔小姐姐": "## 🎓 Conclusion\nDarling, you're doing amazing and working so hard~🥺 It's a tough journey, but I'm so proud of you. Get some sleep tonight, review my highlights one last time. Don't be nervous tomorrow, you're smart and you'll do great. I'm always here for you~ Hugs~🌸✨",
-        "阳光小哥哥": "## 🎓 Conclusion\nBro, if you made it through this guide, you're already ahead of 80% of people. It's tiring, but your hard work will pay off. Don't stress, just follow my steps. Go out there and give it your all. I believe in you! You got this."
-    }
-}
+
 
 TRANSLATIONS = {
     "zh": {
@@ -98,7 +85,7 @@ TRANSLATIONS = {
         "note_title": "📝 自定义笔记模式", "note_save": "保存笔记", "note_saved": "笔记已保存！",
         "all_files_title": "📁 全部资料归档", "file_type_guide": "专属讲义", "file_type_analysis": "逻辑分析",
         "file_type_extract": "资料提取", "file_type_exam": "训练试卷", "file_type_note": "自定义笔记",
-        "is_exam_paper": "☑️ 以上资料包含【历年真题】 (解锁真题参考)",
+        "is_exam_paper": "以上资料包含【历年真题】(解锁真题参考)",
         "train_difficulty": "难度等级：", "train_sets": "生成套数：",
         "paper_mode": "出题基准：", "paper_default": "AI 智能生成默认卷型", "paper_diy": "自定义题型结构",
         "paper_exam": "参考历年真题风格",
@@ -141,7 +128,7 @@ TRANSLATIONS = {
         "note_title": "📝 Custom Notes", "note_save": "Save Note", "note_saved": "Note Saved!",
         "all_files_title": "📁 All Files Archive", "file_type_guide": "Guide", "file_type_analysis": "Analysis",
         "file_type_extract": "Extraction", "file_type_exam": "Mock Exam", "file_type_note": "Note",
-        "is_exam_paper": "☑️ Contains [Past Exam Papers]", "train_difficulty": "Difficulty: ", "train_sets": "Sets: ",
+        "is_exam_paper": "Contains [Past Exam Papers]", "train_difficulty": "Difficulty: ", "train_sets": "Sets: ",
         "paper_mode": "Paper Base: ", "paper_default": "AI Default", "paper_diy": "DIY Structure",
         "paper_exam": "Ref Past Exam",
         "diy_score_tips": "Total: {} / 100", "diy_score_warn": "Total score is {}. Generate anyway?",
@@ -527,6 +514,7 @@ class TermFinaleApp(ctk.CTk):
         self.view_args = {"course": course, "index": index, "is_edit": is_edit}
 
         if is_edit and not self.materials_loaded:
+            self.temp_materials = []  # 防止反复进出编辑页时累加重复材料
             db = get_db_session()
             mats = db.query(DBMaterial).filter(DBMaterial.course_id == course["id"]).all()
             for m in mats:
@@ -680,10 +668,8 @@ class TermFinaleApp(ctk.CTk):
         scroll.pack(fill="both", expand=True, padx=100, pady=10)
 
         ctk.CTkLabel(scroll, text=self.t("persona_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
-        persona_menu = ctk.CTkOptionMenu(scroll,
-                                         values=["温柔小姐姐 (适合零基础)", "学术AI (极简硬核)", "老师 (严谨推导)",
-                                                 "温柔小哥哥 (逻辑清晰)", "暴力极客 (极限施压)"], font=FONT_BODY,
-                                         width=400)
+        persona_menu = ctk.CTkOptionMenu(scroll, values=list(PERSONA_LABELS.keys()),
+                                         font=FONT_BODY, width=400)
         persona_menu.pack(anchor="w", pady=(0, 20))
 
         ctk.CTkLabel(scroll, text=self.t("lang_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
@@ -699,7 +685,7 @@ class TermFinaleApp(ctk.CTk):
         btn_frame.pack(fill="x", pady=10)
 
         def start(mode):
-            self.start_generation(course, index, mode, persona_menu.get().split(" ")[0], lang_menu.get())
+            self.start_generation(course, index, mode, persona_from_label(persona_menu.get()), lang_menu.get())
 
         ctk.CTkButton(btn_frame, text=self.t("full_mode"), font=FONT_H2, width=300, height=100, fg_color=CARD_COLOR,
                       text_color=TEXT_COLOR, border_width=1, border_color="#E5E5E5",
@@ -776,134 +762,64 @@ class TermFinaleApp(ctk.CTk):
         self.after(0, self.show_dashboard)
 
     def run_backend_task(self, course, index, mode, persona, core_ratio, lang):
+        """线程入口：调用服务层生成讲义，进度由 _on_service_progress 桥接到主线程。"""
         try:
-            db = get_db_session()
-            materials = db.query(DBMaterial).filter(DBMaterial.course_id == course["id"]).all()
-            if not materials: raise Exception("没有找到任何上传资料")
-
-            core_pages, ref_pages = [], []
-            for m in materials:
-                if self.stop_event.is_set(): return
-                self.update_progress(f"📖 正在解析文件: {m.filename}...", 0.1)
-                pages = extract_text_from_file(m.file_path)
-                if m.file_type == "core":
-                    core_pages.extend(pages)
-                else:
-                    ref_pages.extend(pages)
-            db.close()
-
-            chunks = []
-
-            weight_prompt = ""
-            if core_pages and ref_pages:
-                if core_ratio > 0.5:
-                    weight_prompt = f"本轮生成以【核心重点】为绝对主导（占 {int(core_ratio * 100)}%），【参考资料】仅作辅助补充。遇到冲突时，必须无条件以核心重点为准！"
-                elif core_ratio < 0.5:
-                    weight_prompt = f"本轮生成以【参考资料】为主要框架（占 {int((1 - core_ratio) * 100)}%），【核心重点】作为点睛之笔。"
-                else:
-                    weight_prompt = "本轮生成综合参考【核心重点】与【参考资料】，请提取双方的精华进行融合。"
-            elif core_pages:
-                weight_prompt = "本轮生成纯粹基于【核心重点】，禁止自行发散。"
-            elif ref_pages:
-                weight_prompt = "本轮生成纯粹基于【参考资料】，请仔细梳理全部知识点。"
-
-            max_pages = 15
-            if core_pages and ref_pages:
-                core_limit = int(max_pages * core_ratio)
-                ref_limit = max_pages - core_limit
-                core_pages = core_pages[:max(1, core_limit)]
-                ref_pages = ref_pages[:max(1, ref_limit)]
-
-            def build_chunks(pages, prefix_tag):
-                local_chunks = []
-                for i in range(0, len(pages), 2):
-                    chunk_items = pages[i:i + 2]
-                    content = "\n\n".join(chunk_items)
-                    if not content.strip(): continue
-                    if i > 0 and len(pages[i - 1]) > 150:
-                        content = "【上一页回顾...】\n" + pages[i - 1][-150:] + "\n\n" + content
-                    local_chunks.append((f"{prefix_tag}", content))
-                return local_chunks
-
-            chunks.extend(build_chunks(core_pages, "【核心重点】"))
-            chunks.extend(build_chunks(ref_pages, "【参考资料】"))
-
-            info = CourseInfo(name=course["name"], school_level=course["school"], major=course["major"],
-                              is_core_major=course["is_major"], credits=course["credits"],
-                              days_left=course["days_left"], target_score=course["target_score"],
-                              user_difficulty=course["difficulty"])
-            results = []
-            total_chunks = len(chunks)
-
-            for i, (tag, content) in enumerate(chunks):
-                if self.stop_event.is_set(): return
-
-                elapsed = time.time() - self.start_time
-                if i > 0:
-                    avg_time = elapsed / i
-                    remain = int(avg_time * (total_chunks - i))
-                    self.after(0, lambda r=remain: self.time_label.configure(
-                        text=self.t("time_est").format(f"{r // 60}分{r % 60}秒")))
-
-                self.update_progress(f"🧠 AI导师正在梳理考点... ({i + 1}/{total_chunks})",
-                                     0.1 + (i / total_chunks) * 0.8)
-
-                img_tags = re.findall(r'\[\[\[IMAGE:.*?\]\]\]', content)
-
-                user_choice = "option_1_保命流" if mode == "key" else "option_2_硬核流"
-                md = generate_super_guide(f"{tag}\n{content}", info, persona=persona, user_choice=user_choice,
-                                          weight_prompt=weight_prompt, lang=lang)
-
-                if md and "跳过" not in md and len(md.strip()) > 20:
-                    missing_tags = [t for t in img_tags if t not in md]
-                    if missing_tags:
-                        for img_tag in missing_tags:
-                            parts = md.split("\n\n", 1)
-                            if len(parts) > 1:
-                                md = parts[0] + f"\n\n{img_tag}\n\n" + parts[1]
-                            else:
-                                md += f"\n\n{img_tag}\n"
-                    results.append(md)
-
-            if not results: raise Exception("未提取到有效考点")
-            if self.stop_event.is_set(): return
-
-            self.update_progress("🎨 正在排版公式、图片与高亮名词...", 0.9)
-
-            clean_results = []
-            for md in results:
-                md = re.sub(r'【结语】.*', '', md, flags=re.DOTALL)
-                md = re.sub(r'## 🎓 结语.*', '', md, flags=re.DOTALL)
-                md = re.sub(r'### 🎓 结语.*', '', md, flags=re.DOTALL)
-                clean_results.append(md.strip())
-
-            final_markdown = "\n\n---\n\n".join(clean_results)
-
-            outro_lang = "en" if lang == "English" else "zh"
-            final_markdown += f"\n\n---\n\n{OUTROS[outro_lang].get(persona, OUTROS[outro_lang]['温柔小姐姐'])}"
-
-            time_str = time.strftime("%m%d_%H%M", time.localtime())
-            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-            if not os.path.exists(desktop): desktop = os.path.abspath(".")
-            mode_str = "精简" if mode == "key" else "全量"
-            output_filename = os.path.join(desktop, f"{course['name']}_{mode_str}_{time_str}.html")
-
-            export_to_html(final_markdown, output_file=output_filename, course=info, persona=persona,
-                           doc_type="专属讲义", lang=lang)
-
-            db = get_db_session()
-            db.add(DBGeneratedFile(course_id=course["id"], file_path=output_filename, created_at=time_str,
-                                   file_type="guide"))
-            db.commit()
-            db.close()
-            self.update_progress("✅ 渲染完成，即将打开...", 1.0)
-            time.sleep(0.5)
-            self.after(0, lambda: self.show_preview_screen(output_filename))
-        except Exception as e:
-            logger.error(f"生成失败: {e}")
+            result = guide_service.run_guide(
+                course,
+                mode=mode,
+                persona=persona,
+                core_ratio=core_ratio,
+                lang=lang,
+                on_progress=self._on_service_progress,
+                stop_event=self.stop_event,
+            )
+        except Exception as exc:
+            logger.error("讲义生成失败: {}", exc)
             if not self.stop_event.is_set():
-                self.after(0, lambda: messagebox.showerror(self.t("error"), str(e)))
+                self.after(0, lambda: messagebox.showerror(self.t("error"), str(exc)))
                 self.after(0, self.show_dashboard)
+            return
+        if result and not self.stop_event.is_set():
+            self.after(0, lambda: self.show_preview_screen(result.output_path))
+
+    def _show_progress_page(self, initial_text="🚀 正在准备数据与网络请求..."):
+        """生成中页面（讲义与复习共用）。"""
+        self.clear_ui()
+        center = ctk.CTkFrame(self, fg_color="transparent")
+        center.place(relx=0.5, rely=0.4, anchor="center")
+        ctk.CTkLabel(center, text=self.t("gen_ing"), font=FONT_H1).pack(pady=(0, 20))
+        self.progress_label = ctk.CTkLabel(center, text=initial_text, font=FONT_H2,
+                                           text_color=ACCENT_COLOR)
+        self.progress_label.pack(pady=(0, 10))
+        self.time_label = ctk.CTkLabel(center, text=self.t("time_est").format("计算中..."),
+                                       font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR)
+        self.time_label.pack(pady=(0, 10))
+        self.progressbar = ctk.CTkProgressBar(center, width=400)
+        self.progressbar.pack(pady=20)
+        self.progressbar.set(0)
+        ctk.CTkLabel(center, text=self.t("do_not_leave"), font=FONT_H2,
+                     text_color=DANGER_COLOR).pack(pady=(10, 10))
+        ctk.CTkButton(center, text=self.t("stop_btn"), font=FONT_H2, fg_color=DANGER_COLOR,
+                      command=self.stop_generation).pack(pady=10)
+
+    def _on_service_progress(self, event):
+        """服务层回调（工作线程）→ 通过 after 回到主线程；控件已销毁时静默跳过。"""
+        def apply():
+            try:
+                label = getattr(self, "progress_label", None)
+                if label is not None and label.winfo_exists():
+                    label.configure(text=event.message)
+                bar = getattr(self, "progressbar", None)
+                if bar is not None and bar.winfo_exists():
+                    bar.set(max(0.0, min(1.0, event.value)))
+                eta = getattr(self, "time_label", None)
+                if event.eta_seconds is not None and eta is not None and eta.winfo_exists():
+                    seconds = event.eta_seconds
+                    eta.configure(text=self.t("time_est").format(f"{seconds // 60}分{seconds % 60}秒"))
+            except Exception:  # 控件销毁/窗口关闭，属正常竞态
+                pass
+
+        self.after(0, apply)
 
     def update_progress(self, text, value):
         self.after(0, lambda: self.progress_label.configure(text=text))
@@ -1184,91 +1100,39 @@ class TermFinaleApp(ctk.CTk):
                       command=start).pack(pady=40)
 
     def run_generation_task(self, course, index, task_type, text, **kwargs):
-        self.clear_ui()
+        """线程入口：调用复习服务，UI 只负责展示进度。"""
         self.stop_event.clear()
         self.start_time = time.time()
-
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.place(relx=0.5, rely=0.4, anchor="center")
-        ctk.CTkLabel(center, text=self.t("gen_ing"), font=FONT_H1).pack(pady=(0, 20))
-        self.progress_label = ctk.CTkLabel(center, text="🚀 正在准备数据与网络请求...", font=FONT_H2,
-                                           text_color=ACCENT_COLOR)
-        self.progress_label.pack(pady=(0, 10))
-        self.time_label = ctk.CTkLabel(center, text=self.t("time_est").format("计算中..."), font=FONT_SUBTITLE,
-                                       text_color=SUB_TEXT_COLOR)
-        self.time_label.pack(pady=(0, 10))
-        self.progressbar = ctk.CTkProgressBar(center, width=400)
-        self.progressbar.pack(pady=20)
-        self.progressbar.set(0)
-        ctk.CTkLabel(center, text=self.t("do_not_leave"), font=FONT_H2, text_color=DANGER_COLOR).pack(pady=(10, 10))
-        ctk.CTkButton(center, text=self.t("stop_btn"), font=FONT_H2, fg_color=DANGER_COLOR,
-                      command=self.stop_generation).pack(pady=10)
+        self._show_progress_page()
 
         def task():
             try:
-                info = CourseInfo(name=course["name"], school_level=course["school"], major=course["major"],
-                                  is_core_major=course["is_major"], credits=course["credits"],
-                                  days_left=course["days_left"], target_score=course["target_score"],
-                                  user_difficulty=course["difficulty"])
-
-                if task_type == "extract":
-                    chunks = [text[i:i + 2000] for i in range(0, len(text), 2000)]
-                    results = []
-                    for i, chunk in enumerate(chunks):
-                        if self.stop_event.is_set(): return
-                        elapsed = time.time() - self.start_time
-                        if i > 0:
-                            remain = int((elapsed / i) * (len(chunks) - i))
-                            self.after(0, lambda r=remain: self.time_label.configure(
-                                text=self.t("time_est").format(f"{r // 60}分{r % 60}秒")))
-                        self.update_progress(f"🔍 正在提取区块 {i + 1}/{len(chunks)}...", (i + 1) / len(chunks))
-                        md = generate_extraction(chunk, kwargs.get("extract_type"), kwargs.get("with_answer"))
-                        if md:
-                            md = re.sub(r'以下是.*?考题。', '', md)
-                            md = re.sub(r'以下是.*?提取.*?：', '', md)
-                            results.append(md)
-                    md = "\n\n".join(results)
-                    doc_name = "资料提取"
-
-                elif task_type == "analysis":
-                    self.update_progress("🧠 AI 正在扫描文本，构建思维拓扑图...", 0.4)
-                    md = generate_logic_analysis(text, kwargs.get("mode", "mindmap"))
-                    doc_name = "逻辑分析" if kwargs.get("mode") == "text_logic" else "思维导图"
-
-                elif task_type == "exam":
-                    self.update_progress("📝 命题组长正在疯狂敲键盘，为你量身定制试卷题目...", 0.4)
-                    md = generate_exam_paper(text, kwargs.get("train_type"), kwargs.get("num_sets"),
-                                             kwargs.get("difficulty", 3), kwargs.get("diy_config", ""),
-                                             kwargs.get("user_context"), kwargs.get("lang", "中文"))
-                    doc_name = "训练试卷"
-
-                if not md: raise Exception("生成结果为空")
-                if self.stop_event.is_set(): return
-
-                self.update_progress("🎨 正在渲染排版，并为你检查公式与换行...", 0.8)
-                time_str = time.strftime("%m%d_%H%M", time.localtime())
-                desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-                if not os.path.exists(desktop): desktop = os.path.abspath(".")
-                output_filename = os.path.join(desktop, f"{course['name']}_{doc_name}_{time_str}.html")
-
-                export_to_html(md, output_file=output_filename, course=info, persona="AI", doc_type=doc_name,
-                               lang=kwargs.get("lang", "中文"))
-
-                db = get_db_session()
-                db.add(DBGeneratedFile(course_id=course["id"], file_path=output_filename, created_at=time_str,
-                                       file_type=task_type))
-                db.commit()
-                db.close()
-                self.update_progress("✅ 渲染成功，准备展示！", 1.0)
-                time.sleep(0.5)
-                if not self.stop_event.is_set(): self.after(0, lambda: self.show_preview_screen(output_filename))
-            except Exception as e:
-                logger.error(f"生成失败: {e}")
+                result = review_service.run_review(
+                    course,
+                    task_type,
+                    text,
+                    extract_type=kwargs.get("extract_type"),
+                    with_answer=kwargs.get("with_answer", True),
+                    mode=kwargs.get("mode", "mindmap"),
+                    train_type=kwargs.get("train_type"),
+                    num_sets=kwargs.get("num_sets", 1),
+                    difficulty=kwargs.get("difficulty", 3),
+                    diy_config=kwargs.get("diy_config", ""),
+                    user_context=kwargs.get("user_context"),
+                    lang=kwargs.get("lang", "中文"),
+                    on_progress=self._on_service_progress,
+                    stop_event=self.stop_event,
+                )
+            except Exception as exc:
+                logger.error("复习任务失败: {}", exc)
                 if not self.stop_event.is_set():
-                    self.after(0, lambda: messagebox.showerror(self.t("error"), str(e)))
+                    self.after(0, lambda: messagebox.showerror(self.t("error"), str(exc)))
                     self.after(0, self.show_dashboard)
+                return
+            if result and not self.stop_event.is_set():
+                self.after(0, lambda: self.show_preview_screen(result.output_path))
 
-        threading.Thread(target=task).start()
+        threading.Thread(target=task, daemon=True).start()
 
     def show_notes(self, course, index):
         self.current_view = "notes"
@@ -1344,24 +1208,13 @@ class TermFinaleApp(ctk.CTk):
                                                                                                   pady=10)
 
                 def open_f(path=f.file_path):
-                    if not os.path.exists(path): return
-                    if path.endswith(".txt"):
-                        subprocess.run(["open", path])
-                    else:
-                        try:
-                            subprocess.run(["open", "-a", "Microsoft Edge", f"file://{path}"])
-                        except:
-                            subprocess.run(["open", f"file://{path}"])
+                    open_path(path)
 
                 ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color="#F0F8FF",
                               text_color=ACCENT_COLOR, command=open_f).pack(side="right", padx=15)
 
     def open_file(self, path):
-        if os.path.exists(path):
-            try:
-                subprocess.run(["open", "-a", "Microsoft Edge", f"file://{path}"])
-            except:
-                subprocess.run(["open", f"file://{path}"])
+        open_path(path)
 
     def show_preview_screen(self, html_path):
         self.current_view = "preview"
