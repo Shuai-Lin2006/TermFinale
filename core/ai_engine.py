@@ -50,14 +50,24 @@ def build_learner_radar(course: CourseInfo) -> str:
     return "\n".join(strategies)
 
 def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老师",
-                         user_choice: str = "option_1_保命流", weight_prompt: str = "", lang: str = "中文") -> str:
+                         user_choice: str = "option_1_保命流", weight_prompt: str = "", lang: str = "中文",
+                         chapter: dict | None = None) -> str:
+    """生成一章讲义。
+
+    chapter: {title, index, total, must_know, neighbors, target_words}
+    """
     persona_prompt = PERSONAS.get(persona, PERSONAS["温柔小姐姐"])
     learner_radar = build_learner_radar(course)
+    is_key = user_choice == "option_1_保命流"
 
-    if user_choice == "option_1_保命流":
-        mode_prompt = "【保命流】放弃复杂推导，只给核心公式和做题套路。废话直接删。"
+    if is_key:
+        mode_prompt = (
+            "【保命流·结构压缩】只输出三样：①必背要点(3~5条) ②公式卡(公式/符号含义/适用条件) "
+            "③三步解题套路。禁止推导过程、历史背景、无关比喻。"
+            "注意：压缩的是**排版与展开度**，不是知识点——必考概念一个都不能漏。"
+        )
     else:
-        mode_prompt = "【全量流】全面覆盖，详细拆解推导。必须讲透。"
+        mode_prompt = "【全量流】完整覆盖：概念→原理→推导→例题→陷阱。可以长，但每句话都要有信息量。"
 
     file_match = re.search(r'【《(.*?)》第 (\d+) 页】', raw_text)
     source_str = f"《{file_match.group(1)}》第 {file_match.group(2)} 页" if file_match else "多页合并内容"
@@ -65,10 +75,29 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     has_image = "[[[IMAGE:" in raw_text
     weight_instruction = f"\n【⚖️ 资料权重指令】：{weight_prompt}\n" if weight_prompt else ""
 
+    chapter_title = ""
+    chapter_block = ""
+    if chapter:
+        idx = int(chapter.get("index", 0)) + 1
+        total = int(chapter.get("total", 1))
+        chapter_title = str(chapter.get("title", "")).strip()
+        must = "、".join(chapter.get("must_know") or []) or "（沿用资料主线）"
+        neighbors = chapter.get("neighbors", "") or "无"
+        target_words = chapter.get("target_words") or (1200 if is_key else 2600)
+        chapter_block = f"""
+    ========================================
+    【本章定位】第 {idx}/{total} 章：{chapter_title or '未命名'}
+    【必须覆盖，一个都不能少】{must}
+    【相邻章节（只用于避免重复，不要展开）】{neighbors}
+    【篇幅要求】约 {target_words} 字（中文字符计），明显不足或大幅超出都算不合格。
+    【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
+    """
+
     if lang == "English":
+        heading = chapter_title or "[Title]"
         step3_title = "### 3. Deep Dive (Examples & Figures)" if has_image else "### 3. Deep Dive"
         structure = f"""
-    ## Core Concept: [Title]
+    ## Core Concept: {heading}
     > 📌 Source: {source_str}
     ### 1. Why Learn This?
     ### 2. Core Principles & Formulas
@@ -79,9 +108,10 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
         lang_req = "🚨【STRICT ENGLISH ONLY】: You must output entirely in English. Do NOT use any Chinese characters."
         keyword_req = "3. **Keyword Highlight**: Strictly wrap keywords with `[[English_Term | Plain English Explanation]]`."
     else:
+        heading = chapter_title or "[标题]"
         step3_title = "### 3. 深度拆解（保留例题和配图）" if has_image else "### 3. 深度拆解"
         structure = f"""
-    ## 核心考点：[标题]
+    ## 核心考点：{heading}
     > 📌 出处：{source_str}
     ### 1. 为什么学这个？
     ### 2. 核心原理与公式
@@ -100,6 +130,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     {learner_radar}
     {mode_prompt}
     {weight_instruction}
+    {chapter_block}
 
     🚨【讲义质量绝对红线】🚨
     1. {lang_req}
@@ -123,7 +154,14 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": raw_text}],
                 temperature=0.3, max_tokens=4096, timeout=90
             )
-            return response.choices[0].message.content
+            choice = response.choices[0]
+            if getattr(choice, "finish_reason", None) == "length":
+                usage = getattr(response, "usage", None)
+                logger.warning(
+                    "输出被截断 finish_reason=length tokens={} 章节={}",
+                    getattr(usage, "completion_tokens", "?"), chapter_title or "-",
+                )
+            return choice.message.content
         except Exception as e:
             logger.warning(f"AI 调用失败 (尝试 {attempt + 1}/{max_retries}): {e}")
             if attempt == max_retries - 1: return ""

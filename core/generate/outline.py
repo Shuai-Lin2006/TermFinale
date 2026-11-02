@@ -1,0 +1,188 @@
+"""课程大纲规划：先定章节，再逐章生成。
+
+旧实现按「2 页 PPT = 一章」硬切，出来的目录是 16 篇并列作文，没有主线。
+现在先用一次轻量 AI 调用规划章节（含必考点、重要度、预估字数），
+失败则退回分页启发式大纲——保证离线/断网也能跑。
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+from dataclasses import dataclass, field
+from typing import Callable
+
+from loguru import logger
+
+MAX_CHAPTERS = 10
+MAX_PAGES_PER_CHAPTER = 6
+MAX_TOTAL_PAGES = 40
+
+_DISABLE_AI = os.getenv("TERMFINALE_DISABLE_AI", "").strip().lower() in ("1", "true", "yes")
+
+
+@dataclass
+class Chapter:
+    index: int
+    title: str
+    pages: list[int]                 # pages 列表中的 0-based 下标
+    must_know: list[str] = field(default_factory=list)
+    importance: int = 3              # 1~5
+    est_words: int = 1800
+
+
+@dataclass
+class Outline:
+    chapters: list[Chapter]
+    source: str = "fallback"         # ai | fallback
+
+
+# --------------------------------------------------------------------------- #
+# 启发式兜底
+# --------------------------------------------------------------------------- #
+def _page_head(page: str, limit: int = 60) -> str:
+    text = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", page)
+    text = re.sub(r"【《.*?》第.*?页】", "", text).strip()
+    for line in text.splitlines():
+        line = line.strip()
+        if len(line) >= 4:
+            return line[:limit]
+    return ""
+
+
+def fallback_outline(pages: list[str], chapters: int | None = None) -> Outline:
+    n = len(pages)
+    if n == 0:
+        return Outline([], source="fallback")
+    count = chapters or max(3, min(MAX_CHAPTERS, round(n / 3)))
+    count = min(count, n)
+    size = max(1, -(-n // count))
+    out: list[Chapter] = []
+    for i in range(0, n, size):
+        idx = list(range(i, min(n, i + size)))
+        title = _page_head(pages[idx[0]]) or f"第 {len(out) + 1} 部分"
+        out.append(Chapter(index=len(out), title=title, pages=idx, importance=3))
+    return Outline(out, source="fallback")
+
+
+# --------------------------------------------------------------------------- #
+# AI 大纲
+# --------------------------------------------------------------------------- #
+def build_digest(pages: list[str], per_page: int = 180, max_chars: int = 14000) -> str:
+    lines = []
+    for i, page in enumerate(pages[:MAX_TOTAL_PAGES]):
+        head = re.sub(r"\s+", " ", _page_head(page, per_page))
+        lines.append(f"[{i}] {head}")
+    digest = "\n".join(lines)
+    return digest[:max_chars]
+
+
+def _extract_json(text: str) -> dict | None:
+    if not text:
+        return None
+    cleaned = re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.MULTILINE).strip()
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        return json.loads(cleaned[start:end + 1])
+    except json.JSONDecodeError:
+        return None
+
+
+def _normalize(data: dict, n_pages: int) -> list[Chapter]:
+    chapters: list[Chapter] = []
+    for i, item in enumerate(data.get("chapters", [])):
+        if not isinstance(item, dict):
+            continue
+        pages = []
+        for p in item.get("pages", []):
+            try:
+                p = int(p)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= p < n_pages:
+                pages.append(p)
+        pages = sorted(set(pages))
+        if not pages:
+            continue
+        title = str(item.get("title", "")).strip() or f"第 {i + 1} 部分"
+        must = [str(x).strip() for x in item.get("must_know", []) if str(x).strip()][:8]
+        try:
+            importance = max(1, min(5, int(item.get("importance", 3))))
+        except (TypeError, ValueError):
+            importance = 3
+        try:
+            est_words = max(400, min(4000, int(item.get("est_words", 1800))))
+        except (TypeError, ValueError):
+            est_words = 1800
+        chapters.append(Chapter(len(chapters), title[:60], pages[:MAX_PAGES_PER_CHAPTER],
+                                must, importance, est_words))
+        if len(chapters) >= MAX_CHAPTERS:
+            break
+
+    # 未覆盖的页：就近并入，避免整页内容丢失
+    assigned = {p for c in chapters for p in c.pages}
+    missing = [p for p in range(n_pages) if p not in assigned]
+    if chapters:
+        for p in missing:
+            nearest = min(chapters, key=lambda c: min(abs(p - q) for q in c.pages))
+            if len(nearest.pages) < MAX_PAGES_PER_CHAPTER:
+                nearest.pages = sorted(nearest.pages + [p])
+            else:
+                chapters.append(Chapter(len(chapters), f"补充：{p + 1}–{p + 1} 页", [p]))
+    elif missing:
+        chapters = fallback_outline([""] * n_pages).chapters
+    return chapters
+
+
+OUTLINE_SYSTEM = """你是大学期末复习资料的课程架构师。
+下面给出资料的分页摘要，序号 [n] 对应第 n+1 页。
+请按知识结构划分 4~10 章，输出**严格 JSON**，不要任何解释文字：
+{"chapters":[{"title":"章标题(<=18字)","pages":[0,1],"must_know":["必考点1","必考点2"],"importance":3,"est_words":1800}]}
+要求：
+1. pages 只能使用给定序号，每章 1~4 页，不要重复分配同一页；
+2. must_know 写 3~6 条本章必须掌握的知识点（短语，不带编号）；
+3. importance 1~5，按期末出现概率给分；
+4. est_words 是本章合理篇幅（中文单字计），一般 1200~2600；
+5. 章节顺序必须与页码顺序一致，不要跳来跳去。"""
+
+
+def generate_outline(
+    pages: list[str],
+    course: dict | None = None,
+    *,
+    lang: str = "中文",
+    ai_call: Callable[[str, str], str] | None = None,
+    min_chapters: int = 3,
+) -> Outline:
+    """优先 AI 规划，任何异常都退回启发式，保证流水线不断。"""
+    n = len(pages)
+    if n == 0:
+        return Outline([], source="fallback")
+    if _DISABLE_AI or ai_call is None:
+        logger.info("大纲：使用启发式（AI 关闭或未注入）")
+        return fallback_outline(pages)
+
+    digest = build_digest(pages)
+    if course:
+        digest = f"课程：{course.get('name', '')}｜专业：{course.get('major', '')}｜目标分：{course.get('target_score', '')}\n" + digest
+
+    try:
+        raw = ai_call(OUTLINE_SYSTEM, digest)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("大纲 AI 调用失败，退回启发式: {}", exc)
+        return fallback_outline(pages)
+
+    data = _extract_json(raw or "")
+    if not data:
+        logger.warning("大纲 JSON 解析失败，退回启发式")
+        return fallback_outline(pages)
+
+    chapters = _normalize(data, n)
+    if len(chapters) < min_chapters:
+        logger.warning("大纲章节数不足（{}），退回启发式", len(chapters))
+        return fallback_outline(pages)
+
+    logger.info("大纲生成完成：{} 章（AI）", len(chapters))
+    return Outline(chapters, source="ai")

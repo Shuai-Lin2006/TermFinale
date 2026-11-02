@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,7 +41,12 @@ def noop_progress(_event: ProgressEvent) -> None:
 
 
 def default_output_dir() -> Path:
-    """生成物默认落桌面；没有桌面目录时落用户数据目录的 outputs/。"""
+    """生成物默认落桌面；可用 TERMFINALE_OUTPUT_DIR 覆盖（测试/自定义导出目录）。"""
+    override = os.getenv("TERMFINALE_OUTPUT_DIR", "").strip()
+    if override:
+        path = Path(override).expanduser()
+        path.mkdir(parents=True, exist_ok=True)
+        return path
     desktop = Path.home() / "Desktop"
     if desktop.is_dir():
         return desktop

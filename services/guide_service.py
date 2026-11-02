@@ -1,9 +1,10 @@
-"""讲义生成服务：解析资料 → 分块 → 调 AI → 渲染 HTML。
+"""讲义生成服务：解析资料 → 规划大纲 → 逐章生成 → 校验 → 渲染 HTML。
 
-行为与重构前保持一致，唯一的变化：
-1. 进度通过回调上报，不再直接操作控件；
-2. 原始 Markdown 与指标落盘到 debug/；
-3. AI 吞掉的图片标签统一补在本章末尾，不再插进段落中间。
+与 v1 的差别：
+1. 不再按「2 页一块」硬切，而是**先出大纲**，再按章节生成；
+2. 每章带「必须覆盖 / 前后章 / 篇幅」约束，减少跑题与重复；
+3. 每章生成后跑 `qa.check_markdown`，指标写进 debug；
+4. 进度通过回调上报；原始 Markdown + 指标落盘。
 """
 from __future__ import annotations
 
@@ -15,9 +16,12 @@ from loguru import logger
 
 from core.ai_engine import generate_super_guide
 from core.database import GeneratedFile as DBGeneratedFile, Material as DBMaterial, get_db_session
+from core.exam_engine import call_ai_with_retry
 from core.exporter import export_to_html
+from core.generate.outline import Chapter, Outline, generate_outline
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
+from core.quality.qa import check_chapters
 from models.user_profile import CourseInfo
 from services.task import (
     ProgressCb,
@@ -29,7 +33,7 @@ from services.task import (
 )
 
 MAX_PAGES = 15
-CHUNK_SIZE = 2
+PAGES_PER_CALL = 3          # 单次请求最多塞 3 页，避免输入过长导致输出被挤压
 
 
 # --------------------------------------------------------------------------- #
@@ -58,18 +62,6 @@ def truncate_pages(core_pages: list, ref_pages: list, core_ratio: float) -> tupl
         ref_limit = MAX_PAGES - core_limit
         return core_pages[: max(1, core_limit)], ref_pages[: max(1, ref_limit)]
     return core_pages, ref_pages
-
-
-def build_chunks(pages: list, prefix_tag: str) -> list[tuple[str, str]]:
-    chunks = []
-    for i in range(0, len(pages), CHUNK_SIZE):
-        content = "\n\n".join(pages[i:i + CHUNK_SIZE])
-        if not content.strip():
-            continue
-        if i > 0 and len(pages[i - 1]) > 150:
-            content = "【上一页回顾...】\n" + pages[i - 1][-150:] + "\n\n" + content
-        chunks.append((prefix_tag, content))
-    return chunks
 
 
 def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
@@ -101,6 +93,33 @@ def build_course_info(course: dict) -> CourseInfo:
     )
 
 
+def chapter_blocks(chapter: Chapter, pages: list[str], per_call: int = PAGES_PER_CALL) -> list[tuple[str, list[str]]]:
+    """把一章的页面打包成若干次请求：(正文, 该批次的图片标签)。"""
+    texts = [pages[i] for i in chapter.pages if 0 <= i < len(pages)]
+    blocks: list[tuple[str, list[str]]] = []
+    for start in range(0, len(texts), per_call):
+        batch = texts[start:start + per_call]
+        content = "\n\n".join(batch)
+        if not content.strip():
+            continue
+        tags = re.findall(r"\[\[\[IMAGE:.*?\]\]\]", content)
+        blocks.append((content, tags))
+    return blocks
+
+
+def _neighbors(outline: Outline, index: int) -> str:
+    parts = []
+    if index > 0:
+        parts.append(f"上一章《{outline.chapters[index - 1].title}》")
+    if index + 1 < len(outline.chapters):
+        parts.append(f"下一章《{outline.chapters[index + 1].title}》")
+    return "；".join(parts) or "无"
+
+
+def _default_outline_ai(system: str, user: str) -> str:
+    return call_ai_with_retry(system, user, temp=0.2)
+
+
 # --------------------------------------------------------------------------- #
 # 主流程
 # --------------------------------------------------------------------------- #
@@ -113,10 +132,18 @@ def run_guide(
     lang: str = "中文",
     on_progress: ProgressCb = noop_progress,
     stop_event: threading.Event | None = None,
+    outline: Outline | None = None,
+    ai_call=None,
+    guide_generator=None,
 ) -> RunResult | None:
-    """生成一份讲义。被用户中断时返回 None。"""
+    """生成一份讲义。被用户中断时返回 None。
+
+    可注入 outline / ai_call / guide_generator，便于离线测试。
+    """
     stop_event = stop_event or threading.Event()
     started = time.time()
+    is_key = mode == "key"
+    user_choice = "option_1_保命流" if is_key else "option_2_硬核流"
 
     db = get_db_session()
     try:
@@ -131,67 +158,92 @@ def run_guide(
     for material in materials:
         if stop_event.is_set():
             return None
-        on_progress(ProgressEvent(f"📖 正在解析文件: {material.filename}...", 0.1))
+        on_progress(ProgressEvent(f"📖 正在解析文件: {material.filename}...", 0.08))
         pages = extract_text_from_file(material.file_path)
         (core_pages if material.file_type == "core" else ref_pages).extend(pages)
 
     weight_prompt = build_weight_prompt(core_pages, ref_pages, core_ratio)
     core_pages, ref_pages = truncate_pages(core_pages, ref_pages, core_ratio)
+    pages = core_pages + ref_pages
+    if not pages:
+        raise RuntimeError("未从资料中解析到任何内容")
 
-    chunks = build_chunks(core_pages, "【核心重点】") + build_chunks(ref_pages, "【参考资料】")
-    if not chunks:
-        raise RuntimeError("未从资料中解析到任何文本内容")
+    if outline is None:
+        on_progress(ProgressEvent("🧭 正在规划课程大纲...", 0.12))
+        outline = generate_outline(pages, course, lang=lang,
+                                   ai_call=ai_call or _default_outline_ai)
+    if not outline.chapters:
+        raise RuntimeError("无法规划章节结构")
 
+    total = len(outline.chapters)
+    on_progress(ProgressEvent(f"🧭 已规划 {total} 章，开始逐章生成...", 0.15))
+    logger.info("讲义大纲来源={} 章节={}", outline.source, total)
+
+    generator = guide_generator or generate_super_guide
     info = build_course_info(course)
-    total = len(chunks)
-    results: list[str] = []
-    images_seen = 0
-    images_reinjected = 0
-    empty_chunks = 0
+    chapter_mds: list[tuple[str, str]] = []
+    images_expected = images_reinjected = 0
+    empty_calls = 0
 
-    for i, (tag, content) in enumerate(chunks):
+    for ci, chapter in enumerate(outline.chapters):
         if stop_event.is_set():
             return None
 
-        eta = None
-        if i > 0:
-            avg = (time.time() - started) / i
-            eta = int(avg * (total - i))
+        target_words = int(chapter.est_words * (0.6 if is_key else 1.0))
+        target_words = max(700, min(2800, target_words))
+        blocks = chapter_blocks(chapter, pages)
+        parts: list[str] = []
 
-        on_progress(ProgressEvent(
-            f"🧠 AI导师正在梳理考点... ({i + 1}/{total})",
-            0.1 + (i / total) * 0.8,
-            eta,
-        ))
+        for bi, (content, tags) in enumerate(blocks):
+            if stop_event.is_set():
+                return None
+            images_expected += len(tags)
+            progress = 0.15 + (ci + bi / max(1, len(blocks))) / max(1, total) * 0.75
+            on_progress(ProgressEvent(
+                f"🧠 第 {ci + 1}/{total} 章：{chapter.title}（{bi + 1}/{len(blocks)}）", progress,
+                eta_seconds=int((time.time() - started) / max(1, ci) * (total - ci)) if ci else None,
+            ))
 
-        img_tags = re.findall(r"\[\[\[IMAGE:.*?\]\]\]", content)
-        images_seen += len(img_tags)
-
-        user_choice = "option_1_保命流" if mode == "key" else "option_2_硬核流"
-        markdown = generate_super_guide(
-            f"{tag}\n{content}", info, persona=persona, user_choice=user_choice,
-            weight_prompt=weight_prompt, lang=lang,
-        )
-
-        if markdown and "跳过" not in markdown and len(markdown.strip()) > 20:
-            markdown, fixed = reinject_missing_images(markdown, img_tags)
+            context = {
+                "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
+                "index": ci,
+                "total": total,
+                "must_know": chapter.must_know if bi == 0 else [],
+                "neighbors": _neighbors(outline, ci),
+                "target_words": max(400, target_words // max(1, len(blocks))),
+            }
+            markdown = generator(
+                f"【本章资料】\n{content}", info,
+                persona=persona, user_choice=user_choice,
+                weight_prompt=weight_prompt, lang=lang, chapter=context,
+            )
+            if not markdown or len(markdown.strip()) < 20 or "跳过" in markdown:
+                empty_calls += 1
+                logger.warning("第 {} 章第 {} 块未返回有效内容", ci + 1, bi + 1)
+                continue
+            markdown, fixed = reinject_missing_images(markdown, tags)
             images_reinjected += fixed
-            results.append(strip_ai_outros(markdown))
-        else:
-            empty_chunks += 1
-            logger.warning("第 {}/{} 块未返回有效内容（疑似截断或跳过）", i + 1, total)
+            parts.append(strip_ai_outros(markdown))
 
-    if not results:
-        raise RuntimeError("未提取到有效考点")
+        chapter_md = "\n\n".join(p for p in parts if p)
+        if chapter_md:
+            chapter_mds.append((chapter.title, chapter_md))
 
-    on_progress(ProgressEvent("🎨 正在排版公式、图片与高亮名词...", 0.9))
+    if not chapter_mds:
+        raise RuntimeError("未提取到有效考点（所有章节均生成失败）")
 
-    final_markdown = "\n\n---\n\n".join(results)
+    on_progress(ProgressEvent("🎨 正在排版公式、图片与高亮名词...", 0.92))
+
+    qa = check_chapters(chapter_mds, mode=mode, lang=lang)
+    for issue in qa.issues:
+        logger.warning("质量校验: {}", issue)
+
+    final_markdown = "\n\n---\n\n".join(md for _, md in chapter_mds)
     outro_lang = "en" if lang == "English" else "zh"
     final_markdown += "\n\n---\n\n" + OUTROS[outro_lang].get(persona, OUTROS[outro_lang]["温柔小姐姐"])
 
     time_str = time.strftime("%m%d_%H%M", time.localtime())
-    mode_str = "精简" if mode == "key" else "全量"
+    mode_str = "精简" if is_key else "全量"
     output_path = str(default_output_dir() / f"{course['name']}_{mode_str}_{time_str}.html")
 
     export_to_html(final_markdown, output_file=output_path, course=info, persona=persona,
@@ -211,14 +263,17 @@ def run_guide(
         "persona": persona,
         "lang": lang,
         "core_ratio": core_ratio,
-        "chunks": total,
-        "core_pages": len(core_pages),
-        "ref_pages": len(ref_pages),
-        "empty_chunks": empty_chunks,
-        "images_expected": images_seen,
+        "outline_source": outline.source,
+        "chapters": total,
+        "chapters_done": len(chapter_mds),
+        "empty_calls": empty_calls,
+        "images_expected": images_expected,
         "images_reinjected": images_reinjected,
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
+        "qa_ok": qa.ok,
+        "qa_issues": qa.issues[:20],
+        "qa_chapters": qa.metrics.get("chapters", []),
     }
     dump_debug("guide", final_markdown, metrics)
 
@@ -226,4 +281,5 @@ def run_guide(
     time.sleep(0.5)
 
     return RunResult(output_path=output_path, doc_type="专属讲义",
-                     markdown=final_markdown, metrics=metrics)
+                     markdown=final_markdown, metrics=metrics,
+                     warnings=qa.issues[:20])
