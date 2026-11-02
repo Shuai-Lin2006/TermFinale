@@ -1,7 +1,7 @@
 import os
 import time
 from openai import OpenAI
-from core.config import get_key, load_env
+from core.config import get_key, load_env, text_model
 from loguru import logger
 
 load_env()
@@ -13,7 +13,7 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="deepseek-chat",
+                model=text_model(),
                 messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_content}],
                 temperature=temp, max_tokens=4096, timeout=90
             )

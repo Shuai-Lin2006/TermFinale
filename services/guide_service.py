@@ -8,6 +8,9 @@
 """
 from __future__ import annotations
 
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import re
 import threading
 import time
@@ -18,6 +21,7 @@ from core.ai_engine import generate_super_guide
 from core.database import GeneratedFile as DBGeneratedFile, Material as DBMaterial, get_db_session
 from core.exam_engine import call_ai_with_retry
 from core.exporter import export_to_html
+from core.generate import outline_store
 from core.generate.outline import Chapter, Outline, generate_outline
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
@@ -34,6 +38,14 @@ from services.task import (
 
 MAX_PAGES = 15
 PAGES_PER_CALL = 3          # 单次请求最多塞 3 页，避免输入过长导致输出被挤压
+
+
+def _concurrency() -> int:
+    """并发生成度：默认 2，可用 TERMFINALE_CONCURRENCY 调整（1~4）。"""
+    try:
+        return max(1, min(4, int(os.getenv("TERMFINALE_CONCURRENCY", "2"))))
+    except ValueError:
+        return 1
 
 
 # --------------------------------------------------------------------------- #
@@ -117,7 +129,7 @@ def _neighbors(outline: Outline, index: int) -> str:
 
 
 def _default_outline_ai(system: str, user: str) -> str:
-    return call_ai_with_retry(system, user, temp=0.2)
+    return call_ai_with_retry(system, user, temp=0.1)
 
 
 # --------------------------------------------------------------------------- #
@@ -153,6 +165,15 @@ def run_guide(
     if not materials:
         raise RuntimeError("没有找到任何上传资料")
 
+    material_meta = []
+    for m in materials:
+        try:
+            stat = os.stat(m.file_path)
+            size, mtime = stat.st_size, stat.st_mtime
+        except OSError:
+            size, mtime = 0, 0
+        material_meta.append({"path": m.file_path, "size": size, "mtime": mtime})
+
     core_pages: list[str] = []
     ref_pages: list[str] = []
     for material in materials:
@@ -169,9 +190,13 @@ def run_guide(
         raise RuntimeError("未从资料中解析到任何内容")
 
     if outline is None:
-        on_progress(ProgressEvent("🧭 正在规划课程大纲...", 0.12))
-        outline = generate_outline(pages, course, lang=lang,
-                                   ai_call=ai_call or _default_outline_ai)
+        cache_key = outline_store.fingerprint(material_meta, lang)
+        outline = outline_store.load(cache_key)
+        if outline is None:
+            on_progress(ProgressEvent("🧭 正在规划课程大纲...", 0.12))
+            outline = generate_outline(pages, course, lang=lang,
+                                       ai_call=ai_call or _default_outline_ai)
+            outline_store.save(cache_key, outline)
     if not outline.chapters:
         raise RuntimeError("无法规划章节结构")
 
@@ -185,25 +210,13 @@ def run_guide(
     images_expected = images_reinjected = 0
     empty_calls = 0
 
+    # 先把所有块排成任务，再按并发度执行（保持章节顺序输出）
+    jobs: list[tuple[int, int, str, list[str], dict]] = []
+    tags_map: dict[tuple[int, int], list[str]] = {}
     for ci, chapter in enumerate(outline.chapters):
-        if stop_event.is_set():
-            return None
-
-        target_words = int(chapter.est_words * (0.6 if is_key else 1.0))
-        target_words = max(700, min(2800, target_words))
+        target_words = max(700, min(2800, int(chapter.est_words * (0.6 if is_key else 1.0))))
         blocks = chapter_blocks(chapter, pages)
-        parts: list[str] = []
-
         for bi, (content, tags) in enumerate(blocks):
-            if stop_event.is_set():
-                return None
-            images_expected += len(tags)
-            progress = 0.15 + (ci + bi / max(1, len(blocks))) / max(1, total) * 0.75
-            on_progress(ProgressEvent(
-                f"🧠 第 {ci + 1}/{total} 章：{chapter.title}（{bi + 1}/{len(blocks)}）", progress,
-                eta_seconds=int((time.time() - started) / max(1, ci) * (total - ci)) if ci else None,
-            ))
-
             context = {
                 "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
                 "index": ci,
@@ -212,19 +225,82 @@ def run_guide(
                 "neighbors": _neighbors(outline, ci),
                 "target_words": max(400, target_words // max(1, len(blocks))),
             }
-            markdown = generator(
-                f"【本章资料】\n{content}", info,
-                persona=persona, user_choice=user_choice,
-                weight_prompt=weight_prompt, lang=lang, chapter=context,
-            )
-            if not markdown or len(markdown.strip()) < 20 or "跳过" in markdown:
+            jobs.append((ci, bi, content, tags, context))
+            tags_map[(ci, bi)] = tags
+            images_expected += len(tags)
+
+    results: dict[tuple[int, int], str] = {}
+    total_jobs = len(jobs)
+    done = 0
+    retries = 0
+
+    def _call(job):
+        nonlocal retries
+        ci, bi, content, tags, context = job
+        if stop_event.is_set():
+            return (ci, bi), ""
+        markdown = ""
+        for attempt in (1, 2):
+            payload = content if attempt == 1 else content[: max(1500, len(content) // 2)]
+            try:
+                markdown = generator(f"【本章资料】\n{payload}", info, persona=persona,
+                                     user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
+                                     chapter=context)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("第 {} 章第 {} 块生成异常: {}", ci + 1, bi + 1, exc)
+                markdown = ""
+            if markdown and len(markdown.strip()) >= 20 and "跳过" not in markdown:
+                return (ci, bi), markdown
+            if attempt == 1:
+                retries += 1
+                logger.warning("第 {} 章第 {} 块为空（疑似截断），缩短输入重试一次", ci + 1, bi + 1)
+        return (ci, bi), ""
+
+    def _report(key, markdown):
+        nonlocal done
+        done += 1
+        if markdown:
+            results[key] = markdown
+        eta = int((time.time() - started) / max(1, done) * (total_jobs - done)) if done else None
+        on_progress(ProgressEvent(f"🧠 已生成 {done}/{total_jobs} 个章节块", 
+                                  0.15 + done / max(1, total_jobs) * 0.75, eta))
+
+    workers = _concurrency()
+    if workers > 1 and total_jobs > 1:
+        logger.info("并发生成：{} 个任务 / 并发 {}", total_jobs, workers)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(_call, job) for job in jobs]
+            for future in as_completed(futures):
+                key, markdown = future.result()
+                _report(key, markdown)
+                if stop_event.is_set():
+                    break
+    else:
+        for job in jobs:
+            if stop_event.is_set():
+                return None
+            key, markdown = _call(job)
+            _report(key, markdown)
+
+    if stop_event.is_set():
+        return None
+
+    grouped: dict[int, list[tuple[int, str]]] = {}
+    for (ci, bi), markdown in results.items():
+        grouped.setdefault(ci, []).append((bi, markdown))
+
+    for ci, chapter in enumerate(outline.chapters):
+        parts: list[str] = []
+        for bi, markdown in sorted(grouped.get(ci, [])):
+            if len(markdown.strip()) < 20 or "跳过" in markdown:
                 empty_calls += 1
                 logger.warning("第 {} 章第 {} 块未返回有效内容", ci + 1, bi + 1)
                 continue
-            markdown, fixed = reinject_missing_images(markdown, tags)
+            if bi > 0:  # 同一章的续块，不再生成新的「## 第 N 章」
+                markdown = re.sub(r"^##\s+", "### ", markdown, count=1, flags=re.MULTILINE)
+            markdown, fixed = reinject_missing_images(markdown, tags_map.get((ci, bi), []))
             images_reinjected += fixed
             parts.append(strip_ai_outros(markdown))
-
         chapter_md = "\n\n".join(p for p in parts if p)
         if chapter_md:
             chapter_mds.append((chapter.title, chapter_md))
@@ -264,9 +340,11 @@ def run_guide(
         "lang": lang,
         "core_ratio": core_ratio,
         "outline_source": outline.source,
+        "outline_cached": outline.source == "cached",
         "chapters": total,
         "chapters_done": len(chapter_mds),
         "empty_calls": empty_calls,
+        "retries": retries,
         "images_expected": images_expected,
         "images_reinjected": images_reinjected,
         "chars": len(final_markdown),

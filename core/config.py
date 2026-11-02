@@ -69,3 +69,13 @@ def save_key(name: str, value: str) -> Path:
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.environ[name] = value.strip()
     return target
+
+
+def text_model() -> str:
+    """文本模型：默认 deepseek-flash（实测可用且快），可用 DEEPSEEK_MODEL 覆盖。"""
+    return get_key("DEEPSEEK_MODEL", "deepseek-flash")
+
+
+def vision_model() -> str:
+    """视觉模型：默认 qwen3-vl-plus（qwen-vl-max 在本账号 404），可用 QWEN_VL_MODEL 覆盖。"""
+    return get_key("QWEN_VL_MODEL", "qwen3-vl-plus")

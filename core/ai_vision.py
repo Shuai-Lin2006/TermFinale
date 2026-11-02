@@ -2,7 +2,7 @@ import os
 import base64
 from openai import OpenAI
 from loguru import logger
-from core.config import get_key, load_env
+from core.config import get_key, load_env, vision_model
 
 load_env()
 
@@ -23,7 +23,7 @@ def analyze_image_with_ai(image_path: str) -> str:
 
         # 可用 QWEN_VL_MODEL 覆盖；默认 qwen-vl-max（旧值 qwen3.8-max 会 404）
         response = client.chat.completions.create(
-            model=os.getenv("QWEN_VL_MODEL", "qwen-vl-max"),
+            model=vision_model(),
             messages=[
                 {
                     "role": "user",

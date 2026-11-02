@@ -4,8 +4,19 @@ import os
 import base64
 
 
+def _repair_image_tags(markdown: str) -> str:
+    """AI 偶尔漏写 ]]]，会让正则一路吞到下一段，表现为图注里出现大段正文。"""
+    fixed = []
+    for line in markdown.split("\n"):
+        if "[[[IMAGE:" in line and "]]]" not in line:
+            line = line.rstrip() + "]]]"
+        fixed.append(line)
+    return "\n".join(fixed)
+
+
 def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=None, persona: str = "老师",
                    doc_type: str = "讲义", lang: str = "中文"):
+    markdown_text = _repair_image_tags(markdown_text)
     markdown_text = re.sub(r'\\\[(.*?)\\\]', r'$$\1$$', markdown_text, flags=re.DOTALL)
     markdown_text = re.sub(r'\\\((.*?)\\\)', r'$\1$', markdown_text, flags=re.DOTALL)
     markdown_text = re.sub(r'(?<!\[)\[([^\[\]|]+)\s*\|\s*([^\[\]]+)\](?!\])', r'[[\1 | \2]]', markdown_text)
@@ -64,10 +75,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
                 clean_title = re.sub(r'^\s*(核心考点|章节导览|Core Concept)\s*[:：]\s*', '',
                                      clean_title, flags=re.IGNORECASE).strip()
 
+            if clean_title.endswith("（续）") or clean_title.endswith("(cont.)"):
+                return f"### {clean_title}"
             if lang == "English":
                 return f"## Chapter {chapter_counter}: {clean_title if clean_title else 'Core Concepts'}"
-            else:
-                return f"## 第 {chapter_counter} 章：{clean_title if clean_title else '核心考点解析'}"
+            return f"## 第 {chapter_counter} 章：{clean_title if clean_title else '核心考点解析'}"
 
         processed_md = re.sub(r'##\s*(核心考点：.*|章节导览.*|第.*章.*|Core Concept:.*|Chapter.*)', add_chapter_num,
                               processed_md)
@@ -110,6 +122,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         parts = raw.split("|")
         filename = parts[0].strip()
         caption = parts[1].replace("图注:", "").strip() if len(parts) > 1 else ""
+        caption = re.split(r"\[\[\[|#{2,}", caption)[0].strip()
         path = os.path.join(img_dir, filename)
 
         html_img = ""
