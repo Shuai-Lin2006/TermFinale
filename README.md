@@ -29,16 +29,12 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 ```
 
-配置 API Key（二选一）：
+启动后点右上角 **⚙ 设置**，粘贴 Key 并点「测试连接」：
 
-1. 项目根目录 `.env`（开发期）
-2. 用户数据目录 `.env`（打包版推荐），路径见 [`docs/API_KEYS.md`](docs/API_KEYS.md)
+- **DeepSeek API Key**（必填）：文本生成
+- **阿里云百炼 API Key**（选填）：给图片生成说明；不填则显示「第 N 页配图」
 
-```bash
-.env 内容：
-DEEPSEEK_API_KEY=sk-xxxx
-DASHSCOPE_API_KEY=sk-xxxx     # 可选，用于图片说明
-```
+Key 只保存在本机用户数据目录，不会上传。也可以手动写 `.env`，路径见 [`docs/API_KEYS.md`](docs/API_KEYS.md)。
 
 启动：
 

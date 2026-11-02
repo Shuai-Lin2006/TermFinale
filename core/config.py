@@ -21,7 +21,10 @@ _loaded = False
 
 def env_candidates() -> list[Path]:
     """优先用户数据目录（可写、可分发），其次源码目录（开发期）。"""
-    return [paths.data_dir() / ".env", paths.project_root() / ".env"]
+    files = [paths.data_dir() / ".env"]
+    if os.getenv("TERMFINALE_SKIP_PROJECT_ENV", "").strip().lower() not in ("1", "true", "yes"):
+        files.append(paths.project_root() / ".env")
+    return files
 
 
 def load_env(force: bool = False) -> list[Path]:
@@ -102,3 +105,17 @@ def model_extra() -> dict:
     if mode in ("on", "enabled", "1", "true"):
         return {}
     return {"extra_body": {"thinking": {"type": "disabled"}}}
+
+
+def clear_key(name: str) -> None:
+    """从用户 .env 中删除某个 key，并清掉当前进程环境变量。"""
+    os.environ.pop(name, None)
+    target = user_env_path()
+    if not target.is_file():
+        return
+    try:
+        lines = [ln for ln in target.read_text(encoding="utf-8").splitlines()
+                 if not ln.strip().startswith(f"{name}=")]
+        target.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    except OSError:
+        pass

@@ -169,12 +169,8 @@ class TermFinaleApp(ctk.CTk):
         logger.info("启动 | {} | 迁移={}", paths.describe(), migration)
         init_db()
 
-        missing = config.missing_keys()
-        if missing:
-            logger.warning("缺少 API Key：{}", "、".join(missing))
-            self.after(800, lambda: Toast.show(
-                self, f"未配置 {'、'.join(missing)}，AI 功能不可用（配置文件：{config.user_env_path()}）",
-                "warning", 8000))
+        if config.missing_keys():
+            logger.warning("缺少 API Key：{}（可在设置页填写）", "、".join(config.missing_keys()))
         self.current_lang = "zh"
         self.user_name = self.load_user_config()
         self.history_courses = []
@@ -240,6 +236,9 @@ class TermFinaleApp(ctk.CTk):
         if show_back and back_command:
             ctk.CTkButton(nav, text=self.t("back"), width=50, font=FONT_H2, fg_color="transparent",
                           text_color=TEXT_COLOR, hover_color="#E5E5E5", command=back_command).pack(side="left")
+        ctk.CTkButton(nav, text="⚙ 设置", width=70, font=FONT_SUBTITLE, fg_color="transparent",
+                      text_color=SUB_TEXT_COLOR, border_width=1, border_color="#E5E5E5",
+                      hover_color="#E5E5E5", command=self.show_settings).pack(side="right", padx=(0, 8))
         ctk.CTkButton(nav, text="中 / EN", width=70, font=FONT_SUBTITLE, fg_color="transparent",
                       text_color=SUB_TEXT_COLOR, border_width=1, border_color=SUB_TEXT_COLOR, hover_color="#E5E5E5",
                       command=self.toggle_language).pack(side="right")
@@ -454,6 +453,18 @@ class TermFinaleApp(ctk.CTk):
         GhostButton(motto, text="修改", command=self.edit_motto, height=26).pack(
             side="left", padx=theme.SPACE["sm"])
 
+        if config.missing_keys():
+            warning = Card(main_area, fg_color="#FFF6E5", border_color=theme.WARNING_COLOR)
+            warning.pack(fill="x", pady=(0, theme.SPACE["lg"]))
+            wleft = ctk.CTkFrame(warning, fg_color="transparent")
+            wleft.pack(side="left", fill="x", expand=True, padx=theme.SPACE["lg"], pady=theme.SPACE["md"])
+            ctk.CTkLabel(wleft, text="⚠️ 还没有配置 API Key，AI 功能暂时不可用",
+                         font=FONT_BODY, text_color=TEXT_COLOR, anchor="w").pack(fill="x")
+            ctk.CTkLabel(wleft, text="点右侧按钮填入 DeepSeek Key 即可开始生成（Key 只保存在本机）",
+                         font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR, anchor="w").pack(fill="x")
+            PrimaryButton(warning, text="去配置", command=self.show_settings, width=96).pack(
+                side="right", padx=theme.SPACE["lg"])
+
         stats = self._dashboard_stats()
         if not stats["count"]:
             EmptyState(main_area, "📭", "还没有课程",
@@ -504,6 +515,102 @@ class TermFinaleApp(ctk.CTk):
         for line in lines:
             ctk.CTkLabel(inner, text=f"· {line}", font=FONT_BODY, text_color=SUB_TEXT_COLOR,
                          anchor="w", justify="left", wraplength=760).pack(fill="x", pady=2)
+
+    def show_settings(self):
+        """API Key 设置页：首次启动与之后随时可进。"""
+        self.current_view = "settings"
+        self.clear_ui()
+        self.build_top_nav(show_back=True, back_command=self.show_dashboard)
+        scroll = self._page_scroll()
+        SectionTitle(scroll, "设置 · API Key",
+                     "Key 只保存在本机用户数据目录，不会上传；换 Key 直接覆盖即可").pack(
+            fill="x", pady=(10, 12))
+
+        card = Card(scroll)
+        card.pack(fill="x", pady=8)
+        inner = ctk.CTkFrame(card, fg_color="transparent")
+        inner.pack(fill="x", padx=theme.SPACE["xl"], pady=theme.SPACE["lg"])
+
+        status = config.key_status()
+
+        def add_field(label: str, name: str, hint: str):
+            ctk.CTkLabel(inner, text=label, font=FONT_H2, text_color=TEXT_COLOR,
+                         anchor="w").pack(fill="x")
+            ctk.CTkLabel(inner, text=hint, font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR,
+                         anchor="w", wraplength=720, justify="left").pack(fill="x", pady=(2, 6))
+            entry = ctk.CTkEntry(inner, show="•", width=520, font=FONT_BODY,
+                                 placeholder_text="已配置，留空表示不修改" if status.get(name) else "sk-...")
+            entry.pack(anchor="w", pady=(0, theme.SPACE["lg"]))
+            return entry
+
+        ds_entry = add_field("DeepSeek API Key（文本生成，必填）", "DEEPSEEK_API_KEY",
+                             "在 platform.deepseek.com 创建。没有它无法生成讲义 / 提取 / 试卷。")
+        qw_entry = add_field("阿里云百炼 API Key（图片说明，选填）", "DASHSCOPE_API_KEY",
+                             "不填也能用，只是图片下方显示「第 N 页配图」。")
+
+        result = ctk.CTkLabel(inner, text="", font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR,
+                              anchor="w", wraplength=720, justify="left")
+        result.pack(fill="x")
+
+        def collect():
+            return {"DEEPSEEK_API_KEY": ds_entry.get().strip() or config.get_key("DEEPSEEK_API_KEY"),
+                    "DASHSCOPE_API_KEY": qw_entry.get().strip() or config.get_key("DASHSCOPE_API_KEY")}
+
+        def save():
+            entered = {"DEEPSEEK_API_KEY": ds_entry.get().strip(),
+                       "DASHSCOPE_API_KEY": qw_entry.get().strip()}
+            saved = [name for name, value in entered.items() if value]
+            for name in saved:
+                config.save_key(name, entered[name])
+            if not config.get_key("DEEPSEEK_API_KEY"):
+                result.configure(text="请先填写 DeepSeek Key（必填）", text_color=DANGER_COLOR)
+                return
+            Toast.show(self, "已保存", "success")
+            self.show_dashboard()
+
+        def clear():
+            config.clear_key("DEEPSEEK_API_KEY")
+            config.clear_key("DASHSCOPE_API_KEY")
+            ds_entry.delete(0, "end")
+            qw_entry.delete(0, "end")
+            result.configure(text="已清除本机保存的 Key", text_color=SUB_TEXT_COLOR)
+
+        def test():
+            values = collect()
+            if not values["DEEPSEEK_API_KEY"] and not values["DASHSCOPE_API_KEY"]:
+                result.configure(text="请先填写 Key", text_color=DANGER_COLOR)
+                return
+            result.configure(text="测试中…", text_color=SUB_TEXT_COLOR)
+
+            def work():
+                from openai import OpenAI
+
+                lines = []
+                if values["DEEPSEEK_API_KEY"]:
+                    try:
+                        OpenAI(api_key=values["DEEPSEEK_API_KEY"],
+                               base_url="https://api.deepseek.com").models.list()
+                        lines.append("DeepSeek ✅")
+                    except Exception as exc:  # noqa: BLE001
+                        lines.append(f"DeepSeek ❌ {type(exc).__name__}")
+                if values["DASHSCOPE_API_KEY"]:
+                    try:
+                        OpenAI(api_key=values["DASHSCOPE_API_KEY"],
+                               base_url="https://dashscope.aliyuncs.com/compatible-mode/v1").models.list()
+                        lines.append("百炼 ✅")
+                    except Exception as exc:  # noqa: BLE001
+                        lines.append(f"百炼 ❌ {type(exc).__name__}")
+                self.after(0, lambda: result.configure(text=" · ".join(lines),
+                                                       text_color=SUB_TEXT_COLOR))
+
+            threading.Thread(target=work, daemon=True).start()
+
+        btns = ctk.CTkFrame(inner, fg_color="transparent")
+        btns.pack(fill="x", pady=(theme.SPACE["md"], 0))
+        PrimaryButton(btns, text="保存", command=save, width=110).pack(side="left")
+        GhostButton(btns, text="测试连接", command=test, width=110).pack(side="left", padx=theme.SPACE["sm"])
+        GhostButton(btns, text="清除本机 Key", command=clear, width=130).pack(side="left")
+        GhostButton(btns, text="稍后配置", command=self.show_dashboard, width=110).pack(side="right")
 
     def edit_motto(self):
         dialog = ctk.CTkInputDialog(text="请输入新的励志名言：", title="修改名言")
@@ -892,6 +999,10 @@ class TermFinaleApp(ctk.CTk):
                     side="right", padx=15)
 
     def start_generation(self, course, index, mode, persona, lang="中文"):
+        if config.missing_keys():
+            Toast.show(self, "请先在设置里配置 API Key", "warning", 3000)
+            self.show_settings()
+            return
         config_file = CONFIG_FILE
         today_str = datetime.datetime.now().strftime("%Y-%m-%d")
         daily_limit = 20
@@ -1299,6 +1410,10 @@ class TermFinaleApp(ctk.CTk):
                       command=start).pack(anchor="e", pady=30, padx=60)
 
     def run_generation_task(self, course, index, task_type, text, **kwargs):
+        if config.missing_keys():
+            Toast.show(self, "请先在设置里配置 API Key", "warning", 3000)
+            self.show_settings()
+            return
         """线程入口：调用复习服务，UI 只负责展示进度。"""
         self.stop_event.clear()
         self.start_time = time.time()
