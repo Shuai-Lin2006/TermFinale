@@ -2,7 +2,7 @@ import os
 import re
 import time
 from openai import OpenAI
-from core.config import get_key, load_env, text_model
+from core.config import get_key, load_env, max_tokens, text_model
 from loguru import logger
 from models.user_profile import CourseInfo
 
@@ -152,7 +152,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "ËÄÅÂ
             response = client.chat.completions.create(
                 model=text_model(),
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": raw_text}],
-                temperature=0.3, max_tokens=4096, timeout=90
+                temperature=0.3, max_tokens=max_tokens(), timeout=90
             )
             choice = response.choices[0]
             if getattr(choice, "finish_reason", None) == "length":

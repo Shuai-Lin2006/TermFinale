@@ -1,7 +1,7 @@
 import os
 import time
 from openai import OpenAI
-from core.config import get_key, load_env, text_model
+from core.config import get_key, load_env, max_tokens, text_model
 from loguru import logger
 
 load_env()
@@ -9,19 +9,34 @@ client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_u
 
 
 def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
+    """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
     max_retries = 3
     for attempt in range(max_retries):
-        try:
-            response = client.chat.completions.create(
-                model=text_model(),
-                messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_content}],
-                temperature=temp, max_tokens=4096, timeout=90
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            logger.warning(f"API 请求失败 (尝试 {attempt + 1}/{max_retries}): {e}")
-            if attempt == max_retries - 1: return ""
-            time.sleep(3)
+        budget = max_tokens()
+        for _ in range(2):
+            try:
+                response = client.chat.completions.create(
+                    model=text_model(),
+                    messages=[{"role": "system", "content": sys_prompt},
+                              {"role": "user", "content": user_content}],
+                    temperature=temp, max_tokens=budget, timeout=120,
+                )
+                choice = response.choices[0]
+                content = choice.message.content or ""
+                if content.strip():
+                    return content
+                if getattr(choice, "finish_reason", None) == "length" and budget < 16384:
+                    logger.warning("输出为空（budget={}），加倍预算重试", budget)
+                    budget = min(16384, budget * 2)
+                    continue
+                return ""
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"API 请求失败 (尝试 {attempt + 1}/{max_retries}): {exc}")
+                if attempt == max_retries - 1:
+                    return ""
+                time.sleep(3)
+                break
+    return ""
 
 
 def generate_logic_analysis(raw_text: str, mode: str) -> str:

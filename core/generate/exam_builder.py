@@ -87,8 +87,12 @@ def _split_sections(markdown: str) -> dict[str, str]:
     return sections
 
 
+QUESTION_RE = re.compile(r"^\s*(?:\*\*|__)?\s*(\d{1,2})\s*[.、．)）]\s*(?:\*\*)?\s*", re.MULTILINE)
+
+
 def _count_questions(content: str) -> int:
-    return len(re.findall(r"^\s*\d+[.、]", content, flags=re.MULTILINE))
+    """兼容 `1.` / `**1.**` / `1、` / `1）` 等常见题号写法。"""
+    return len(QUESTION_RE.findall(content))
 
 
 def _stem_of(block: str) -> str:
@@ -100,11 +104,9 @@ def _stem_of(block: str) -> str:
 def _stems(markdown: str) -> list[str]:
     body = markdown.split("# 答案与解析")[0]
     stems = []
-    for block in re.split(r"(?=^\s*\d+[.、])", body, flags=re.MULTILINE):
+    for block in QUESTION_RE.split(body):
         block = block.strip()
-        if not block or not re.match(r"^\d+[.、]", block):
-            continue
-        stem = _stem_of(block)
+        stem = _stem_of(block) if block else ""
         if len(stem) >= 12:
             stems.append(stem)
     return stems

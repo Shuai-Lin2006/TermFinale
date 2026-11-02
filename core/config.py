@@ -72,8 +72,20 @@ def save_key(name: str, value: str) -> Path:
 
 
 def text_model() -> str:
-    """文本模型：默认 deepseek-flash（实测可用且快），可用 DEEPSEEK_MODEL 覆盖。"""
-    return get_key("DEEPSEEK_MODEL", "deepseek-flash")
+    """文本模型默认 deepseek-chat。
+
+    实测 deepseek-flash / v4-pro 属推理模型：复杂 prompt 会把预算全耗在思考上，
+    正文返回空字符串（finish=length, content=""），不适合长输出任务。
+    """
+    return get_key("DEEPSEEK_MODEL", "deepseek-chat")
+
+
+def max_tokens() -> int:
+    """单次输出预算。推理模型需要更大；chat 8192 可完整写完一套卷。"""
+    try:
+        return max(2048, min(16384, int(get_key("DEEPSEEK_MAX_TOKENS", "8192"))))
+    except ValueError:
+        return 8192
 
 
 def vision_model() -> str:
