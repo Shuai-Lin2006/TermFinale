@@ -2,13 +2,13 @@ import os
 import base64
 from openai import OpenAI
 from loguru import logger
-from dotenv import load_dotenv
+from core.config import get_key, load_env
 
-load_dotenv()
+load_env()
 
 # 🚨 阿里云百炼 OpenAI 兼容接口
 client = OpenAI(
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    api_key=get_key("DASHSCOPE_API_KEY", "sk-not-configured"),
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 

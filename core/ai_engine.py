@@ -2,12 +2,12 @@ import os
 import re
 import time
 from openai import OpenAI
-from dotenv import load_dotenv
+from core.config import get_key, load_env
 from loguru import logger
 from models.user_profile import CourseInfo
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
+load_env()
+client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_url="https://api.deepseek.com")
 
 PERSONAS = {
     "老师": "你是一位严厉又苦口婆心的老教授。你非常看重学生的前途，讲课一板一眼，偶尔会敲黑板强调重点。你的语言充满学术威严，但能看到你恨铁不成钢的关心。",

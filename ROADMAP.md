@@ -191,11 +191,22 @@
 
 ---
 
-## P7 打包分发
+## P7 打包分发 ✅ 已完成（2026-11-02，macOS 实测出包）
 
-1. 锁 Python 3.12，`requirements.txt`
-2. PyInstaller spec（customtkinter data、fitz hiddenimports、图标）
-3. 干净机双击测试；崩溃日志可回传
+1. ✅ `requirements.txt`：直接依赖锁版本；注释说明建议 Python 3.12
+2. ✅ `launcher.py`：新的打包入口——先装崩溃日志再启动，`console=False` 下也能留下 `crash.log` 并弹窗告知
+3. ✅ `TermFinale.spec`：收集 customtkinter/certifi 资源；隐藏导入 fitz/sqlalchemy.sqlite/pptx/docx/PIL._tkinter_finder；排除 onnxruntime/numpy/pandas 等（体积从数百 MB 压到 125MB）
+4. ✅ `tools/build.py`：版本检查 + 一键打包；`PYINSTALLER_CONFIG_DIR` 指向项目内（绕开只读的 `~/Library`）
+5. ✅ `core/config.py`：密钥支持用户数据目录 `.env`，缺失时用占位 key 而不是启动崩溃；启动弹 Toast 提示
+6. ✅ `docs/API_KEYS.md`：三平台路径与配置说明
+
+**实测结果**
+- [x] 打包成功：`dist/TermFinale.app`（125MB）、`dist/TermFinale/`
+- [x] **打包产物真跑**：日志 `frozen=True`、数据库加载成功、仪表盘正常渲染、缺 Key 时底部弹出橙色提示（截图 `docs/probe/frozen_app.png`）
+- [x] `tests/test_config.py`：密钥写入/读取/缺失检测通过
+- [ ] Windows 构建（需在 Windows 机器上跑同一 spec）
+- [ ] 代码签名/公证（分发前再做）
+- [ ] 图标（暂无 .icns/.ico，用系统默认）
 
 ---
 

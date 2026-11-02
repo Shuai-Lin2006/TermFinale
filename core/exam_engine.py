@@ -1,11 +1,11 @@
 import os
 import time
 from openai import OpenAI
-from dotenv import load_dotenv
+from core.config import get_key, load_env
 from loguru import logger
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
+load_env()
+client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_url="https://api.deepseek.com")
 
 
 def call_ai_with_retry(sys_prompt, user_content, temp=0.1):

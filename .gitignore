@@ -18,3 +18,7 @@ debug/
 _backup/
 docs/probe/
 .termfinale_home/
+
+# 构建产物
+build/
+dist/

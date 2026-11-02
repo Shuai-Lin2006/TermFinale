@@ -1,0 +1,16 @@
+# TermFinale 运行依赖（直接依赖，锁定版本）
+# 打包建议使用 Python 3.12：PyInstaller 对 3.14 的支持尚不完整
+
+customtkinter==6.0.0
+loguru==0.7.3
+Markdown==3.11.2
+openai==3.37.0
+Pillow==13.0.0
+PyMuPDF==2.0
+python-docx==1.2.0
+python-dotenv==1.2.4
+python-pptx==1.0.2
+SQLAlchemy==2.1.6
+
+# 可选：解析增强（标题/表格），不装也能跑
+# pymupdf4llm==2.0

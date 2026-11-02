@@ -16,7 +16,7 @@ from core.exam_engine import generate_logic_analysis, generate_extraction, gener
 from core.exporter import export_to_html
 from core.database import init_db, get_db_session, Course as DBCourse, GeneratedFile as DBGeneratedFile, \
     Material as DBMaterial, UserConfig as DBUserConfig
-from core import paths
+from core import config, paths
 from core.logger import setup_logging, install_exception_hooks
 from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
@@ -157,6 +157,13 @@ class TermFinaleApp(ctk.CTk):
         install_exception_hooks(self)
         logger.info("启动 | {} | 迁移={}", paths.describe(), migration)
         init_db()
+
+        missing = config.missing_keys()
+        if missing:
+            logger.warning("缺少 API Key：{}", "、".join(missing))
+            self.after(800, lambda: Toast.show(
+                self, f"未配置 {'、'.join(missing)}，AI 功能不可用（配置文件：{config.user_env_path()}）",
+                "warning", 8000))
         self.current_lang = "zh"
         self.user_name = self.load_user_config()
         self.history_courses = []
@@ -1388,6 +1395,11 @@ class TermFinaleApp(ctk.CTk):
         db.close()
 
 
-if __name__ == "__main__":
+def run():
+    """应用入口（launcher 与 PyInstaller 都调用这里）。"""
     app = TermFinaleApp()
     app.mainloop()
+
+
+if __name__ == "__main__":
+    run()
