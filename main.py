@@ -18,7 +18,7 @@ from core.database import init_db, get_db_session, Course as DBCourse, Generated
     Material as DBMaterial, UserConfig as DBUserConfig
 from core import paths
 from core.logger import setup_logging, install_exception_hooks
-from core.personas import OUTROS, PERSONA_LABELS, persona_from_label
+from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
 from services import guide_service, review_service
 
@@ -820,10 +820,6 @@ class TermFinaleApp(ctk.CTk):
                 pass
 
         self.after(0, apply)
-
-    def update_progress(self, text, value):
-        self.after(0, lambda: self.progress_label.configure(text=text))
-        self.after(0, lambda: self.progressbar.set(value))
 
     def show_review_menu(self, course, index):
         self.current_view = "review_menu"

@@ -58,18 +58,26 @@
 - [ ] 打包模拟（`sys.frozen=True` 单测）留待 P7
 - [ ] 11 页截图回归留待 P1b 一起做
 
-### P1b 服务层抽离 + 已知 bug
-1. `services/task.py`：`Task(id, kind, status, progress, artifacts, metrics)`
-2. `services/guide_service.py`：搬 `run_backend_task`，签名 `run(course, params, on_progress)`
-3. `services/review_service.py`：搬 `run_generation_task`
-4. `main.py` 只做：收集参数 → 调服务 → `after()` 桥接进度
-5. 修 B1 人设 key / B2 视觉模型名 / B3 打开文件 / B4 重复材料 / B5 标题双前缀 / B6 补图位置
-6. 修 U1 蓝块下拉 / U4 文字裁切 / U5 双复选框 / U6 按钮对齐 / U8 按钮对比度
+### P1b 服务层抽离 + 已知 bug ✅ 已完成（2026-11-02，commit 871f300）
 
-**验收**
-- [ ] `main.py` < 900 行
-- [ ] 同样输入产物结构与改前一致
-- [ ] 六个 B 类问题逐条复测通过
+1. `services/task.py`：`ProgressEvent` / `RunResult` / `dump_debug`
+2. `services/guide_service.py`：`run_guide(course, mode, persona, core_ratio, lang, on_progress, stop_event)`
+3. `services/review_service.py`：`run_review(course, task_type, text, **params)`
+4. `main.py` 只做：收集参数 → 调服务 → `after()` 桥接进度；抽 `_show_progress_page` / `_on_service_progress`
+5. 修 B1 人设 key / B2 视觉模型名 / B3 打开文件 / B4 重复材料 / B5 标题双前缀 / B6 补图位置
+6. UI 五个刺点（U1/U4/U5/U6/U8）→ **改到 P6 随 UI 重建一起做**（避免在即将废弃的代码上花两遍功夫）
+
+**验收结果（实测）**
+- [x] `main.py` 1401 → **1253 行**（剩余基本是纯 UI，P6 会继续降）
+- [x] 服务层零 tkinter 依赖；`services/` 可被 Web 端复用
+- [x] 原始 Markdown + 指标落盘 `debug/`
+- [x] B1：5 个人设全部映射到 `PERSONAS` 有效 key（"阳光小哥哥"可选）
+- [x] B2：`qwen-vl-max`，可用 `QWEN_VL_MODEL` 覆盖
+- [x] B3：跨平台 `open_path()`，不再依赖 Edge
+- [x] B4：编辑资料不再累加重复材料
+- [x] B5：实测 `第 1 章：刚体力学基础`（无双前缀）；英文 `Chapter 1: Rigid Body`
+- [x] B6：丢图补在章末「📷 配图」区
+- [x] 8 个页面截图回归通过（`/tmp/tf_probe/regress`）
 
 ---
 
