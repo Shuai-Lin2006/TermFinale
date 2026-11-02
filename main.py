@@ -549,15 +549,24 @@ class TermFinaleApp(ctk.CTk):
 
     def delete_course(self, index):
         course = self.history_courses[index]
-        if not messagebox.askyesno(self.t("error"), f"确定删除【{course['name']}】吗？"): return
+        if not messagebox.askyesno(
+                "删除课程",
+                f"确定删除【{course['name']}】吗？\n\n"
+                "只会删除本软件生成的讲义/试卷/笔记记录；\n"
+                "你上传的原始课件不会被删除。"):
+            return
         db = get_db_session()
         try:
             c = db.query(DBCourse).filter(DBCourse.id == course["id"]).first()
             if c:
-                for m in c.materials:
-                    if os.path.exists(m.file_path): os.remove(m.file_path)
+                # 只清理由本软件生成的产物；materials.file_path 指向用户的原始文件，绝不能删
                 for g in c.generated_files:
-                    if os.path.exists(g.file_path): os.remove(g.file_path)
+                    try:
+                        if os.path.exists(g.file_path):
+                            os.remove(g.file_path)
+                    except OSError as exc:
+                        logger.warning("删除生成物失败 {}: {}", g.file_path, exc)
+                logger.info("删除课程 {}（保留 {} 份原始资料）", course["name"], len(c.materials))
                 db.delete(c)
                 db.commit()
             self.history_courses.pop(index)
