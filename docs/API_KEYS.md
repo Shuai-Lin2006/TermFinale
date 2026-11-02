@@ -55,3 +55,13 @@ DASHSCOPE_API_KEY=sk-xxxxxxxx
 - 比 16384 预算更快、更省（思考 token 不计入正文）。
 
 需要打开思考时设 `TERMFINALE_THINKING=on`；换成非推理模型时也应设为 `on`，避免传未知参数。
+
+## 图片识别耗时（第一次会慢）
+
+- 每张图调用一次视觉模型（`qwen3.8-max` 约 15~40s/张），32 页课件约 36 张图。
+- 已做三件事：
+  1. **并发识别**：`TERMFINALE_VISION_CONCURRENCY`（默认 4），36 张约 3 分钟；
+  2. **进度可见**：解析阶段显示「正在识别配图：文件名（3/36）」；
+  3. **结果缓存**：按图片内容哈希存到 `debug/caption_cache.json`，同一份资料**第二次生成不再调用视觉模型**。
+- 想更快可换 `QWEN_VL_MODEL=qwen3-vl-plus`（实测约 1.5s/张，图注略简）。
+- 完全不需要图注时设 `TERMFINALE_DISABLE_VISION=1`（图片仍保留，图注为"第 N 页配图"）。

@@ -1,5 +1,9 @@
+import hashlib
+import json
 import os
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import docx
 import fitz
 from PIL import Image
@@ -17,20 +21,87 @@ FIG_DPI = 180
 _DISABLE_VISION = os.getenv("TERMFINALE_DISABLE_VISION", "").strip().lower() in ("1", "true", "yes")
 
 
-def _figure_caption(fig) -> str | None:
-    """图注：优先用页面上的原文标题；否则调视觉模型。
+_VISION_CONCURRENCY = int(os.getenv("TERMFINALE_VISION_CONCURRENCY", "4") or 4)
+_CAPTION_CACHE_FILE = paths.debug_dir() / "caption_cache.json"
+_caption_cache: dict[str, str] | None = None
 
-    视觉模型判定"无内容"（返回空）时返回 None，表示这张图是装饰，应当丢弃。
-    离线模式（TERMFINALE_DISABLE_VISION=1）直接给兜底文案，不联网。
+
+def _load_caption_cache() -> dict:
+    global _caption_cache
+    if _caption_cache is None:
+        try:
+            _caption_cache = json.loads(_CAPTION_CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            _caption_cache = {}
+    return _caption_cache
+
+
+def _save_caption_cache() -> None:
+    try:
+        paths.ensure_dirs()
+        _CAPTION_CACHE_FILE.write_text(
+            json.dumps(_caption_cache or {}, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        logger.warning("图注缓存写入失败: {}", exc)
+
+
+def _file_digest(path: str) -> str:
+    try:
+        with open(path, "rb") as fh:
+            return hashlib.md5(fh.read()).hexdigest()
+    except OSError:
+        return ""
+
+
+def resolve_captions(figs: list, on_progress=None) -> dict:
+    """批量图注：页面原文优先 → 本地缓存 → 视觉模型（并发）。
+
+    返回 {filename: caption or None}；None 表示视觉模型判定为装饰，应丢弃。
+    缓存按图片内容哈希，重复生成同一份资料时不再调视觉模型。
     """
-    if fig.caption:
-        return fig.caption
-    if _DISABLE_VISION:
-        return f"第 {fig.page} 页配图"
-    caption = analyze_image_with_ai(os.path.join(IMG_DIR, fig.filename))
-    if not caption or not caption.strip():
-        return None
-    return caption
+    cache = _load_caption_cache()
+    result: dict = {}
+    pending: list = []
+
+    for fig in figs:
+        if fig.caption:
+            result[fig.filename] = fig.caption
+            continue
+        if _DISABLE_VISION:
+            result[fig.filename] = f"第 {fig.page} 页配图"
+            continue
+        digest = _file_digest(os.path.join(IMG_DIR, fig.filename))
+        if digest and digest in cache:
+            result[fig.filename] = cache[digest] or None
+        else:
+            pending.append((fig, digest))
+
+    total = len(pending)
+    if on_progress and total:
+        on_progress(0, total)
+
+    def work(item):
+        fig, digest = item
+        caption = analyze_image_with_ai(os.path.join(IMG_DIR, fig.filename))
+        return fig, digest, (caption.strip() if caption and caption.strip() else None)
+
+    if total:
+        workers = max(1, min(8, _VISION_CONCURRENCY))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(work, item) for item in pending]
+            for index, future in enumerate(as_completed(futures), start=1):
+                try:
+                    fig, digest, caption = future.result()
+                except Exception as exc:  # noqa: BLE001
+                    logger.error("图注识别失败: {}", exc)
+                    continue
+                result[fig.filename] = caption
+                if digest:
+                    cache[digest] = caption or ""
+                if on_progress:
+                    on_progress(index, total)
+        _save_caption_cache()
+    return result
 
 
 def clean_text_lines(slide_text: str) -> list:
@@ -81,7 +152,7 @@ def process_image(img_bytes, img_filename):
     return f"[[[IMAGE: {img_filename} | 图注: {caption}]]]"
 
 
-def extract_text_from_file(file_path: str) -> list:
+def extract_text_from_file(file_path: str, on_progress=None) -> list:
     file_name = os.path.basename(file_path)
     ext = file_path.lower().split('.')[-1]
     all_pages = []
@@ -112,13 +183,15 @@ def extract_text_from_file(file_path: str) -> list:
             try:
                 # 先把整份文档的图形区域渲染出来（矢量图也能出），再按 y 坐标插回文本流
                 figs_by_page = figure_lib.extract_figures(doc, IMG_DIR, dpi=FIG_DPI)
+                all_figs = [f for group in figs_by_page.values() for f in group]
+                captions = resolve_captions(all_figs, on_progress)
                 for page_num in range(len(doc)):
                     page = doc[page_num]
                     text_blocks = [b for b in page.get_text("blocks") if b[6] == 0]
 
                     items = [(b[1], b[0], b[4]) for b in text_blocks]
                     for fig in figs_by_page.get(page_num + 1, []):
-                        caption = _figure_caption(fig)
+                        caption = captions.get(fig.filename)
                         if caption is None:  # 装饰图，丢弃
                             continue
                         items.append((fig.bbox[1], fig.bbox[0],

@@ -180,7 +180,12 @@ def run_guide(
         if stop_event.is_set():
             return None
         on_progress(ProgressEvent(f"📖 正在解析文件: {material.filename}...", 0.08))
-        pages = extract_text_from_file(material.file_path)
+        def _parse_progress(done: int, total: int, _name: str = material.filename):
+            on_progress(ProgressEvent(
+                f"🖼️ 正在识别配图：{_name}（{done}/{total}）",
+                0.05 + 0.06 * (done / max(1, total))))
+
+        pages = extract_text_from_file(material.file_path, on_progress=_parse_progress)
         (core_pages if material.file_type == "core" else ref_pages).extend(pages)
 
     weight_prompt = build_weight_prompt(core_pages, ref_pages, core_ratio)
