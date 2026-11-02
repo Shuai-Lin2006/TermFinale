@@ -1,2 +1,19 @@
 .env
 .venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# IDE
+.idea/
+
+# 本地数据与产物（不入库）
+term_finale_pro.db
+user_config.json
+assets_images/
+ppt_images/
+logs/
+debug/
+_backup/
+docs/probe/
