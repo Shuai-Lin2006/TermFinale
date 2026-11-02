@@ -22,7 +22,8 @@ from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
 from services import guide_service, review_service
 from app.desktop import theme
-from app.desktop.components import StyledOptionMenu, Toast
+from app.desktop.components import (Card, EmptyState, GhostButton, PrimaryButton,
+                                    SectionTitle, StatTile, StyledOptionMenu, Toast)
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
@@ -298,43 +299,180 @@ class TermFinaleApp(ctk.CTk):
         ctk.CTkButton(center, text=self.t("start"), font=FONT_H1, width=300, height=60, fg_color=ACCENT_COLOR,
                       command=self.show_dashboard).pack(pady=(0, 30))
 
+    # ------------------------------------------------------------------ #
+    # 仪表盘
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _greeting() -> str:
+        hour = datetime.datetime.now().hour
+        if hour < 6:
+            return "夜深了"
+        if hour < 12:
+            return "早上好"
+        if hour < 18:
+            return "下午好"
+        return "晚上好"
+
+    def _dashboard_stats(self) -> dict:
+        courses = self.history_courses
+        if not courses:
+            return {"nearest_days": None, "nearest_name": "", "count": 0, "files": 0,
+                    "avg_weight": 0.0, "suggest_daily": 0}
+        db = get_db_session()
+        try:
+            files = db.query(DBGeneratedFile).count()
+        finally:
+            db.close()
+
+        nearest = min(courses, key=lambda c: c["days_left"])
+        weights, suggest = [], 0
+        for c in courses:
+            info = self._course_info(c)
+            ev = info.evaluate()
+            weights.append(ev["final_priority_weight"])
+            if c["id"] == nearest["id"]:
+                suggest = ev["suggested_daily_hours"]
+        return {"nearest_days": nearest["days_left"], "nearest_name": nearest["name"],
+                "count": len(courses), "files": files,
+                "avg_weight": round(sum(weights) / len(weights), 1),
+                "suggest_daily": suggest}
+
+    @staticmethod
+    def _course_info(course: dict) -> CourseInfo:
+        return CourseInfo(name=course["name"], school_level=course["school"], major=course["major"],
+                          is_core_major=course["is_major"], credits=course["credits"],
+                          days_left=course["days_left"], target_score=course["target_score"],
+                          user_difficulty=course["difficulty"])
+
+    def _bind_click(self, widget, callback):
+        widget.bind("<Button-1>", lambda _e: callback())
+        for child in widget.winfo_children():
+            self._bind_click(child, callback)
+
+    def _course_card(self, parent, course: dict, index: int):
+        info = self._course_info(course)
+        ev = info.evaluate()
+        tone = (theme.DANGER_COLOR if ev["status"] == "极度危险"
+                else theme.WARNING_COLOR if ev["status"] == "时间紧迫" else theme.SUCCESS_COLOR)
+
+        card = Card(parent, corner_radius=theme.RADIUS["md"])
+        head = ctk.CTkFrame(card, fg_color="transparent")
+        head.pack(fill="x", padx=theme.SPACE["lg"], pady=(theme.SPACE["md"], 0))
+        ctk.CTkLabel(head, text=f"📚 {course['name']}", font=FONT_H2, text_color=TEXT_COLOR,
+                     anchor="w").pack(side="left")
+        ctk.CTkLabel(head, text=f"{ev['final_priority_weight']:.0f}", font=FONT_H2,
+                     text_color=tone).pack(side="right")
+        ctk.CTkLabel(card, text=f"剩余 {course['days_left']} 天 · 目标 {course['target_score']} 分 · "
+                               f"{ev['status']}",
+                     font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR, anchor="w").pack(
+            fill="x", padx=theme.SPACE["lg"], pady=(2, 0))
+        bar = ctk.CTkProgressBar(card, height=6, progress_color=tone,
+                                 fg_color=theme.palette().surface_alt)
+        bar.pack(fill="x", padx=theme.SPACE["lg"], pady=theme.SPACE["sm"])
+        bar.set(min(1.0, ev["final_priority_weight"] / 100))
+        ctk.CTkLabel(card, text=f"建议每天 {ev['suggested_daily_hours']:g} 小时",
+                     font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR, anchor="w").pack(
+            fill="x", padx=theme.SPACE["lg"], pady=(0, theme.SPACE["md"]))
+        self._bind_click(card, lambda: self.show_course_actions(course, index))
+        return card
+
     def show_dashboard(self):
         self.current_view = "dashboard"
         self.clear_ui()
         self.build_top_nav()
 
-        sidebar = ctk.CTkFrame(self, width=280, fg_color=SIDEBAR_COLOR, corner_radius=0, border_width=1,
-                               border_color="#E5E5E5")
+        # 侧栏
+        sidebar = ctk.CTkFrame(self, width=250, fg_color=SIDEBAR_COLOR, corner_radius=0)
         sidebar.pack(side="left", fill="y")
+        sidebar.pack_propagate(False)
+        ctk.CTkLabel(sidebar, text="TermFinale", font=FONT_H1, text_color=ACCENT_COLOR).pack(
+            pady=(28, 18), padx=20, anchor="w")
 
-        ctk.CTkLabel(sidebar, text="TermFinale", font=FONT_H1, text_color=ACCENT_COLOR).pack(pady=(30, 20), padx=20,
-                                                                                             anchor="w")
         btn_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
+        btn_frame.pack(fill="x", padx=16, pady=(0, 12))
         if not self.is_delete_mode:
-            ctk.CTkButton(btn_frame, text=self.t("new_task"), font=FONT_H2, height=40, fg_color=ACCENT_COLOR,
-                          command=lambda: self.show_course_setup()).pack(fill="x", pady=(0, 10))
-            ctk.CTkButton(btn_frame, text=self.t("delete_mode"), font=FONT_BODY, height=35, fg_color="#FFEBEE",
-                          text_color=DANGER_COLOR, hover_color="#FFCDD2", command=self.enter_delete_mode).pack(fill="x")
+            PrimaryButton(btn_frame, text=self.t("new_task"),
+                          command=lambda: self.show_course_setup(), height=38).pack(fill="x", pady=(0, 8))
+            ctk.CTkButton(btn_frame, text=self.t("delete_mode"), font=FONT_BODY, height=32,
+                          fg_color=theme.palette().surface_alt, text_color=DANGER_COLOR,
+                          hover_color=theme.palette().border,
+                          command=self.enter_delete_mode).pack(fill="x")
         else:
-            ctk.CTkButton(btn_frame, text=self.t("exit_delete"), font=FONT_H2, height=40, fg_color=DANGER_COLOR,
-                          command=self.exit_delete_mode).pack(fill="x")
+            ctk.CTkButton(btn_frame, text=self.t("exit_delete"), font=FONT_BODY, height=38,
+                          fg_color=DANGER_COLOR, command=self.exit_delete_mode).pack(fill="x")
 
         self.sidebar_list = ctk.CTkScrollableFrame(sidebar, fg_color="transparent")
-        self.sidebar_list.pack(fill="both", expand=True, padx=10)
+        self.sidebar_list.pack(fill="both", expand=True, padx=8)
         self.render_history_list()
 
-        main_area = ctk.CTkFrame(self, fg_color="transparent")
-        main_area.pack(side="right", fill="both", expand=True, padx=40, pady=40)
+        # 主区
+        main_area = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        main_area.pack(side="right", fill="both", expand=True, padx=theme.SPACE["2xl"], pady=0)
 
-        ctk.CTkLabel(main_area, text=self.t("welcome_back").format(self.user_name), font=FONT_HUGE,
-                     text_color=TEXT_COLOR).pack(anchor="w", pady=(40, 10))
-        motto_frame = ctk.CTkFrame(main_area, fg_color="transparent")
-        motto_frame.pack(anchor="w", pady=(0, 40))
-        ctk.CTkLabel(motto_frame, text=f"「 {self.user_motto} 」", font=FONT_H2, text_color=SUB_TEXT_COLOR).pack(
-            side="left")
-        ctk.CTkButton(motto_frame, text="⚙️", width=30, height=30, fg_color="transparent", hover_color="#E5E5E5",
-                      text_color=SUB_TEXT_COLOR, command=self.edit_motto).pack(side="left", padx=10)
+        head = ctk.CTkFrame(main_area, fg_color="transparent")
+        head.pack(fill="x", pady=(theme.SPACE["xl"], 0))
+        ctk.CTkLabel(head, text=f"{self._greeting()}，{self.user_name}",
+                     font=FONT_H1, text_color=TEXT_COLOR, anchor="w").pack(side="left")
+        ctk.CTkLabel(head, text=datetime.datetime.now().strftime("%m月%d日"),
+                     font=FONT_BODY, text_color=SUB_TEXT_COLOR).pack(side="right")
+
+        motto = ctk.CTkFrame(main_area, fg_color="transparent")
+        motto.pack(fill="x", pady=(theme.SPACE["xs"], theme.SPACE["lg"]))
+        ctk.CTkLabel(motto, text=f"「 {self.user_motto} 」", font=FONT_BODY,
+                     text_color=SUB_TEXT_COLOR).pack(side="left")
+        GhostButton(motto, text="修改", command=self.edit_motto, height=26).pack(
+            side="left", padx=theme.SPACE["sm"])
+
+        stats = self._dashboard_stats()
+        if not stats["count"]:
+            EmptyState(main_area, "📭", "还没有课程",
+                       "点左侧「新建科目」，填一下考试信息就能开始").pack(pady=60)
+            return
+
+        tiles = ctk.CTkFrame(main_area, fg_color="transparent")
+        tiles.pack(fill="x", pady=(0, theme.SPACE["lg"]))
+        tones = ("danger" if (stats["nearest_days"] or 99) <= 3
+                 else "warning" if (stats["nearest_days"] or 99) <= 7 else "success")
+        for i, (label, value, hint, tone) in enumerate([
+            ("最近考试", f"{stats['nearest_days']} 天", stats["nearest_name"], tones),
+            ("在学课程", str(stats["count"]), f"平均紧迫度 {stats['avg_weight']:.0f}", "text"),
+            ("已生成资料", str(stats["files"]), "讲义 / 试卷 / 笔记", "text"),
+        ]):
+            tile = StatTile(tiles, label, value, hint, tone)
+            tile.pack(side="left", fill="both", expand=True, padx=(0 if i == 0 else theme.SPACE["md"], 0))
+            tile.configure(width=260)
+
+        SectionTitle(main_area, "课程概览", "点卡片进入操作").pack(fill="x", pady=(0, theme.SPACE["sm"]))
+        visible = min(6, len(self.history_courses))
+        for start in range(0, visible, 2):
+            row = ctk.CTkFrame(main_area, fg_color="transparent")
+            row.pack(fill="x", pady=(0, theme.SPACE["md"]))
+            for offset in range(2):
+                slot = start + offset
+                if slot < visible:
+                    card = self._course_card(row, self.history_courses[slot], slot)
+                else:  # 奇数个课程时补一个透明占位，保持两栏等宽
+                    card = ctk.CTkFrame(row, fg_color="transparent")
+                card.pack(side="left", fill="both", expand=True,
+                          padx=(0 if offset == 0 else theme.SPACE["md"], 0))
+
+        advice = Card(main_area)
+        advice.pack(fill="x", pady=(theme.SPACE["sm"], theme.SPACE["2xl"]))
+        inner = ctk.CTkFrame(advice, fg_color="transparent")
+        inner.pack(fill="x", padx=theme.SPACE["lg"], pady=theme.SPACE["lg"])
+        ctk.CTkLabel(inner, text="🎯 今日建议", font=FONT_H2, text_color=TEXT_COLOR,
+                     anchor="w").pack(fill="x")
+        urgent = (stats["nearest_days"] or 99) <= 3
+        lines = [
+            f"离《{stats['nearest_name']}》只剩 {stats['nearest_days']} 天，"
+            f"建议每天投入 {stats['suggest_daily']:g} 小时",
+            "先出「精简讲义」只保必考，再刷 1 套模拟卷" if urgent
+            else "先出「全量讲义」吃透原理，再用逻辑分析串成线",
+            "做完题立刻在「训练模式」里对答案，错题记进笔记",
+        ]
+        for line in lines:
+            ctk.CTkLabel(inner, text=f"· {line}", font=FONT_BODY, text_color=SUB_TEXT_COLOR,
+                         anchor="w", justify="left", wraplength=760).pack(fill="x", pady=2)
 
     def edit_motto(self):
         dialog = ctk.CTkInputDialog(text="请输入新的励志名言：", title="修改名言")
@@ -824,6 +962,18 @@ class TermFinaleApp(ctk.CTk):
 
         self.after(0, apply)
 
+    def _action_card(self, parent, title: str, desc: str, command):
+        """整行可点的功能卡：标题 + 说明 + 进入按钮（修掉窄卡片文字被裁）。"""
+        card = Card(parent)
+        card.pack(fill="x", pady=theme.SPACE["xs"])
+        left = ctk.CTkFrame(card, fg_color="transparent")
+        left.pack(side="left", fill="x", expand=True, padx=theme.SPACE["lg"], pady=theme.SPACE["md"])
+        ctk.CTkLabel(left, text=title, font=FONT_H2, text_color=TEXT_COLOR, anchor="w").pack(fill="x")
+        ctk.CTkLabel(left, text=desc, font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR, anchor="w",
+                     justify="left", wraplength=720).pack(fill="x")
+        GhostButton(card, text="进入 →", command=command, width=84).pack(side="right", padx=theme.SPACE["lg"])
+        return card
+
     def show_review_menu(self, course, index):
         self.current_view = "review_menu"
         self.view_args = {"course": course, "index": index}
@@ -832,19 +982,12 @@ class TermFinaleApp(ctk.CTk):
         scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
         scroll.pack(fill="both", expand=True, padx=100, pady=10)
         ctk.CTkLabel(scroll, text=self.t("review_menu_title"), font=FONT_H1).pack(anchor="w", pady=(10, 30))
-        btn_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(0, 40))
-        ctk.CTkButton(btn_frame, text=f"{self.t('review_ai_analysis')}\n{self.t('review_ai_analysis_desc')}",
-                      font=FONT_H2, width=280, height=120, fg_color=CARD_COLOR, text_color=TEXT_COLOR, border_width=1,
-                      border_color="#E5E5E5", command=lambda: self.show_ai_analysis(course, index)).pack(side="left",
-                                                                                                         padx=(0, 20))
-        ctk.CTkButton(btn_frame, text=f"{self.t('review_extract')}\n{self.t('review_extract_desc')}", font=FONT_H2,
-                      width=280, height=120, fg_color=CARD_COLOR, text_color=TEXT_COLOR, border_width=1,
-                      border_color="#E5E5E5", command=lambda: self.show_extract(course, index)).pack(side="left",
-                                                                                                     padx=(0, 20))
-        ctk.CTkButton(btn_frame, text=f"{self.t('review_train')}\n{self.t('review_train_desc')}", font=FONT_H2,
-                      width=280, height=120, fg_color=CARD_COLOR, text_color=TEXT_COLOR, border_width=1,
-                      border_color="#E5E5E5", command=lambda: self.show_training(course, index)).pack(side="left")
+        self._action_card(scroll, self.t("review_ai_analysis"), self.t("review_ai_analysis_desc"),
+                          lambda: self.show_ai_analysis(course, index))
+        self._action_card(scroll, self.t("review_extract"), self.t("review_extract_desc"),
+                          lambda: self.show_extract(course, index))
+        self._action_card(scroll, self.t("review_train"), self.t("review_train_desc"),
+                          lambda: self.show_training(course, index))
 
         ctk.CTkLabel(scroll, text=self.t("history_guide"), font=FONT_H2).pack(anchor="w", pady=(20, 10))
         db = get_db_session()
@@ -905,7 +1048,7 @@ class TermFinaleApp(ctk.CTk):
             self.run_generation_task(course, index, "analysis", text, mode="bundle")
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(pady=40)
+                      command=start).pack(anchor="e", pady=40, padx=10)
 
     def show_extract(self, course, index):
         self.current_view = "extract"
@@ -935,7 +1078,7 @@ class TermFinaleApp(ctk.CTk):
                                      with_answer=ans_var.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(pady=40)
+                      command=start).pack(anchor="e", pady=40, padx=10)
 
     def show_training(self, course, index):
         self.current_view = "training"
@@ -1093,7 +1236,7 @@ class TermFinaleApp(ctk.CTk):
                                      user_context=u_ctx, lang=train_lang_menu.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
-                      command=start).pack(pady=40)
+                      command=start).pack(anchor="e", pady=40, padx=10)
 
     def run_generation_task(self, course, index, task_type, text, **kwargs):
         """线程入口：调用复习服务，UI 只负责展示进度。"""
