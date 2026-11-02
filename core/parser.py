@@ -8,9 +8,29 @@ from pptx import Presentation
 from loguru import logger
 from core.ai_vision import analyze_image_with_ai
 from core import paths
+from core.parsing import figures as figure_lib
 
 IMG_DIR = str(paths.assets_dir())
 paths.ensure_dirs()
+
+FIG_DPI = 180
+_DISABLE_VISION = os.getenv("TERMFINALE_DISABLE_VISION", "").strip().lower() in ("1", "true", "yes")
+
+
+def _figure_caption(fig) -> str | None:
+    """图注：优先用页面上的原文标题；否则调视觉模型。
+
+    视觉模型判定"无内容"（返回空）时返回 None，表示这张图是装饰，应当丢弃。
+    离线模式（TERMFINALE_DISABLE_VISION=1）直接给兜底文案，不联网。
+    """
+    if fig.caption:
+        return fig.caption
+    if _DISABLE_VISION:
+        return f"第 {fig.page} 页配图"
+    caption = analyze_image_with_ai(os.path.join(IMG_DIR, fig.filename))
+    if not caption or not caption.strip():
+        return None
+    return caption
 
 
 def clean_text_lines(slide_text: str) -> list:
@@ -46,11 +66,14 @@ def process_image(img_bytes, img_filename):
         f.write(img_bytes)
 
     # 🚨 核心修复：无论视觉模型识别出什么，都强制加上标签
-    try:
-        caption = analyze_image_with_ai(img_path)
-    except Exception as e:
-        logger.error(f"图注识别异常: {e}")
+    if _DISABLE_VISION:
         caption = ""
+    else:
+        try:
+            caption = analyze_image_with_ai(img_path)
+        except Exception as e:
+            logger.error(f"图注识别异常: {e}")
+            caption = ""
 
     if not caption or len(caption.strip()) < 2:
         caption = "原题配图"
@@ -86,29 +109,30 @@ def extract_text_from_file(file_path: str) -> list:
 
         elif ext == 'pdf':
             doc = fitz.open(file_path)
-            for page_num in range(len(doc)):
-                page = doc[page_num]
-                blocks = page.get_text("blocks")
-                blocks.sort(key=lambda b: (b[1], b[0]))
+            try:
+                # 先把整份文档的图形区域渲染出来（矢量图也能出），再按 y 坐标插回文本流
+                figs_by_page = figure_lib.extract_figures(doc, IMG_DIR, dpi=FIG_DPI)
+                for page_num in range(len(doc)):
+                    page = doc[page_num]
+                    text_blocks = [b for b in page.get_text("blocks") if b[6] == 0]
 
-                page_text = ""
-                for b in blocks:
-                    if b[6] == 0:
-                        page_text += b[4] + "\n"
-                    elif b[6] == 1:
-                        try:
-                            img_bytes = b[5]
-                            if len(img_bytes) < 5 * 1024: continue  # 🚨 降至 5KB
-                            img_filename = f"pdf{page_num + 1}_{len(os.listdir(IMG_DIR)) + 1}.png"
-                            img_tag = process_image(img_bytes, img_filename)
-                            if img_tag: page_text += f"\n{img_tag}\n"
-                        except:
-                            pass
+                    items = [(b[1], b[0], b[4]) for b in text_blocks]
+                    for fig in figs_by_page.get(page_num + 1, []):
+                        caption = _figure_caption(fig)
+                        if caption is None:  # 装饰图，丢弃
+                            continue
+                        items.append((fig.bbox[1], fig.bbox[0],
+                                      f"[[[IMAGE: {fig.filename} | 图注: {caption}]]]"))
 
-                if page_text.strip():
-                    cleaned = "\n".join(clean_text_lines(page_text))
-                    if cleaned.strip(): all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{cleaned}")
-            doc.close()
+                    items.sort(key=lambda item: (item[0], item[1]))
+                    page_text = "\n".join(item[2] for item in items)
+
+                    if page_text.strip():
+                        cleaned = "\n".join(clean_text_lines(page_text))
+                        if cleaned.strip():
+                            all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{cleaned}")
+            finally:
+                doc.close()
 
         elif ext in ['doc', 'docx']:
             doc = docx.Document(file_path)

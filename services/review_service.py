@@ -26,9 +26,34 @@ from services.guide_service import build_course_info
 EXTRACT_CHUNK = 2000
 
 
+def split_text_safely(text: str, size: int = EXTRACT_CHUNK) -> list[str]:
+    """按页/段安全切块：绝不把 [[[IMAGE: ... ]]] 标记切成两半。
+
+    旧实现 ``text[i:i+2000]`` 会把图片标签拦腰截断，导致 AI 拿到半个标记、
+    输出里图就丢了。
+    """
+    chunks: list[str] = []
+    start, n = 0, len(text)
+    while start < n:
+        end = min(n, start + size)
+        if end < n:
+            tag_start = text.rfind("[[[IMAGE:", start, end)
+            if tag_start != -1 and text.find("]]]", tag_start, end) == -1:
+                end = tag_start  # 回退到标签前，整块留给下一段
+            if end - start > size // 2:
+                para = text.rfind("\n\n", start + size // 2, end)
+                if para != -1:
+                    end = para
+        if end <= start:  # 极端情况兜底，避免死循环
+            end = min(n, start + size)
+        chunks.append(text[start:end])
+        start = end
+    return [c for c in chunks if c.strip()]
+
+
 def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                  on_progress: ProgressCb, stop_event: threading.Event, started: float) -> str:
-    chunks = [text[i:i + EXTRACT_CHUNK] for i in range(0, len(text), EXTRACT_CHUNK)]
+    chunks = split_text_safely(text, EXTRACT_CHUNK)
     results: list[str] = []
     for i, chunk in enumerate(chunks):
         if stop_event.is_set():
