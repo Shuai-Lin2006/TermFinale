@@ -81,6 +81,13 @@ def install_exception_hooks(tk_root=None) -> None:
     if tk_root is not None:
         def _tk_cb(exc, val, tb):
             logger.opt(exception=(exc, val, tb)).error("Tk 回调异常")
+            # 按钮点了没反应，往往就是这里被吞掉了；给用户一个可见提示
+            try:
+                from tkinter import messagebox
+
+                messagebox.showerror("操作失败", f"{exc.__name__}: {val}"[:600])
+            except Exception:
+                pass
 
         try:
             tk_root.report_callback_exception = _tk_cb
