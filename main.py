@@ -892,17 +892,14 @@ class TermFinaleApp(ctk.CTk):
         scroll.pack(fill="both", expand=True, padx=100, pady=10)
         ctk.CTkLabel(scroll, text=self.t("review_ai_analysis"), font=FONT_H1).pack(anchor="w", pady=(10, 20))
         self.render_material_checkboxes(scroll, course["id"])
-        ctk.CTkLabel(scroll, text="生成类型：", font=FONT_H2).pack(anchor="w", pady=(20, 5))
-        mode_var = ctk.StringVar(value="mindmap")
-        ctk.CTkRadioButton(scroll, text=self.t("mindmap"), variable=mode_var, value="mindmap", font=FONT_BODY).pack(
-            anchor="w", padx=20, pady=5)
-        ctk.CTkRadioButton(scroll, text=self.t("text_logic"), variable=mode_var, value="text_logic",
-                           font=FONT_BODY).pack(anchor="w", padx=20, pady=5)
+        ctk.CTkLabel(scroll, text="一次生成：知识图谱 + 因果链 + 概念对照表（图与文在同一页，互补而非二选一）",
+                     font=FONT_BODY, text_color=SUB_TEXT_COLOR, wraplength=780,
+                     justify="left").pack(anchor="w", pady=(20, 20))
 
         def start():
             text = self.get_selected_texts()
             if not text: messagebox.showerror(self.t("error"), "请勾选有效资料！"); return
-            self.run_generation_task(course, index, "analysis", text, mode=mode_var.get())
+            self.run_generation_task(course, index, "analysis", text, mode="bundle")
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
                       command=start).pack(pady=40)

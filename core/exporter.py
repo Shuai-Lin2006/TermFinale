@@ -161,12 +161,41 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         "TermFinale Exam" if lang == "English" and doc_type == "训练试卷" else f"TermFinale {doc_type}")
     cover_desc = f"Your Personalized Final Prep · {course.name if course else ''}" if lang == "English" else f"为你量身定制的期末突击宝典 · {course.name if course else ''}"
 
+    # 试卷专用卷头：姓名/学号/时间/满分 + 密封线
+    exam_header = ""
+    if doc_type in ("训练试卷", "Test Paper", "Exam Paper"):
+        course_name = course.name if course else ""
+        if lang == "English":
+            exam_header = f"""
+        <div class="exam-head">
+            <h1>{course_name} Final Mock Exam</h1>
+            <div class="exam-meta">
+                <span>Name: ____________</span><span>ID: ____________</span>
+                <span>Time: 120 min</span><span>Total: 100 pts</span>
+            </div>
+            <div class="seal-line">— — — — — — — —  Seal Line  — — — — — — — —</div>
+        </div>"""
+        else:
+            exam_header = f"""
+        <div class="exam-head">
+            <h1>{course_name}期末模拟试卷</h1>
+            <div class="exam-meta">
+                <span>姓名：____________</span><span>学号：____________</span>
+                <span>考试时间：120 分钟</span><span>满分：100 分</span>
+            </div>
+            <div class="seal-line">— — — — — — — — 密 封 线 — — — — — — — —</div>
+        </div>"""
+
     btn_search = "Search" if lang == "English" else "搜索"
     btn_edit = "Edit" if lang == "English" else "编辑"
     btn_word = "Word" if lang == "English" else "Word"
     btn_pdf = "Print PDF" if lang == "English" else "打印 PDF"
     nav_reading = "Reading..." if lang == "English" else "正在阅读..."
     modal_title = "Explanation" if lang == "English" else "名词解释"
+
+    cover_html = f'<div class="cover"><h1>{cover_title}</h1><p>{cover_desc}</p>{custom_info}</div>'
+    if exam_header:
+        cover_html = ""
 
     html_template = f"""<!DOCTYPE html>
 <html>
@@ -290,6 +319,10 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     .search-item:hover {{ background: #f0f8ff; color: #007AFF; }}
     .current-chapter {{ background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; font-weight: bold; font-size: 14px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
     .cover {{ text-align: center; padding: 60px 0; border-bottom: 2px dashed #eee; margin-bottom: 40px; }}
+    .exam-head {{ text-align: center; margin-bottom: 26px; }}
+    .exam-head h1 {{ font-size: 30px; color: #1a1a1a; border: none; margin-bottom: 14px; }}
+    .exam-meta {{ display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 15px; color: #333; margin-bottom: 12px; }}
+    .seal-line {{ color: #999; letter-spacing: 2px; font-size: 13px; margin: 10px 0 26px; }}
     .cover h1 {{ font-size: 38px; color: #0056b3; border: none; margin-bottom: 10px; }}
     .cover p {{ color: #86868B; font-size: 16px; letter-spacing: 1px; margin-bottom: 30px; }}
     .custom-info {{ display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 20px; }}
@@ -320,7 +353,8 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         <a class="print-btn" onclick="window.print()">🖨️ {btn_pdf}</a>
     </div>
     <div class="container" id="main-container">
-        <div class="cover"><h1>{cover_title}</h1><p>{cover_desc}</p>{custom_info}</div>
+        {cover_html}
+        {exam_header}
         {toc_html}
         {html_content}
     </div>
