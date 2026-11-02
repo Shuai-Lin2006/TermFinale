@@ -25,6 +25,15 @@ from app.desktop import theme
 from app.desktop.components import (Card, EmptyState, GhostButton, PrimaryButton,
                                     SectionTitle, StatTile, StyledOptionMenu, Toast)
 
+# Windows 高 DPI（必须在创建窗口前设置）
+if os.name == "nt":
+    try:
+        import ctypes
+
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        pass
+
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
@@ -675,27 +684,27 @@ class TermFinaleApp(ctk.CTk):
         self.upload_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
         self.upload_scroll.pack(fill="both", expand=True, padx=100, pady=10)
 
-        self.core_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=2,
+        self.core_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=2, height=10,
                                       border_color=ACCENT_COLOR)
         self.core_card.pack(fill="x", pady=10, ipadx=20, ipady=20)
         ctk.CTkLabel(self.core_card, text=self.t("upload_core"), font=FONT_H2, text_color=ACCENT_COLOR).pack(anchor="w")
         ctk.CTkButton(self.core_card, text="+ " + self.t("select_file"), command=lambda: self.pick_file("core")).pack(
             pady=10)
 
-        self.core_list_frame = ctk.CTkFrame(self.core_card, fg_color="transparent")
+        self.core_list_frame = ctk.CTkFrame(self.core_card, fg_color="transparent", height=10)
         self.core_list_frame.pack(fill="x")
 
-        self.ref_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=1,
+        self.ref_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=1, height=10,
                                      border_color="#E5E5E5")
         self.ref_card.pack(fill="x", pady=10, ipadx=20, ipady=20)
         ctk.CTkLabel(self.ref_card, text=self.t("upload_ref"), font=FONT_H2).pack(anchor="w")
         ctk.CTkButton(self.ref_card, text="+ " + self.t("select_file"), command=lambda: self.pick_file("ref")).pack(
             pady=10)
 
-        self.ref_list_frame = ctk.CTkFrame(self.ref_card, fg_color="transparent")
+        self.ref_list_frame = ctk.CTkFrame(self.ref_card, fg_color="transparent", height=10)
         self.ref_list_frame.pack(fill="x")
 
-        self.weight_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=1,
+        self.weight_card = ctk.CTkFrame(self.upload_scroll, fg_color=CARD_COLOR, corner_radius=12, border_width=1, height=10,
                                         border_color="#E5E5E5")
         ctk.CTkLabel(self.weight_card, text=self.t("weight_title"), font=FONT_H2, text_color=ACCENT_COLOR).pack(
             anchor="w")
