@@ -164,10 +164,27 @@
 
 ## P6 UI 重建
 
-1. `app/desktop/theme.py`（token 纯数据）、`components.py`（Card/StatTile/Toast/...）
-2. 页面栈 + 局部刷新，去掉 6 处全量销毁
-3. 先出 HTML 原型 → 你确认 → 再移植
-4. 字体回退栈、SVG 图标、深色模式、高 DPI
+### P6a 主题与组件 ✅ 已完成（2026-11-02）
+1. ✅ `app/desktop/theme.py`：色板（亮/暗）、8pt 间距、圆角、跨平台字体栈（PingFang / 微软雅黑 / Noto）
+2. ✅ `app/desktop/components.py`：`Card` / `SectionTitle` / `PrimaryButton` / `GhostButton` / `StyledOptionMenu` / `ListRow` / `StatTile` / `EmptyState` / `Toast`
+3. ✅ `main.py` 接入：39 处裸色收敛到 theme 常量；6 个下拉框换成 `StyledOptionMenu`；"打开"按钮改为实心蓝；笔记/打印提示改非阻塞 Toast
+4. 验收：8 页截图回归通过；组件独立冒烟通过
+
+**已修复的视觉缺陷**
+- [x] U1 下拉框整条蓝色块 → 浅灰填充 + 深色字 + 独立箭头区（截图确认）
+- [x] U8 "打开"按钮对比度过低 → 实心蓝底白字（截图确认）
+- [x] U5 复选框双框（i18n 文案去掉 ☑️）
+
+### P6b 布局与页面（待做）
+- U2 右侧大片空白：主内容限宽 / 双列
+- U3 上传页参考卡片内部空白
+- U4 复习中心第三张卡片文字被裁
+- U6 主按钮对齐不一致
+- 仪表盘重做：倒计时 + 今日任务 + 课程卡（剩余天数/进度）
+- 页面栈 + 局部刷新，去掉 6 处全量销毁
+
+### P6c 细节（待做）
+- 深色模式切换、内置 SVG 图标（替 68 个 emoji）、高 DPI、Toast 全覆盖
 
 ---
 

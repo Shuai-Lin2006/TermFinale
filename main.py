@@ -21,26 +21,29 @@ from core.logger import setup_logging, install_exception_hooks
 from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
 from services import guide_service, review_service
+from app.desktop import theme
+from app.desktop.components import StyledOptionMenu, Toast
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
-FONT_FAMILY = "PingFang SC"
-FONT_HUGE = (FONT_FAMILY, 46, "bold")
-FONT_H1 = (FONT_FAMILY, 26, "bold")
-FONT_H2 = (FONT_FAMILY, 18, "bold")
-FONT_BODY = (FONT_FAMILY, 14, "normal")
-FONT_SUBTITLE = (FONT_FAMILY, 12, "normal")
+# 视觉常量统一来自 app/desktop/theme.py（跨平台字体、色板、间距）
+FONT_FAMILY = theme.FONT_FAMILY
+FONT_HUGE = theme.FONT_HUGE
+FONT_H1 = theme.FONT_H1
+FONT_H2 = theme.FONT_H2
+FONT_BODY = theme.FONT_BODY
+FONT_SUBTITLE = theme.FONT_SUBTITLE
 
-BG_COLOR = "#F5F5F7"
-SIDEBAR_COLOR = "#FFFFFF"
-CARD_COLOR = "#FFFFFF"
-TEXT_COLOR = "#1D1D1F"
-SUB_TEXT_COLOR = "#86868B"
-ACCENT_COLOR = "#007AFF"
-DANGER_COLOR = "#FF3B30"
-SUCCESS_COLOR = "#34C759"
-WARNING_COLOR = "#FF9500"
+BG_COLOR = theme.BG_COLOR
+SIDEBAR_COLOR = theme.SIDEBAR_COLOR
+CARD_COLOR = theme.CARD_COLOR
+TEXT_COLOR = theme.TEXT_COLOR
+SUB_TEXT_COLOR = theme.SUB_TEXT_COLOR
+ACCENT_COLOR = theme.ACCENT_COLOR
+DANGER_COLOR = theme.DANGER_COLOR
+SUCCESS_COLOR = theme.SUCCESS_COLOR
+WARNING_COLOR = theme.WARNING_COLOR
 
 
 
@@ -466,7 +469,7 @@ class TermFinaleApp(ctk.CTk):
                 w.pack(side="left", padx=20)
                 return w
             else:
-                w = ctk.CTkOptionMenu(row, values=options, font=FONT_BODY, width=300)
+                w = StyledOptionMenu(row, values=options, font=FONT_BODY, width=300)
                 if default in options: w.set(default)
                 w.pack(side="left", padx=20)
                 return w
@@ -668,12 +671,12 @@ class TermFinaleApp(ctk.CTk):
         scroll.pack(fill="both", expand=True, padx=100, pady=10)
 
         ctk.CTkLabel(scroll, text=self.t("persona_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
-        persona_menu = ctk.CTkOptionMenu(scroll, values=list(PERSONA_LABELS.keys()),
+        persona_menu = StyledOptionMenu(scroll, values=list(PERSONA_LABELS.keys()),
                                          font=FONT_BODY, width=400)
         persona_menu.pack(anchor="w", pady=(0, 20))
 
         ctk.CTkLabel(scroll, text=self.t("lang_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
-        lang_menu = ctk.CTkOptionMenu(scroll, values=["中文", "English"], font=FONT_BODY, width=400)
+        lang_menu = StyledOptionMenu(scroll, values=["中文", "English"], font=FONT_BODY, width=400)
         lang_menu.set("中文")
         lang_menu.pack(anchor="w", pady=(0, 30))
 
@@ -708,8 +711,8 @@ class TermFinaleApp(ctk.CTk):
                 row.pack(fill="x", pady=5)
                 ctk.CTkLabel(row, text=f"📄 {os.path.basename(f.file_path)}", font=FONT_BODY).pack(side="left", padx=15,
                                                                                                   pady=10)
-                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color="#F0F8FF",
-                              text_color=ACCENT_COLOR, command=lambda p=f.file_path: self.open_file(p)).pack(
+                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color=ACCENT_COLOR,
+                              text_color="#FFFFFF", command=lambda p=f.file_path: self.open_file(p)).pack(
                     side="right", padx=15)
 
     def start_generation(self, course, index, mode, persona, lang="中文"):
@@ -859,8 +862,8 @@ class TermFinaleApp(ctk.CTk):
                                                                                                       "文档")
                 ctk.CTkLabel(row, text=f"{type_name} | {os.path.basename(f.file_path)}", font=FONT_BODY).pack(
                     side="left", padx=15, pady=10)
-                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color="#F0F8FF",
-                              text_color=ACCENT_COLOR, command=lambda p=f.file_path: self.open_file(p)).pack(
+                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color=ACCENT_COLOR,
+                              text_color="#FFFFFF", command=lambda p=f.file_path: self.open_file(p)).pack(
                     side="right", padx=15)
 
     def render_material_checkboxes(self, parent, course_id):
@@ -1042,7 +1045,7 @@ class TermFinaleApp(ctk.CTk):
         row3 = ctk.CTkFrame(scroll, fg_color="transparent")
         row3.pack(anchor="w", pady=10)
         ctk.CTkLabel(row3, text=self.t("train_difficulty"), font=FONT_H2).pack(side="left")
-        diff_var = ctk.CTkOptionMenu(row3,
+        diff_var = StyledOptionMenu(row3,
                                      values=["1星 (基础)", "2星 (中等)", "3星 (常规期末)", "4星 (拔高)", "5星 (地狱)"],
                                      font=FONT_BODY)
         diff_var.set("3星 (常规期末)")
@@ -1051,12 +1054,12 @@ class TermFinaleApp(ctk.CTk):
         row4 = ctk.CTkFrame(scroll, fg_color="transparent")
         row4.pack(anchor="w", pady=10)
         ctk.CTkLabel(row4, text=self.t("train_sets"), font=FONT_H2).pack(side="left")
-        sets_var = ctk.CTkOptionMenu(row4, values=["1", "2", "3", "4", "5"], font=FONT_BODY)
+        sets_var = StyledOptionMenu(row4, values=["1", "2", "3", "4", "5"], font=FONT_BODY)
         sets_var.set("1")
         sets_var.pack(side="left", padx=10)
 
         ctk.CTkLabel(scroll, text=self.t("lang_select"), font=FONT_H2).pack(anchor="w", pady=(10, 5))
-        train_lang_menu = ctk.CTkOptionMenu(scroll, values=["中文", "English"], font=FONT_BODY, width=400)
+        train_lang_menu = StyledOptionMenu(scroll, values=["中文", "English"], font=FONT_BODY, width=400)
         train_lang_menu.set("中文")
         train_lang_menu.pack(anchor="w", pady=(0, 20))
 
@@ -1164,7 +1167,7 @@ class TermFinaleApp(ctk.CTk):
                                        file_type="note"))
             db.commit()
             db.close()
-            messagebox.showinfo(self.t("ok"), self.t("note_saved"))
+            Toast.show(self, self.t("note_saved"), "success")
 
         ctk.CTkButton(self, text=self.t("note_save"), font=FONT_H2, height=45, fg_color=SUCCESS_COLOR,
                       command=save_note).pack(pady=20)
@@ -1203,8 +1206,8 @@ class TermFinaleApp(ctk.CTk):
                 def open_f(path=f.file_path):
                     open_path(path)
 
-                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color="#F0F8FF",
-                              text_color=ACCENT_COLOR, command=open_f).pack(side="right", padx=15)
+                ctk.CTkButton(row, text="打开", width=60, height=30, font=FONT_SUBTITLE, fg_color=ACCENT_COLOR,
+                              text_color="#FFFFFF", command=open_f).pack(side="right", padx=15)
 
     def open_file(self, path):
         open_path(path)
@@ -1219,7 +1222,7 @@ class TermFinaleApp(ctk.CTk):
         ctk.CTkLabel(center, text="🎉", font=("Arial", 60)).pack(pady=(0, 10))
         ctk.CTkLabel(center, text=self.t("preview"), font=FONT_H1).pack(pady=(0, 40))
 
-        def open_and_print(): self.open_file(html_path); messagebox.showinfo(self.t("ok"), self.t("print_tips"))
+        def open_and_print(): self.open_file(html_path); Toast.show(self, self.t("print_tips"), "info", duration=5000)
 
         btn_frame = ctk.CTkFrame(center, fg_color="transparent")
         btn_frame.pack()
