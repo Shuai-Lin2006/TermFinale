@@ -60,7 +60,12 @@ def fallback_outline(pages: list[str], chapters: int | None = None) -> Outline:
     out: list[Chapter] = []
     for i in range(0, n, size):
         idx = list(range(i, min(n, i + size)))
-        title = _page_head(pages[idx[0]]) or f"第 {len(out) + 1} 部分"
+        title = ""
+        for page_index in idx:
+            if len(re.sub(r"\s", "", pages[page_index])) >= 80:
+                title = _page_head(pages[page_index])
+                break
+        title = title or _page_head(pages[idx[0]]) or f"第 {len(out) + 1} 部分"
         out.append(Chapter(index=len(out), title=title, pages=idx, importance=3))
     return Outline(out, source="fallback")
 
@@ -145,7 +150,9 @@ OUTLINE_SYSTEM = """你是大学期末复习资料的课程架构师。
 2. must_know 写 3~6 条本章必须掌握的知识点（短语，不带编号）；
 3. importance 1~5，按期末出现概率给分；
 4. est_words 是本章合理篇幅（中文单字计），一般 1200~2600；
-5. 章节顺序必须与页码顺序一致，不要跳来跳去。"""
+5. 章节顺序必须与页码顺序一致，不要跳来跳去；
+6. 章节名必须是知识点名称（例如「气体的压缩因子」），不能用课程名、页码、「1.1」这类编号；
+7. 资料很短时 1~3 章即可，不要为了凑数硬拆。"""
 
 
 def generate_outline(
@@ -154,7 +161,7 @@ def generate_outline(
     *,
     lang: str = "中文",
     ai_call: Callable[[str, str], str] | None = None,
-    min_chapters: int = 3,
+    min_chapters: int | None = None,
 ) -> Outline:
     """优先 AI 规划，任何异常都退回启发式，保证流水线不断。"""
     n = len(pages)
@@ -179,9 +186,10 @@ def generate_outline(
         logger.warning("大纲 JSON 解析失败，退回启发式")
         return fallback_outline(pages)
 
+    required = min_chapters if min_chapters is not None else max(1, min(3, n // 4))
     chapters = _normalize(data, n)
-    if len(chapters) < min_chapters:
-        logger.warning("大纲章节数不足（{}），退回启发式", len(chapters))
+    if len(chapters) < required:
+        logger.warning("大纲章节数不足（{} < {}），退回启发式", len(chapters), required)
         return fallback_outline(pages)
 
     logger.info("大纲生成完成：{} 章（AI）", len(chapters))
