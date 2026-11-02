@@ -25,3 +25,6 @@ dist/
 
 # 旧日志
 core/app.log
+
+# macOS
+.DS_Store

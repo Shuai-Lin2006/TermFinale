@@ -4,6 +4,14 @@
 
 面向大学生的桌面复习工具：导入 PPT / PDF / Word → 本地解析（文本 + 图形）→ 按你的考试信息规划大纲 → 逐章生成讲义 / 试卷 → 输出可打印的单文件 HTML。
 
+## 界面预览
+
+![仪表盘](docs/screenshots/dashboard.png)
+
+![课程操作](docs/screenshots/review.png)
+
+![训练出卷](docs/screenshots/training.png)
+
 ## 能做什么
 
 | 模块 | 产出 |
@@ -101,3 +109,13 @@ python -m tests.test_maintenance
 
 - 生成内容由大模型产出，请以原始资料为准；讲义中每个知识点尽量标注源页码。
 - 图片来自原始课件渲染，仅用于个人复习，请勿二次分发。
+
+
+## 许可
+
+[MIT](LICENSE)
+
+## 安全提示
+
+- `.env` 已在 `.gitignore` 中，**不要提交真实 API Key**；模板见 [`.env.example`](.env.example)。
+- 如果曾经误提交过 Key，请到对应平台**吊销并重新生成**。
