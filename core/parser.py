@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 import re
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import docx
 import fitz
@@ -65,7 +64,7 @@ def _clean_ocr_text(text: str) -> str:
 def _ocr_page(page, model: str | None = None) -> str:
     """把一页渲染成图，交给视觉模型转录成文字。"""
     from openai import OpenAI
-    from core.config import get_key, vision_model
+    from core.config import get_key
 
     pix = page.get_pixmap(dpi=OCR_DPI)
     png = pix.tobytes("png")

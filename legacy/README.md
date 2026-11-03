@@ -8,3 +8,6 @@
 | `ui_main_v0.py` | 根目录 | 最早的 4 页原型（含主题切换、更粗字号），被 `main.py` 取代 |
 | `text_exporter_v1.py` | `core/` | 与 `core/exporter.py` 约 95% 重复的渲染器；其 mermaid 正则更宽松，可作参考 |
 | `test_api_zhipu.py` | 根目录 | 智谱 GLM-4V 连通性测试，与现行 DeepSeek + 通义千问方案无关 |
+
+| `test_html_v1.py` | `core/` | 早期渲染自测脚本（路径写死在作者桌面），已归档 |
+| `test_chem_v1.py` | 根目录 | 早期图片识别自测脚本，已归档 |

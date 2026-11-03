@@ -44,15 +44,17 @@ def split_pages(text: str) -> list[str]:
     return parts or ([text] if text and text.strip() else [])
 
 
-def pack_pages(pages: list[str], limit: int = EXTRACT_CHUNK) -> list[str]:
-    """把页装进不超过 limit 的块，整页为单位，不切断图标签。"""
+def pack_pages(pages: list[str], limit: int = EXTRACT_CHUNK, overlap: int = 300) -> list[str]:
+    """把页装进不超过 limit 的块；块之间带上一页尾部重叠，避免跨页题被切断。"""
     chunks: list[str] = []
     buf: list[str] = []
     size = 0
     for page in pages:
         if buf and size + len(page) > limit:
             chunks.append("\n\n".join(buf))
-            buf, size = [], 0
+            tail = buf[-1][-overlap:] if len(buf[-1]) > overlap else buf[-1]
+            buf = [f"【接上页，若与本题相关请合并成完整一题】\n{tail}"]
+            size = len(buf[0])
         buf.append(page)
         size += len(page)
     if buf:
@@ -146,37 +148,29 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
     return merged, coverage
 
 
-QUESTION_START = re.compile(r"^\s*(?:\*\*)?(\d{1,2})(?:\*\*)?\s*[.、．)）]\s*", re.MULTILINE)
+Q_START = re.compile(r"^\s*(?:\*\*)?(?:\d{1,2}\s*[.、．)）]|【例)", re.MULTILINE)
 
 
-def normalize_questions(markdown: str, blank: bool = False, height: int = 150) -> str:
-    """统一题号：按出现顺序重排为 1..N（避免分块重复/列表被打断），可选每题留白。
+def escape_question_numbers(markdown: str) -> str:
+    """保留资料原始题号，只把行首 "1." 变成 "**1.**"，避免被 Markdown 当成有序列表重排。"""
+    return re.sub(r"(?m)^(\s*)(\d{1,2})([.、．])\s*", r"\1**\2\3** ", markdown or "")
 
-    Markdown 的有序列表遇到留白会重新从 1 开始编号，这是题号错乱的根因；
-    这里把题号改成普通加粗文字，编号完全由代码控制。
-    """
-    text = markdown or ""
-    if not QUESTION_START.search(text):
-        return text
 
-    marker = f"[[BLANK:{height}]]"
-    parts = re.split(r"(?m)^(?=\s*(?:\*\*)?\d{1,2}(?:\*\*)?\s*[.、．)）])", text)
-    out: list[str] = []
-    number = 0
+def insert_answer_blanks(markdown: str, height: int = 150) -> str:
+    """练习题：每道题结束后插入答题留白（题号保持原样）。"""
+    parts = re.split(r"(?m)(?=^\s*(?:\*\*)?(?:\d{1,2}\s*[.、．)）]|【例))", markdown or "")
+    out = []
     for part in parts:
         if not part.strip():
             continue
-        if QUESTION_START.match(part):
-            number += 1
-            part = QUESTION_START.sub(f"**{number}.** ", part, count=1)
-            if blank:
-                part = part.rstrip() + "\n\n" + marker
+        if Q_START.match(part):
+            part = part.rstrip() + f"\n\n[[BLANK:{height}]]"
         out.append(part.rstrip())
     return "\n\n".join(out)
 
 
 def add_answer_space(markdown: str, height: int = 150) -> str:
-    return normalize_questions(markdown, blank=True, height=height)
+    return insert_answer_blanks(escape_question_numbers(markdown), height)
 
 
 # --------------------------------------------------------------------------- #
@@ -213,8 +207,9 @@ def run_review(
             return None
         doc_name = "练习卷" if (extract_type == "questions" and not with_answer) else "资料提取"
         if extract_type == "questions":
-            # 题号统一由代码重排，避免跨块重复与列表被打断
-            markdown = normalize_questions(markdown, blank=not with_answer)
+            markdown = escape_question_numbers(markdown)
+            if not with_answer:
+                markdown = insert_answer_blanks(markdown)
         extra_metrics["coverage"] = coverage
         if coverage["coverage"] < 1.0:
             warnings.append(

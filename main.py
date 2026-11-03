@@ -1,7 +1,6 @@
 import customtkinter as ctk
 import json
 import os
-import re
 import threading
 import time
 import datetime
@@ -11,9 +10,6 @@ from loguru import logger
 
 from models.user_profile import CourseInfo
 from core.parser import extract_text_from_file
-from core.ai_engine import generate_super_guide
-from core.exam_engine import generate_logic_analysis, generate_extraction, generate_exam_paper
-from core.exporter import export_to_html
 from core.database import init_db, get_db_session, Course as DBCourse, GeneratedFile as DBGeneratedFile, \
     Material as DBMaterial, UserConfig as DBUserConfig
 from core import config, paths
@@ -21,6 +17,7 @@ from core.logger import setup_logging, install_exception_hooks
 from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
 from services import guide_service, review_service
+from services.task import ProgressEvent
 from app.desktop import theme
 from app.desktop.components import (Card, EmptyState, GhostButton, PrimaryButton,
                                     SectionTitle, StatTile, StyledOptionMenu, Toast)
@@ -1065,8 +1062,9 @@ class TermFinaleApp(ctk.CTk):
             )
         except Exception as exc:
             logger.error("讲义生成失败: {}", exc)
+            message = str(exc)
             if not self.stop_event.is_set():
-                self.after(0, lambda: messagebox.showerror(self.t("error"), str(exc)))
+                self.after(0, lambda m=message: messagebox.showerror(self.t("error"), m))
                 self.after(0, self.show_dashboard)
             return
         if result and not self.stop_event.is_set():
@@ -1227,9 +1225,7 @@ class TermFinaleApp(ctk.CTk):
                      justify="left").pack(anchor="w", pady=(20, 20))
 
         def start():
-            text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
-            self.run_generation_task(course, index, "analysis", text, mode="bundle")
+            self._parse_and_run(course, index, "analysis", mode="bundle")
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
                       command=start).pack(anchor="e", pady=30, padx=60)
@@ -1255,10 +1251,8 @@ class TermFinaleApp(ctk.CTk):
                                                                                                    pady=10)
 
         def start():
-            text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
-            self.run_generation_task(course, index, "extract", text, extract_type=type_var.get(),
-                                     with_answer=ans_var.get())
+            self._parse_and_run(course, index, "extract", extract_type=type_var.get(),
+                                with_answer=ans_var.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
                       command=start).pack(anchor="e", pady=30, padx=60)
@@ -1389,8 +1383,6 @@ class TermFinaleApp(ctk.CTk):
         train_lang_menu.pack(anchor="w", pady=(0, 20))
 
         def start():
-            text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
             diff_val = int(diff_var.get()[0])
             diy_config = ""
             if paper_mode_var.get() == "diy":
@@ -1413,12 +1405,46 @@ class TermFinaleApp(ctk.CTk):
 
             u_ctx = {"target_score": course["target_score"], "school_level": course["school"],
                      "is_major": course["is_major"]}
-            self.run_generation_task(course, index, "exam", text, train_type=train_focus_var.get(),
-                                     num_sets=int(sets_var.get()), difficulty=diff_val, diy_config=diy_config,
-                                     user_context=u_ctx, lang=train_lang_menu.get())
+            self._parse_and_run(course, index, "exam", train_type=train_focus_var.get(),
+                                num_sets=int(sets_var.get()), difficulty=diff_val, diy_config=diy_config,
+                                user_context=u_ctx, lang=train_lang_menu.get())
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
                       command=start).pack(anchor="e", pady=30, padx=60)
+
+    def _parse_and_run(self, course, index, task_type, **kwargs):
+        """在后台解析选中的资料（扫描件 OCR 很慢），完成后再进入生成流程。"""
+        chosen = [m for m, var in self.selected_materials if var.get()]
+        if not chosen:
+            messagebox.showerror(self.t("error"), "请先勾选要分析的资料")
+            return
+
+        self.stop_event.clear()
+        self.start_time = time.time()
+        self._show_progress_page("📖 正在解析资料（扫描件需 OCR）…")
+
+        def work():
+            texts = []
+            for material in chosen:
+                if self.stop_event.is_set():
+                    return
+                name = material.filename
+
+                def on_prog(done, total, stage="caption", _n=name):
+                    label = "OCR" if stage == "ocr" else "配图"
+                    self._on_service_progress(ProgressEvent(
+                        f"🖼️ {label}：{_n}（{done}/{total}）", 0.05 + 0.05 * done / max(1, total)))
+
+                texts.extend(extract_text_from_file(material.file_path, on_progress=on_prog))
+            text = "\n\n".join(texts)
+            if not text.strip():
+                self.after(0, lambda: messagebox.showerror(
+                    self.t("error"), "没有解析到文字：文件可能是图片型或已损坏。"))
+                self.after(0, self.show_dashboard)
+                return
+            self.after(0, lambda: self.run_generation_task(course, index, task_type, text, **kwargs))
+
+        threading.Thread(target=work, daemon=True).start()
 
     def run_generation_task(self, course, index, task_type, text, **kwargs):
         if config.missing_keys():
@@ -1450,8 +1476,9 @@ class TermFinaleApp(ctk.CTk):
                 )
             except Exception as exc:
                 logger.error("复习任务失败: {}", exc)
+                message = str(exc)
                 if not self.stop_event.is_set():
-                    self.after(0, lambda: messagebox.showerror(self.t("error"), str(exc)))
+                    self.after(0, lambda m=message: messagebox.showerror(self.t("error"), m))
                     self.after(0, self.show_dashboard)
                 return
             if result and not self.stop_event.is_set():
