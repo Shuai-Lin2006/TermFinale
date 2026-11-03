@@ -146,6 +146,39 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
     return merged, coverage
 
 
+QUESTION_START = re.compile(r"^\s*(?:\*\*)?(\d{1,2})(?:\*\*)?\s*[.、．)）]\s*", re.MULTILINE)
+
+
+def normalize_questions(markdown: str, blank: bool = False, height: int = 150) -> str:
+    """统一题号：按出现顺序重排为 1..N（避免分块重复/列表被打断），可选每题留白。
+
+    Markdown 的有序列表遇到留白会重新从 1 开始编号，这是题号错乱的根因；
+    这里把题号改成普通加粗文字，编号完全由代码控制。
+    """
+    text = markdown or ""
+    if not QUESTION_START.search(text):
+        return text
+
+    marker = f"[[BLANK:{height}]]"
+    parts = re.split(r"(?m)^(?=\s*(?:\*\*)?\d{1,2}(?:\*\*)?\s*[.、．)）])", text)
+    out: list[str] = []
+    number = 0
+    for part in parts:
+        if not part.strip():
+            continue
+        if QUESTION_START.match(part):
+            number += 1
+            part = QUESTION_START.sub(f"**{number}.** ", part, count=1)
+            if blank:
+                part = part.rstrip() + "\n\n" + marker
+        out.append(part.rstrip())
+    return "\n\n".join(out)
+
+
+def add_answer_space(markdown: str, height: int = 150) -> str:
+    return normalize_questions(markdown, blank=True, height=height)
+
+
 # --------------------------------------------------------------------------- #
 # 主流程
 # --------------------------------------------------------------------------- #
@@ -178,7 +211,10 @@ def run_review(
             text, extract_type, with_answer, on_progress, stop_event, started)
         if stop_event.is_set():
             return None
-        doc_name = "资料提取"
+        doc_name = "练习卷" if (extract_type == "questions" and not with_answer) else "资料提取"
+        if extract_type == "questions":
+            # 题号统一由代码重排，避免跨块重复与列表被打断
+            markdown = normalize_questions(markdown, blank=not with_answer)
         extra_metrics["coverage"] = coverage
         if coverage["coverage"] < 1.0:
             warnings.append(

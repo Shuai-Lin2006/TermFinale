@@ -12,7 +12,8 @@ from PyInstaller.utils.hooks import collect_data_files
 
 datas = []
 datas += collect_data_files("customtkinter")   # 主题/皮肤资源，缺了会启动即崩
-datas += collect_data_files("certifi")         # HTTPS 证书
+datas += collect_data_files("certifi")
+datas += [("core/assets", "core/assets")]         # HTTPS 证书
 
 hiddenimports = [
     "fitz",

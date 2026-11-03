@@ -14,9 +14,31 @@ def _repair_image_tags(markdown: str) -> str:
     return "\n".join(fixed)
 
 
+from pathlib import Path as _Path
+import sys as _sys
+
+
+def _katex_assets() -> str:
+    """内联 KaTeX（含字体），避免离线/CDN 被墙时公式显示成源码。"""
+    base = _Path(getattr(_sys, "_MEIPASS", "")) / "core" / "assets" / "katex"
+    if not base.is_dir():
+        base = _Path(__file__).resolve().parent / "assets" / "katex"
+    try:
+        css = (base / "katex.inline.css").read_text(encoding="utf-8")
+        js = (base / "katex.min.js").read_text(encoding="utf-8")
+        auto = (base / "auto-render.min.js").read_text(encoding="utf-8")
+    except OSError:
+        return ('<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.css">'
+                '<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>'
+                '<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js"></script>')
+    return f"<style>{css}</style>\n<script>{js}</script>\n<script>{auto}</script>"
+
+
 def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=None, persona: str = "老师",
                    doc_type: str = "讲义", lang: str = "中文"):
     markdown_text = _repair_image_tags(markdown_text)
+    # 常见 OCR/AI 误写的 LaTeX 命令，KaTeX 会把它们渲染成红色错误
+    markdown_text = markdown_text.replace("\\cdotp", "\\cdot").replace("\\cdtos", "\\cdot")
     markdown_text = re.sub(r'\\\[(.*?)\\\]', r'$$\1$$', markdown_text, flags=re.DOTALL)
     markdown_text = re.sub(r'\\\((.*?)\\\)', r'$\1$', markdown_text, flags=re.DOTALL)
     markdown_text = re.sub(r'(?<!\[)\[([^\[\]|]+)\s*\|\s*([^\[\]]+)\](?!\])', r'[[\1 | \2]]', markdown_text)
@@ -30,6 +52,14 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     processed_md = re.sub(r'\[\[\[IMAGE:\s*([^]]+)\]\]\]', protect_img, markdown_text)
 
     # 🚨 终极防白屏：只要是被 ``` 包裹的，统统当思维导图抓出来
+    blank_blocks = []
+
+    def protect_blank(match):
+        blank_blocks.append(match.group(1) or "140")
+        return f"@@BLANKBLOCK{len(blank_blocks) - 1}@@"
+
+    processed_md = re.sub(r"\[\[BLANK(?::(\d+))?\]\]", protect_blank, processed_md)
+
     mermaid_blocks = []
 
     def protect_mermaid(match):
@@ -118,6 +148,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     for i, math in enumerate(math_blocks):
         html_content = html_content.replace(f"@@MATHBLOCK{i}@@", math)
 
+    for i, height in enumerate(blank_blocks):
+        div = f'<div class="blank-space" style="height:{height}px"></div>'
+        html_content = html_content.replace(f"<p>@@BLANKBLOCK{i}@@</p>", div)
+        html_content = html_content.replace(f"@@BLANKBLOCK{i}@@", div)
+
     for i, raw in enumerate(img_blocks):
         parts = raw.split("|")
         filename = parts[0].strip()
@@ -138,6 +173,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     html_content = re.sub(r'@@MERMAIDBLOCK\d+@@', '', html_content)
     html_content = re.sub(r'@@IMAGEBLOCK\d+@@', '', html_content)
     html_content = re.sub(r'@@MATHBLOCK\d+@@', '', html_content)
+    html_content = re.sub(r'@@BLANKBLOCK\d+@@', '', html_content)
 
     h2_counter = 0
 
@@ -215,14 +251,24 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 <head>
 <meta charset="utf-8">
 <title>{course.name if course else '文档'} - {doc_type}</title>
-<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.css">
-<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+{_katex_assets()}
+<script async src="https://cdn.bootcdn.net/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {{
-        renderMathInElement(document.body, {{ delimiters: [{{left: '$$', right: '$$', display: true}}, {{left: '$', right: '$', display: false}}], throwOnError: false }});
-        mermaid.initialize({{ startOnLoad: true, theme: 'default', flowchart: {{ useMaxWidth: false }} }});
+        if (window.renderMathInElement) {{
+            renderMathInElement(document.body, {{ delimiters: [{{left: '$$', right: '$$', display: true}}, {{left: '$', right: '$', display: false}}], throwOnError: false }});
+        }}
+        if (window.mermaid) {{
+            mermaid.initialize({{ startOnLoad: true, theme: 'default', flowchart: {{ useMaxWidth: false }} }});
+        }} else {{
+            // Mermaid 未加载（离线/被墙）时，把源码显示成可读文本，而不是空白
+            setTimeout(function() {{
+                document.querySelectorAll('.mermaid-container').forEach(function(box) {{
+                    var code = box.querySelector('.mermaid');
+                    if (code) box.innerHTML = '<pre style="white-space:pre-wrap;text-align:left;font-size:13px;">' + code.textContent.trim() + '</pre>';
+                }});
+            }}, 2500);
+        }}
     }});
     function showModal(title, content) {{
         document.getElementById('modalTitle').innerText = title;
@@ -348,6 +394,8 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     .toc-box a {{ color: #333333; text-decoration: none; }}
     h2.chapter-title {{ font-size: 24px; color: #0056b3; margin-top: 60px; padding-left: 12px; border-left: 5px solid #007AFF; }}
 
+    .blank-space {{ border-bottom: 1px dashed #c9c9c9; margin: 12px 0 22px; }}
+    @media print {{ .blank-space {{ border-bottom: 1px dashed #bbb; }} }}
     .meta-info, p > .meta-info {{ font-size: 12px !important; color: #999 !important; background: transparent !important; border-left: none !important; padding: 0 !important; margin: 4px 0 !important; display: inline-block; }}
     blockquote {{ display: none; }} 
 </style>

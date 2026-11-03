@@ -167,7 +167,10 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
 2. 页码必须来自资料；找不到就写“资料未标注页码”。
 3. 这段资料如果没有可考内容，直接输出“无”，不要硬凑。"""
     else:
-        ans_req = "必须在每道题下方附带【答案】和【解析】。" if with_answer else "仅输出题目。"
+        if with_answer:
+            ans_req = "必须在每道题下方附带【答案】和【解析】。"
+        else:
+            ans_req = "仅输出题目，不要给答案。"
         sys_prompt = f"""【系统角色】资深资料提取专家。
 【任务】请从提供的资料中，原封不动地提取出所有的【原题】。
 🚨 1. 严禁瞎编！资料里没有的题绝对不准出！如果只有计算题，就不准出选择题！
