@@ -12,7 +12,7 @@ PDF 自带渲染器，矢量图与位图一视同仁。
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import fitz

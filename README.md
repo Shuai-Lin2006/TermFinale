@@ -5,6 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)
 ![Status](https://img.shields.io/badge/status-beta-orange)
+![CI](https://github.com/Shuai-Lin2006/TermFinale/actions/workflows/ci.yml/badge.svg)
 
 TermFinale 是一个面向大学生的**桌面端期末复习工具**：导入 PPT / PDF / Word，本地解析文本与图形，结合你的考试信息规划大纲，逐章生成讲义、逻辑图、考点清单和模拟试卷，最后输出成可以直接打印的单文件 HTML。
 
@@ -202,6 +203,18 @@ python -m tests.test_weights
 python -m tests.test_maintenance
 python -m tests.test_config
 ```
+
+## 评测
+
+```bash
+# 只测解析（不调用 AI、不花钱）
+python tools/evaluate.py ~/Desktop/a.pdf ~/Desktop/b.pptx
+
+# 加测 AI 环节（会产生费用）
+python tools/evaluate.py ~/Desktop/a.pdf --ai extract,exam,guide
+```
+
+报告写到 `evaluation/report_<时间>.md`（含机器指标 + 人工评分表），评测数据目录隔离在 `_backup/eval_home`，不会污染你的课程库。
 
 ## 打包
 
