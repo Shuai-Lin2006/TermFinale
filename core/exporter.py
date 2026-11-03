@@ -25,7 +25,8 @@ def _katex_assets() -> str:
         roots.append(_Path(_sys._MEIPASS))
     roots.append(_Path(_sys.executable).resolve().parent)
     roots.append(_Path(__file__).resolve().parent)
-    rels = ("core/assets/katex", "Resources/core/assets/katex", "../Resources/core/assets/katex")
+    rels = ("assets/katex", "core/assets/katex",
+            "Resources/core/assets/katex", "../Resources/core/assets/katex")
     for root in roots:
         for rel in rels:
             base = (root / rel).resolve()
