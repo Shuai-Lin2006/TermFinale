@@ -19,19 +19,28 @@ import sys as _sys
 
 
 def _katex_assets() -> str:
-    """内联 KaTeX（含字体），避免离线/CDN 被墙时公式显示成源码。"""
-    base = _Path(getattr(_sys, "_MEIPASS", "")) / "core" / "assets" / "katex"
-    if not base.is_dir():
-        base = _Path(__file__).resolve().parent / "assets" / "katex"
-    try:
-        css = (base / "katex.inline.css").read_text(encoding="utf-8")
-        js = (base / "katex.min.js").read_text(encoding="utf-8")
-        auto = (base / "auto-render.min.js").read_text(encoding="utf-8")
-    except OSError:
-        return ('<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.css">'
-                '<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>'
-                '<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js"></script>')
-    return f"<style>{css}</style>\n<script>{js}</script>\n<script>{auto}</script>"
+    """内联 KaTeX（含字体），避免离线/CDN 被墙时公式变成源码或整页白屏。"""
+    roots = []
+    if getattr(_sys, "_MEIPASS", ""):
+        roots.append(_Path(_sys._MEIPASS))
+    roots.append(_Path(_sys.executable).resolve().parent)
+    roots.append(_Path(__file__).resolve().parent)
+    rels = ("core/assets/katex", "Resources/core/assets/katex", "../Resources/core/assets/katex")
+    for root in roots:
+        for rel in rels:
+            base = (root / rel).resolve()
+            if (base / "katex.inline.css").is_file():
+                try:
+                    css = (base / "katex.inline.css").read_text(encoding="utf-8")
+                    js = (base / "katex.min.js").read_text(encoding="utf-8")
+                    auto = (base / "auto-render.min.js").read_text(encoding="utf-8")
+                    return f"<style>{css}</style>\n<script>{js}</script>\n<script>{auto}</script>"
+                except OSError:
+                    break
+    # 兜底：异步 CDN，不阻塞页面渲染
+    return ('<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.css">'
+            '<script async src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>'
+            '<script async src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js"></script>')
 
 
 def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=None, persona: str = "老师",
