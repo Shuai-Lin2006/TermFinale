@@ -18,6 +18,107 @@ IMG_DIR = str(paths.assets_dir())
 paths.ensure_dirs()
 
 FIG_DPI = 180
+OCR_DPI = 120
+_OCR_CACHE_FILE = paths.debug_dir() / "ocr_cache.json"
+_ocr_cache: dict | None = None
+_OCR_PROMPT = (
+    "把这张图片里的所有文字按阅读顺序完整转录为纯文本。\n"
+    "要求：1) 不要总结、不要解释、不要遗漏；2) 保留题号、选项、编号与分行；"
+    "3) 公式用 $...$ 包裹；4) 只输出转录结果。"
+)
+
+
+def _load_ocr_cache() -> dict:
+    global _ocr_cache
+    if _ocr_cache is None:
+        try:
+            _ocr_cache = json.loads(_OCR_CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            _ocr_cache = {}
+    return _ocr_cache
+
+
+def _save_ocr_cache() -> None:
+    try:
+        paths.ensure_dirs()
+        _OCR_CACHE_FILE.write_text(json.dumps(_ocr_cache or {}, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _clean_ocr_text(text: str) -> str:
+    """qwen-vl-ocr 常返回 ```html 包裹的 HTML，这里转成纯文本。"""
+    import html as html_lib
+
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\s*", "", text)
+        text = re.sub(r"\s*```$", "", text).strip()
+    if "<" in text and ">" in text:
+        text = re.sub(r"</p>|<br\s*/?>|</div>", "\n", text, flags=re.IGNORECASE)
+        text = re.sub(r"<[^>]+>", "", text)
+        text = html_lib.unescape(text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _ocr_page(page, model: str | None = None) -> str:
+    """把一页渲染成图，交给视觉模型转录成文字。"""
+    from openai import OpenAI
+    from core.config import get_key, vision_model
+
+    pix = page.get_pixmap(dpi=OCR_DPI)
+    png = pix.tobytes("png")
+    digest = hashlib.md5(png).hexdigest()
+    cache = _load_ocr_cache()
+    if digest in cache:
+        return cache[digest]
+
+    client = OpenAI(api_key=get_key("DASHSCOPE_API_KEY", "sk-not-configured"),
+                    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+    import base64
+    b64 = base64.b64encode(png).decode()
+    ocr_model = model or os.getenv("TERMFINALE_OCR_MODEL", "qwen-vl-ocr")
+    resp = client.chat.completions.create(
+        model=ocr_model,
+        max_tokens=4096,
+        messages=[{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+            {"type": "text", "text": _OCR_PROMPT},
+        ]}],
+    )
+    text = _clean_ocr_text(resp.choices[0].message.content or "")
+    cache[digest] = text
+    _save_ocr_cache()
+    return text
+
+
+def _ocr_pages(doc, on_progress=None) -> dict:
+    """扫描件整本 OCR：返回 {页码(1-based): 文本}。"""
+    pages = list(range(len(doc)))
+    total = len(pages)
+    out: dict = {}
+    if on_progress:
+        on_progress(0, total, "ocr")
+
+    def work(pno):
+        try:
+            return pno, _ocr_page(doc[pno])
+        except Exception as exc:  # noqa: BLE001
+            logger.error("OCR 第 {} 页失败: {}", pno + 1, exc)
+            return pno, ""
+
+    workers = max(1, min(4, int(os.getenv("TERMFINALE_VISION_CONCURRENCY", "4") or 4)))
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(work, pno): pno for pno in pages}
+        for future in as_completed(futures):
+            pno, text = future.result()
+            out[pno + 1] = text
+            done += 1
+            if on_progress:
+                on_progress(done, total, "ocr")
+    return out
 _DISABLE_VISION = os.getenv("TERMFINALE_DISABLE_VISION", "").strip().lower() in ("1", "true", "yes")
 
 
@@ -78,7 +179,7 @@ def resolve_captions(figs: list, on_progress=None) -> dict:
 
     total = len(pending)
     if on_progress and total:
-        on_progress(0, total)
+        on_progress(0, total, "caption")
 
     def work(item):
         fig, digest = item
@@ -99,7 +200,7 @@ def resolve_captions(figs: list, on_progress=None) -> dict:
                 if digest:
                     cache[digest] = caption or ""
                 if on_progress:
-                    on_progress(index, total)
+                    on_progress(index, total, "caption")
         _save_caption_cache()
     return result
 
@@ -182,10 +283,24 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
             doc = fitz.open(file_path)
             try:
                 # 先把整份文档的图形区域渲染出来（矢量图也能出），再按 y 坐标插回文本流
-                figs_by_page = figure_lib.extract_figures(doc, IMG_DIR, dpi=FIG_DPI)
-                all_figs = [f for group in figs_by_page.values() for f in group]
-                captions = resolve_captions(all_figs, on_progress)
+                scanned = sum(len(doc[i].get_text().strip()) for i in range(len(doc))) < 50
+                ocr_map: dict = {}
+                if scanned:
+                    logger.info("检测到扫描版 PDF（无文字层），启用视觉 OCR")
+                    ocr_map = _ocr_pages(doc, on_progress)
+                    figs_by_page, captions = {}, {}
+                else:
+                    figs_by_page = figure_lib.extract_figures(doc, IMG_DIR, dpi=FIG_DPI)
+                    all_figs = [f for group in figs_by_page.values() for f in group]
+                    captions = resolve_captions(all_figs, on_progress)
+
                 for page_num in range(len(doc)):
+                    if ocr_map:
+                        body = ocr_map.get(page_num + 1, "").strip()
+                        if body:
+                            all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{body}")
+                        continue
+
                     page = doc[page_num]
                     text_blocks = [b for b in page.get_text("blocks") if b[6] == 0]
 

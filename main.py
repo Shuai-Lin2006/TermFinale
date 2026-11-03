@@ -1196,11 +1196,22 @@ class TermFinaleApp(ctk.CTk):
             self.selected_materials.append((m, var))
 
     def get_selected_texts(self):
+        """解析勾选的资料；扫描件会自动走 OCR（首次较慢，之后有缓存）。"""
         texts = []
-        for m, var in self.selected_materials:
-            if var.get():
-                pages = extract_text_from_file(m.file_path)
-                texts.extend(pages)
+        chosen = [m for m, var in self.selected_materials if var.get()]
+        if len(chosen) and any(not getattr(self, "_parse_hint_shown", False) for _ in [0]):
+            Toast.show(self, "正在解析资料，扫描件需要 OCR，请稍候…", "info", 4000)
+            try:
+                self.update_idletasks()
+                self.update()
+            except Exception:
+                pass
+            self._parse_hint_shown = True
+        for m in chosen:
+            pages = extract_text_from_file(m.file_path)
+            if not pages:
+                logger.warning("资料未解析出内容: {}", m.filename)
+            texts.extend(pages)
         return "\n\n".join(texts)
 
     def show_ai_analysis(self, course, index):
@@ -1217,7 +1228,7 @@ class TermFinaleApp(ctk.CTk):
 
         def start():
             text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "请勾选有效资料！"); return
+            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
             self.run_generation_task(course, index, "analysis", text, mode="bundle")
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
@@ -1245,7 +1256,7 @@ class TermFinaleApp(ctk.CTk):
 
         def start():
             text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "请勾选有效资料！"); return
+            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
             self.run_generation_task(course, index, "extract", text, extract_type=type_var.get(),
                                      with_answer=ans_var.get())
 
@@ -1379,7 +1390,7 @@ class TermFinaleApp(ctk.CTk):
 
         def start():
             text = self.get_selected_texts()
-            if not text: messagebox.showerror(self.t("error"), "请勾选有效资料！"); return
+            if not text: messagebox.showerror(self.t("error"), "没有解析到文字：确认已勾选资料；若是扫描版 PDF，首次会自动 OCR，稍等即可。"); return
             diff_val = int(diff_var.get()[0])
             diy_config = ""
             if paper_mode_var.get() == "diy":

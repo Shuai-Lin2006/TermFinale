@@ -180,9 +180,11 @@ def run_guide(
         if stop_event.is_set():
             return None
         on_progress(ProgressEvent(f"📖 正在解析文件: {material.filename}...", 0.08))
-        def _parse_progress(done: int, total: int, _name: str = material.filename):
+        def _parse_progress(done: int, total: int, stage: str = "caption",
+                            _name: str = material.filename):
+            label = "正在 OCR 扫描页" if stage == "ocr" else "正在识别配图"
             on_progress(ProgressEvent(
-                f"🖼️ 正在识别配图：{_name}（{done}/{total}）",
+                f"🖼️ {label}：{_name}（{done}/{total}）",
                 0.05 + 0.06 * (done / max(1, total))))
 
         pages = extract_text_from_file(material.file_path, on_progress=_parse_progress)
