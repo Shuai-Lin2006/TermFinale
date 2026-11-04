@@ -362,7 +362,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     li strong {{ color: #007AFF; font-size: 16px; }}
     p {{ margin-bottom: 16px; line-height: 1.8; white-space: pre-wrap; }}
     .img-container {{ text-align: center; margin: 20px auto; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee; max-width: 95%; }}
-    .img-responsive {{ max-width: 92%; height: auto; max-height: 420px; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }}
+    .img-responsive {{ max-width: 92%; height: auto; max-height: 360px; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }}
     .img-caption {{ color: #666; font-size: 14px; margin-top: 10px; font-weight: 500; }}
 
     /* 🚨 防止白屏：如果渲染失败，至少有个虚线框提示 */

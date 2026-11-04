@@ -357,3 +357,5 @@ button{font-family:inherit}
 .doc code{background:var(--paper-2);padding:1px 5px;border-radius:4px;font-size:.92em}
 .doc .kw{border-bottom:1px dashed var(--brand);color:var(--brand);cursor:help}
 .doc hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.doc figure{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 12px 8px}
+.doc figure img{max-height:360px}

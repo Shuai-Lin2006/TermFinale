@@ -158,6 +158,25 @@ def _find_caption(rect: fitz.Rect, text_blocks: list) -> str:
     return best
 
 
+
+
+def _trim_border(img: Image.Image, pad: int = 8) -> Image.Image:
+    """裁掉近白边（PPT 截图常见），让插图更紧凑。"""
+    try:
+        gray = img.convert("L")
+        mask = gray.point(lambda p: 0 if p < 244 else 255)
+        box = mask.getbbox()
+        if not box:
+            return img
+        x0, y0, x1, y1 = box
+        if (x1 - x0) < img.width * 0.35 or (y1 - y0) < img.height * 0.35:
+            return img
+        x0, y0 = max(0, x0 - pad), max(0, y0 - pad)
+        x1, y1 = min(img.width, x1 + pad), min(img.height, y1 + pad)
+        return img.crop((x0, y0, x1, y1))
+    except Exception:  # noqa: BLE001
+        return img
+
 def _is_uniform(img: Image.Image) -> bool:
     """近乎纯色的条带/背景块，没有信息量。"""
     stat = ImageStat.Stat(img.convert("L"))
@@ -235,12 +254,20 @@ def extract_figures(
                 if not label or len(label) > 40 or label == caption:
                     continue
                 label_rect = fitz.Rect(block[:4])
+                # 不要吞进 PPT/页眉标题：顶部 12% 或过大的文字块一律跳过
+                if label_rect.y1 < page.rect.height * 0.12:
+                    continue
+                if label_rect.height > 46 or label_rect.width > page.rect.width * 0.75:
+                    continue
                 if label_rect.intersects(clip):
-                    clip |= label_rect
+                    merged = clip | label_rect
+                    if merged.width * merged.height < page.rect.width * page.rect.height * 0.85:
+                        clip = merged
             clip &= page.rect
             try:
                 pix = page.get_pixmap(clip=clip, dpi=dpi)
                 img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+                img = _trim_border(img)
             except Exception as exc:  # noqa: BLE001
                 logger.debug("渲染失败 p{}: {}", pno + 1, exc)
                 continue
