@@ -1126,12 +1126,29 @@ class TermFinaleApp(ctk.CTk):
             self._progress_value = current
             try:
                 bar.set(current)
-                pct.configure(text=f"{int(current * 100)}%")
+                pct.configure(text="处理中" if current < 0.02 else f"{int(current * 100)}%")
             except Exception:
                 pass
 
         now = time.time()
         elapsed = int(now - getattr(self, "_progress_started", now))
+        # 还没有任何进度事件：用脉冲动画表明“在工作”，不要假装能估算
+        if target <= 0.0 and elapsed >= 3:
+            import math
+            pulse = 0.06 + 0.035 * (1 + math.sin(elapsed * 1.3))
+            try:
+                bar.set(pulse)
+                pct.configure(text="…")
+            except Exception:
+                pass
+            if now - getattr(self, "_last_time_text", 0) >= 1:
+                self._last_time_text = now
+                try:
+                    label.configure(text=f"已用 {elapsed // 60:02d}:{elapsed % 60:02d} · 正在等待模型响应…")
+                except Exception:
+                    return
+            self.after(250, self._tick_progress)
+            return
         if now - getattr(self, "_last_time_text", 0) >= 1:
             self._last_time_text = now
             eta = None

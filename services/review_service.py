@@ -196,6 +196,7 @@ def run_review(
     """task_type: analysis / extract / exam。被中断时返回 None。"""
     stop_event = stop_event or threading.Event()
     started = time.time()
+    on_progress(ProgressEvent("📚 正在整理资料并分块…", 0.04))
     info = build_course_info(course)
     extra_metrics: dict = {}
     warnings: list[str] = []
