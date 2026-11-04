@@ -122,6 +122,19 @@
                     <option value="mock">模拟练习</option><option value="original">原题改数</option>
                     <option value="variant">原题变式</option><option value="predict">预测仿真</option></select></div>
               </div>
+              <div style="margin-top:14px">
+                <div class="tiny muted" style="margin-bottom:6px">自定义题型 / 数量 / 分值（合计必须 100 分）</div>
+                <div id="paperRows"></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+                  <button class="btn ghost sm" id="addPaperRow">+ 加题型</button>
+                  <button class="btn ghost sm" id="applyPreset">按科目推荐</button>
+                  <span class="tiny" id="paperTotal">合计 100 分</span>
+                  <span class="spacer"></span>
+                  <label class="tiny" style="display:flex;align-items:center;gap:6px">
+                    <input type="checkbox" id="referenceExam" style="accent-color:var(--brand)"> 参考历年真题
+                  </label>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -245,6 +258,76 @@
     });
   }
 
+
+  var PAPER_TYPES = ["单项选择题","多项选择题","判断题","填空题","名词解释","简答题","计算题","推断题","综合题",
+    "证明题","翻译题","写作题","阅读理解","完形填空","编程题","案例分析题","论述题"];
+  var SUBJECT_PRESETS = [
+    {keys:["英语","english","外语"], rows:[["单项选择题",10,2],["阅读理解",2,10],["翻译题",2,10],["写作题",1,20]]},
+    {keys:["数学","高数","线代","概率","物理","力学","电磁"], rows:[["单项选择题",6,3],["填空题",4,3],["计算题",4,12],["证明题",1,10]]},
+    {keys:["化学","化工","材料"], rows:[["单项选择题",8,3],["填空题",4,4],["计算题",3,12],["推断题",1,12]]},
+    {keys:["计算机","编程","数据结构","算法","软件"], rows:[["单项选择题",8,3],["填空题",4,4],["简答题",2,10],["编程题",2,14]]},
+    {keys:["医学","临床","护理","药理"], rows:[["单项选择题",10,2],["名词解释",3,6],["简答题",2,10],["案例分析题",2,19]]},
+    {keys:["法学","法律","经济","管理","文学","历史","哲学"], rows:[["单项选择题",10,2],["名词解释",3,6],["简答题",2,10],["论述题",2,24]]}
+  ];
+  var paperRows = [
+    {name:"单项选择题", count:10, points:2},
+    {name:"填空题", count:5, points:2},
+    {name:"计算题", count:3, points:20},
+    {name:"综合题", count:1, points:10}
+  ];
+  function renderPaperRows(){
+    var box = $('paperRows'); if(!box) return;
+    box.innerHTML = paperRows.map(function(r, i){
+      return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px" data-row="'+i+'">'+
+        '<select class="select" data-t="name" style="flex:1">'+PAPER_TYPES.map(function(t){
+          return '<option'+(t===r.name?' selected':'')+'>'+t+'</option>'; }).join('')+'</select>'+
+        '<input class="select" data-t="count" type="number" min="1" value="'+r.count+'" style="width:64px">'+
+        '<span class="tiny muted">题 ×</span>'+
+        '<input class="select" data-t="points" type="number" min="1" value="'+r.points+'" style="width:64px">'+
+        '<span class="tiny muted">分</span>'+
+        '<button class="btn ghost sm" data-rm="'+i+'">×</button></div>';
+    }).join('');
+    box.querySelectorAll('[data-t]').forEach(function(el){
+      el.addEventListener('input', function(){
+        var i = +el.closest('[data-row]').dataset.row;
+        paperRows[i][el.dataset.t] = el.dataset.t === 'name' ? el.value : Math.max(1, +el.value || 1);
+        updatePaperTotal();
+      });
+    });
+    box.querySelectorAll('[data-rm]').forEach(function(b){
+      b.addEventListener('click', function(){ paperRows.splice(+b.dataset.rm,1); renderPaperRows(); updatePaperTotal(); });
+    });
+    updatePaperTotal();
+  }
+  function updatePaperTotal(){
+    var total = paperRows.reduce(function(a,r){ return a + r.count * r.points; }, 0);
+    var el = $('paperTotal'); if(!el) return;
+    el.textContent = '合计 ' + total + ' 分' + (total === 100 ? '' : '（必须等于 100）');
+    el.style.color = total === 100 ? 'var(--ok)' : 'var(--danger)';
+  }
+  function applySubjectPreset(){
+    var c = state.course || {}; var text = ((c.name || '') + ' ' + (c.major || '')).toLowerCase();
+    var preset = null;
+    for(var i=0;i<SUBJECT_PRESETS.length;i++){
+      if(SUBJECT_PRESETS[i].keys.some(function(k){ return text.indexOf(k.toLowerCase()) >= 0; })){ preset = SUBJECT_PRESETS[i]; break; }
+    }
+    if(!preset){ if(window.__toast) window.__toast('没识别到科目，先用通用结构'); return; }
+    paperRows = preset.rows.map(function(r){ return {name:r[0], count:r[1], points:r[2]}; });
+    // 若预设合计不是 100，按比例把最后一题分值补齐
+    var total = paperRows.reduce(function(a,r){ return a + r.count * r.points; }, 0);
+    if(total !== 100 && paperRows.length){
+      var last = paperRows[paperRows.length-1];
+      var need = 100 - (total - last.count * last.points);
+      last.points = Math.max(1, Math.round(need / last.count));
+    }
+    renderPaperRows();
+  }
+  if($('applyPreset')) $('applyPreset').addEventListener('click', applySubjectPreset);
+  if($('addPaperRow')) $('addPaperRow').addEventListener('click', function(){
+    paperRows.push({name:"简答题", count:2, points:10}); renderPaperRows();
+  });
+  renderPaperRows();
+
   function renderMaterials(){
     var box = $('materials');
     if(!state.materials.length){ box.innerHTML = '<div class="tiny muted">这门课还没有资料，先去「我的课程」上传。</div>'; return; }
@@ -331,7 +414,14 @@
     if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value;
       options.strict = $('strictMode').checked; options.page_limit = $('pageLimit').value ? +$('pageLimit').value : null; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
-    if(state.task === 'exam'){ options.num_sets = +$('setsSelect').value; options.difficulty = +$('diffSelect').value; options.train_type = $('trainSelect').value; }
+    if(state.task === 'exam'){
+      var total = paperRows.reduce(function(a,r){ return a + r.count * r.points; }, 0);
+      if(total !== 100){ if(window.__toast) window.__toast('自定义题型合计必须等于 100 分，当前 ' + total); return; }
+      options.num_sets = 1; options.difficulty = +$('diffSelect').value;
+      options.train_type = $('trainSelect').value;
+      options.sections = paperRows.map(function(r){ return {name:r.name, count:r.count, points:r.points}; });
+      options.reference_exam = $('referenceExam').checked;
+    }
 
     fetch('/api/jobs', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ course_id: state.course.id, task: state.task, options: options }) })

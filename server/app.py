@@ -516,6 +516,8 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 user_context={"target_score": course["target_score"]},
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
+                sections=options.get("sections") or None,
+                reference_exam=bool(options.get("reference_exam")),
                 on_progress=job.emit, stop_event=job.stop)
 
         if result is None:

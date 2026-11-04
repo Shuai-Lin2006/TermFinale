@@ -227,41 +227,82 @@ def _qwen_fallback(system: str, user: str, max_tokens: int = 3000) -> str:
         return ""
 
 
-def _generate_sections(raw_text: str, lang: str) -> str:
-    """按大题分四次调用，避免整卷超出单次输出上限。"""
-    sections = [
-        ("一、选择题", "8 题，每题 3 分，共 24 分", "每题 4 个选项 A/B/C/D，各占一行"),
-        ("二、填空题", "4 题，每题 4 分，共 16 分", "每题 1~2 个空"),
-        ("三、计算题", "3 题，每题 12 分，共 36 分", "必须给出完整已知、求、解过程"),
-        ("四、综合题", "2 题，每题 12 分，共 24 分", "综合 2~3 个知识点"),
-    ]
+def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str = "mock",
+                       reference_exam: bool = False) -> str:
+    """按用户给定结构逐题型生成，避免整卷超出单次输出上限。"""
+    if not sections:
+        sections = [("单项选择题", 8, 3), ("填空题", 4, 4), ("计算题", 3, 12), ("综合题", 2, 12)]
+    # 兼容 dict 结构
+    parsed = []
+    for item in sections:
+        if isinstance(item, dict):
+            name = str(item.get("name") or item.get("type") or "题目")
+            count = max(1, int(item.get("count") or 1))
+            points = max(1, int(item.get("points") or 1))
+        else:
+            name, count, points = item
+        parsed.append((name, count, points))
+
     lang_req = "STRICT ENGLISH ONLY." if lang == "English" else "中文作答。"
+    style = {
+        "单项选择题": "每题 4 个选项 A/B/C/D，只有一个正确",
+        "多项选择题": "每题 4~5 个选项，至少两个正确，明确标注多选",
+        "判断题": "每题一句话，判断对错并说明理由",
+        "填空题": "每题 1~2 个空，答案简短",
+        "名词解释": "给出术语，要求解释其定义与要点",
+        "简答题": "问题要能分点作答，答案 3~5 个要点",
+        "计算题": "必须给出完整已知、求、解过程",
+        "推断题": "给出情境或数据，要求推理结论并说明依据",
+        "综合题": "综合 2~3 个知识点，有完整情境与设问层次",
+        "证明题": "给出条件与结论，要求写出完整证明过程",
+        "翻译题": "给出英文/中文段落，要求准确翻译并保留术语",
+        "写作题": "给出题目与要求，字数、体裁明确",
+        "阅读理解": "给出短文与若干选择题，考查理解与推理",
+        "完形填空": "给出短文与选项，考查语境与词汇",
+        "编程题": "给出问题描述与输入输出要求，要求写出代码或算法步骤",
+        "案例分析题": "给出真实案例，要求分析问题、依据与对策",
+        "论述题": "给出观点型问题，要求分点论述并举例",
+    }
+
+    deep = ("题目必须有真实背景或应用情境，设问有层次、有深度，禁止一句话送分题；"
+            "不要出现与资料无关的内容。") if train_type in ("mock", "predict") else (
+            "参考资料中的原题，保留题型与考法；原题改数只改参数，原题变式要改条件组合或设问角度。")
+
+    ref_hint = ("如果资料中包含历年真题，请优先模仿其题型分布、问法与难度。" if reference_exam else "")
     parts = []
-    for title, count, extra in sections:
+    import re as _re
+    for i, (title, count, points) in enumerate(parsed):
+        extra = style.get(title, "按该题型的常规考法命题")
         sys_p = f"""你是大学期末命题老师。{lang_req}
-只出「{title}」这一道大题：{count}。{extra}
-要求：
+本次只出「{title}」这一种题型：{count} 题，每题 {points} 分，共 {count * points} 分。
+题型要求：{extra}
+命题要求：
 - 严格基于给定资料，不超纲、不编造；
+- {deep}
+- {ref_hint}
 - 每题末尾标注【考点：xxx】；
-- 只输出这一个大题，用二级标题 `## {title}（{count}）`，题号从 1 开始；
+- 只输出这一种题型，用二级标题 `## {title}（{count} 题，每题 {points} 分，共 {count * points} 分）`，题号从 1 开始；
 - 不要输出答案或解析。"""
-        md = call_ai_with_retry(sys_p, raw_text[:1200], temp=0.7, min_budget=2048)
+        # 轮换资料片段，避免所有题型都只看第一页
+        start = (i * 1200) % max(1, len(raw_text) - 1200) if len(raw_text) > 1200 else 0
+        chunk = raw_text[start:start + 2200]
+        md = call_ai_with_retry(sys_p, chunk, temp=0.7, min_budget=2048)
         if not md.strip():
-            md = call_ai_with_retry(sys_p, raw_text[:600], temp=0.6, min_budget=2048)
+            md = call_ai_with_retry(sys_p, chunk[:800], temp=0.6, min_budget=2048)
         if not md.strip():
             logger.warning("主模型空返回，切换备用模型：{}", title)
-            md = _qwen_fallback(sys_p, raw_text[:1500], max_tokens=3000)
+            md = _qwen_fallback(sys_p, chunk, max_tokens=2500)
         if md.strip():
             parts.append(md.strip())
     if not parts:
         return ""
-    head = f"# 期末试卷\n**满分：100 分**\n\n"
+    head = "# 期末试卷\n**满分：100 分**\n\n"
     questions = head + "\n\n".join(parts)
     answer_sys = f"""你是答案撰写人。{lang_req}
 按题号输出 `# 答案与解析`：
-- 选择题只给字母；填空题给答案；
-- 计算/综合题给关键步骤与最终结果；
-- 每题解析不超过 2 句，只写考点 + 一个易错点，禁止展开。
+- 选择题给字母；判断题给对/错；填空题给答案；名词解释/简答给要点；
+- 计算/推断/综合给关键步骤与最终结果；
+- 每题解析不超过 2 句，只写考点 + 一个易错点。
 不要重复题目。"""
     answers = call_ai_with_retry(answer_sys, questions[:8000], temp=0.2, min_budget=4096)
     if not answers.strip():
@@ -270,9 +311,14 @@ def _generate_sections(raw_text: str, lang: str) -> str:
 
 
 def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficulty: int = 3, diy_config: str = "", user_note: str = "",
-                        user_context: dict = None, lang: str = "中文", blueprint=None) -> str:
+                        user_context: dict = None, lang: str = "中文", blueprint=None,
+                        sections=None, reference_exam: bool = False) -> str:
+    if sections:
+        return _generate_sections(raw_text, lang, sections=sections,
+                                  train_type=train_type, reference_exam=reference_exam)
     if blueprint is not None and not diy_config:
-        return _generate_sections(raw_text, lang)
+        return _generate_sections(raw_text, lang, train_type=train_type,
+                                  reference_exam=reference_exam)
 
     if diy_config:
         paper_structure = f"【试卷结构（必须严格遵守）】：{diy_config}"

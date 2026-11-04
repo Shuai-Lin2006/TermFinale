@@ -118,7 +118,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                  on_progress: ProgressCb, stop_event: threading.Event,
                  started: float, user_note: str = "") -> tuple[str, dict]:
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    pages = split_pages(text)
+    pages = split_pages(text)[:20]  # 单次最多 20 页，超出请分册
     chunks = pack_pages(pages) if pages else []
     if not chunks:
         return "", {"coverage": 0}
@@ -128,7 +128,16 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
     def work(i: int, chunk: str) -> tuple[int, str]:
         if stop_event.is_set():
             return i, ""
-        return i, generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
+        md = generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
+        if not md.strip():
+            try:
+                from core.exam_engine import _qwen_fallback
+                md = _qwen_fallback(
+                    "你是大学期末复习资料提取助手。只输出结构化考点，中文，不要解释过程。",
+                    chunk[:4000], max_tokens=2500)
+            except Exception:
+                pass
+        return i, md
 
     with ThreadPoolExecutor(max_workers=min(4, len(chunks))) as pool:
         futures = [pool.submit(work, i, c) for i, c in enumerate(chunks)]
@@ -144,9 +153,10 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                 results[i] = md
             done += 1
             on_progress(ProgressEvent(
-                f"🔍 已提取 {done}/{len(chunks)} 个区块（并发 3）...",
+                f"🔍 已提取 {done}/{len(chunks)} 个区块（并发 4）...",
                 done / len(chunks)))
 
+    ok_chunks = sum(1 for r in results if r and r.strip())
     merged, removed = dedupe_markdown("\n\n".join(results))
     coverage = {
         "pages": len(pages),
@@ -200,6 +210,8 @@ def run_review(
     difficulty: int = 3,
     diy_config: str = "",
     user_context: dict | None = None,
+    sections: list | None = None,
+    reference_exam: bool = False,
     lang: str = "中文",
     user_note: str = "",
     on_progress: ProgressCb = noop_progress,
@@ -247,7 +259,8 @@ def run_review(
         markdown = generate_exam_paper(
             text, train_type, num_sets, difficulty,
             diy_config=diy_config, user_note=user_note,
-            user_context=user_context, lang=lang, blueprint=blueprint)
+            user_context=user_context, lang=lang, blueprint=blueprint,
+            sections=sections, reference_exam=reference_exam)
         if stop_event.is_set():
             return None
         report = validate_paper(markdown or "", blueprint)
