@@ -228,6 +228,7 @@
 
   /* 统一返回按钮 */
   (function () {
+    if (location.pathname.endsWith('dashboard.html') || location.pathname.endsWith('/')) return;
     var btn = document.createElement('button');
     btn.className = 'btn ghost sm nav-back';
     btn.innerHTML = '← <span data-back-label>返回</span>';
