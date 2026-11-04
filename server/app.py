@@ -25,6 +25,7 @@ from core import config, paths  # noqa: E402
 from core.database import Course, GeneratedFile, Material, Note, get_db_session  # noqa: E402
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
+from core.quality.report import audit_markdown
 from services.task import ProgressEvent  # noqa: E402
 
 WEB = ROOT / "web"
@@ -317,8 +318,12 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         job.status = "done"
         job.progress = 1.0
         job.message = "完成"
+        md_text = getattr(result, "markdown", "") or ""
         job.result = {"output_path": str(result.output_path),
-                      "metrics": getattr(result, "metrics", {}) or {}}
+                      "metrics": getattr(result, "metrics", {}) or {},
+                      "quality": audit_markdown(md_text) if md_text else None}
+        if md_text and not job.result["quality"]["passed"]:
+            job.message = "完成（自检有问题）"
     except Exception as exc:  # noqa: BLE001
         if job.stop.is_set():
             job.status = "cancelled"

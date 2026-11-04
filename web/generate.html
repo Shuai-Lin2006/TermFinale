@@ -158,6 +158,7 @@
             <div class="chip ok" style="margin-bottom:10px"><svg class="icon sm"><use href="#i-check"/></svg>已完成</div>
             <div class="serif" style="font-size:20px;margin-bottom:4px" id="doneTitle">讲义生成好了</div>
             <p class="muted" style="font-size:13px" id="doneMeta"></p>
+            <div class="tiny" id="qualityLine" style="margin:6px 0 2px"></div>
             <a class="btn primary" id="openResult" target="_blank" style="width:100%;justify-content:center;margin-top:8px">
               打开结果
             </a>
@@ -316,6 +317,12 @@
             $('doneMeta').textContent = snap.result && snap.result.metrics && snap.result.metrics.chars
               ? ('共 ' + snap.result.metrics.chars + ' 字') : '文件已保存到本地';
             $('openResult').href = '/reader.html?course=' + state.course.id;
+            var q = snap.result && snap.result.quality;
+            var line = $('qualityLine');
+            if(q){
+              if(q.passed){ line.style.color = 'var(--ok)'; line.textContent = '自检通过 · ' + q.chapters + ' 章 / ' + q.chars + ' 字'; }
+              else { line.style.color = 'var(--danger)'; line.textContent = '⚠️ 自检：' + q.issues.join('；'); }
+            }
           } else if(snap.status === 'cancelled'){ showIdle(); toast('已取消'); }
           else {
             $('runState').style.display = 'none'; $('errState').style.display = 'block';
