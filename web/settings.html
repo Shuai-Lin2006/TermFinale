@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设置 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=8">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><div class="brand-mark">TF</div>
+      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item active"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot"><div class="user"><div class="avatar">林</div>
+      <div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="search"><svg class="icon sm"><use href="#i-gear"/></svg>设置</div>
+      <div class="spacer"></div>
+      <span class="chip" id="apiState">连接中…</span>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div><h1 class="page-title">设置</h1>
+          <div class="page-sub" id="sub">Key、模型、外观与数据</div></div>
+      </div>
+
+      <div class="grid-2" style="grid-template-columns:minmax(0,1fr) 380px">
+        <div>
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 12px"><h2>API Key</h2><div class="line"></div>
+              <span class="tiny muted">只存本机</span></div>
+
+            <div class="set-row"><div class="k">DeepSeek</div>
+              <div class="v">
+                <input class="select" id="dsKey" type="password" placeholder="已配置，留空表示不修改" style="width:100%">
+                <div class="tiny muted" id="dsState" style="margin-top:6px">—</div>
+              </div></div>
+
+            <div class="set-row"><div class="k">阿里云百炼</div>
+              <div class="v">
+                <input class="select" id="qwKey" type="password" placeholder="已配置，留空表示不修改" style="width:100%">
+                <div class="tiny muted" id="qwState" style="margin-top:6px">用于图片理解、扫描 OCR、音频转写</div>
+              </div></div>
+
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button class="btn primary" id="saveKeys">保存</button>
+              <button class="btn" id="testKeys">测试连接</button>
+              <span class="tiny muted" id="keyMsg" style="align-self:center"></span>
+            </div>
+          </section>
+
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 12px"><h2>模型</h2><div class="line"></div>
+              <span class="tiny muted">可在 .env 覆盖</span></div>
+            <div id="models"></div>
+          </section>
+
+          <section class="card" style="padding:18px 20px">
+            <div class="section-head" style="margin:0 0 12px"><h2>数据与缓存</h2><div class="line"></div>
+              <button class="btn ghost sm" id="prune">清理调试缓存</button></div>
+            <div id="paths"></div>
+            <div id="cache" style="margin-top:12px"></div>
+          </section>
+        </div>
+
+        <aside>
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 12px"><h2>外观</h2><div class="line"></div></div>
+            <div class="tiny muted" style="margin-bottom:6px">模式</div>
+            <div class="tp-seg" id="modeSeg" style="background:var(--paper-2)">
+              <button data-t="light">亮色</button><button data-t="dark">暗色</button>
+            </div>
+            <div class="tiny muted" style="margin:12px 0 8px">强调色</div>
+            <div class="swatches" id="accentRow">
+              <button data-accent="graphite"></button><button data-accent="indigo"></button>
+              <button data-accent="teal"></button><button data-accent="clay"></button><button data-accent="plum"></button>
+            </div>
+          </section>
+
+          <section class="card" style="padding:18px 20px">
+            <div class="section-head" style="margin:0 0 12px"><h2>关于</h2><div class="line"></div></div>
+            <div class="set-row"><div class="k">版本</div><div class="v" id="version">—</div></div>
+            <div class="set-row"><div class="k">构建</div><div class="v" id="build">—</div></div>
+            <div class="set-row"><div class="k">开发者</div><div class="v">Lan</div></div>
+            <p class="note" style="margin:10px 0 0">本地优先：资料只在本机解析，Key 只保存在本机 .env。</p>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=8"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var toast = window.__toast || function(){};
+  var html = document.documentElement;
+
+  function syncTheme(){
+    document.querySelectorAll('#modeSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === html.dataset.theme); });
+    document.querySelectorAll('#accentRow button').forEach(function(b){ b.classList.toggle('on', b.dataset.accent === html.dataset.accent); });
+  }
+  document.querySelectorAll('#modeSeg button').forEach(function(b){
+    b.addEventListener('click', function(){ html.dataset.theme = b.dataset.t; localStorage.setItem('tf-theme', b.dataset.t); syncTheme(); });
+  });
+  document.querySelectorAll('#accentRow button').forEach(function(b){
+    b.addEventListener('click', function(){ html.dataset.accent = b.dataset.accent; localStorage.setItem('tf-accent', b.dataset.accent); syncTheme(); });
+  });
+  syncTheme();
+
+  function load(){
+    return fetch('/api/settings').then(function(r){ return r.json(); }).then(function(d){
+      $('apiState').textContent = '已连接';
+      $('sub').textContent = 'v' + d.version + ' · ' + d.build_time;
+      $('version').textContent = 'v' + d.version;
+      $('build').textContent = d.build_time;
+      $('dsState').textContent = d.keys.deepseek.configured ? ('已配置 · 尾号 ' + d.keys.deepseek.tail) : '未配置';
+      $('qwState').textContent = d.keys.dashscope.configured ? ('已配置 · 尾号 ' + d.keys.dashscope.tail) : '未配置';
+      $('dsKey').placeholder = d.keys.deepseek.configured ? '已配置，留空表示不修改' : 'sk-...';
+      $('qwKey').placeholder = d.keys.dashscope.configured ? '已配置，留空表示不修改' : 'sk-...';
+
+      $('models').innerHTML = [
+        ['文本生成', d.models.text], ['图片理解', d.models.vision],
+        ['扫描 OCR', d.models.ocr], ['音频转写', d.models.asr]
+      ].map(function(x){ return '<span class="model-chip"><span>' + x[0] + '</span>' + x[1] + '</span>'; }).join('')
+        + '<span class="model-chip"><span>并发</span>' + d.concurrency + '</span>';
+
+      $('paths').innerHTML = [
+        ['数据目录', d.paths.data], ['输出目录', d.paths.outputs], ['Key 文件', d.paths.env]
+      ].map(function(x){
+        return '<div class="path-line"><span>' + x[0] + '</span><span class="grow">' + x[1] + '</span>' +
+          '<button class="btn ghost sm" data-copy="' + x[1] + '" style="padding:2px 6px"><svg class="icon sm"><use href="#i-copy"/></svg></button></div>';
+      }).join('');
+      $('paths').querySelectorAll('[data-copy]').forEach(function(b){
+        b.addEventListener('click', function(){
+          navigator.clipboard.writeText(b.dataset.copy).then(function(){ toast('路径已复制'); });
+        });
+      });
+
+      var cache = d.cache;
+      $('cache').innerHTML = ['assets', 'debug', 'logs', 'outputs'].map(function(k){
+        var c = cache[k] || {files:0, human:'0 B'};
+        return '<div class="cache-row"><span>' + ({assets:'解析图片',debug:'调试产物',logs:'日志',outputs:'生成文件'})[k] +
+          '</span><b>' + c.files + ' 个 · ' + c.human + '</b></div>';
+      }).join('');
+    }).catch(function(){
+      $('apiState').textContent = '未连接';
+    });
+  }
+
+  $('saveKeys').addEventListener('click', function(){
+    fetch('/api/settings/keys', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ deepseek: $('dsKey').value, dashscope: $('qwKey').value }) })
+      .then(function(){ $('dsKey').value = ''; $('qwKey').value = ''; $('keyMsg').textContent = '已保存'; toast('已保存'); load(); });
+  });
+
+  $('testKeys').addEventListener('click', function(){
+    $('keyMsg').textContent = '测试中…';
+    fetch('/api/settings/test', { method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' })
+      .then(function(r){ return r.json(); }).then(function(d){
+        var parts = [];
+        if(d.deepseek) parts.push('DeepSeek ' + (d.deepseek === 'ok' ? '✅' : '❌'));
+        if(d.dashscope) parts.push('百炼 ' + (d.dashscope === 'ok' ? '✅' : '❌'));
+        $('keyMsg').textContent = parts.join(' · ') || '没有可测试的 Key';
+      });
+  });
+
+  $('prune').addEventListener('click', function(){
+    fetch('/api/settings/prune', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ keep: 100 }) }).then(function(r){ return r.json(); })
+      .then(function(d){ toast('已清理 ' + d.removed + ' 个文件，释放 ' + Math.round((d.freed||0)/1024) + ' KB'); load(); });
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

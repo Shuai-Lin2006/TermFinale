@@ -395,3 +395,17 @@ button{font-family:inherit}
 .up-item{display:flex;align-items:center;gap:10px;font-size:12.5px;margin:8px 0}
 .up-item .track{flex:1;height:5px;border-radius:99px;background:var(--paper-2);overflow:hidden}
 .up-item .track i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
+/* ---------- 设置 ---------- */
+.set-row{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.set-row:last-child{border-bottom:0}
+.set-row .k{width:120px;flex:0 0 auto;font-size:12.5px;color:var(--muted);padding-top:8px}
+.set-row .v{flex:1;min-width:0}
+.model-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);
+  border-radius:9px;font-size:12.5px;margin:0 8px 8px 0;background:var(--card)}
+.model-chip span{color:var(--faint);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.path-line{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  padding:6px 8px;border-radius:7px;background:var(--paper);margin-bottom:6px;word-break:break-all}
+.path-line .grow{flex:1;min-width:0}
+.cache-row{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--line-2)}
+.cache-row:last-child{border-bottom:0}
+.cache-row b{margin-left:auto;font-weight:600}

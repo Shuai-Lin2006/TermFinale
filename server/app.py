@@ -397,6 +397,52 @@ async def ask(payload: dict):
     return {"answer": await asyncio.to_thread(_answer, payload)}
 
 
+@app.get("/api/settings")
+def settings_info():
+    from core import maintenance
+    from core.build_info import BUILD_TIME, VERSION
+    return {
+        "keys": key_status(),
+        "models": {"text": config.text_model(), "vision": config.vision_model(),
+                   "ocr": os.getenv("TERMFINALE_OCR_MODEL", "qwen-vl-ocr"),
+                   "asr": os.getenv("TERMFINALE_ASR_MODEL", "qwen3-asr-flash")},
+        "paths": {"data": str(paths.data_dir()), "env": str(config.user_env_path()),
+                  "outputs": str(paths.outputs_dir()), "assets": str(paths.assets_dir())},
+        "cache": maintenance.cache_report(),
+        "version": VERSION, "build_time": BUILD_TIME,
+        "concurrency": os.getenv("TERMFINALE_CONCURRENCY", "2"),
+    }
+
+
+@app.post("/api/settings/prune")
+def prune_cache(payload: dict | None = None):
+    from core import maintenance
+    keep = int((payload or {}).get("keep", 100))
+    return maintenance.prune_debug(keep)
+
+
+@app.post("/api/settings/test")
+async def test_keys(payload: dict):
+    from openai import OpenAI
+
+    def check(api_key: str, base: str) -> str:
+        try:
+            OpenAI(api_key=api_key, base_url=base).models.list()
+            return "ok"
+        except Exception as exc:  # noqa: BLE001
+            return f"{type(exc).__name__}: {exc}"
+
+    out = {}
+    if payload.get("deepseek") or config.get_key("DEEPSEEK_API_KEY"):
+        key = (payload.get("deepseek") or "").strip() or config.get_key("DEEPSEEK_API_KEY")
+        out["deepseek"] = await asyncio.to_thread(check, key, "https://api.deepseek.com")
+    if payload.get("dashscope") or config.get_key("DASHSCOPE_API_KEY"):
+        key = (payload.get("dashscope") or "").strip() or config.get_key("DASHSCOPE_API_KEY")
+        out["dashscope"] = await asyncio.to_thread(
+            check, key, "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    return out
+
+
 @app.get("/api/settings/keys")
 def key_status():
     def mask(name: str):
@@ -489,6 +535,11 @@ def _page(name: str) -> FileResponse:
 @app.get("/dashboard.html")
 def dashboard():
     return _page("dashboard.html")
+
+
+@app.get("/settings.html")
+def settings_page():
+    return _page("settings.html")
 
 
 @app.get("/upload.html")
