@@ -352,7 +352,7 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                         if caption is None:  # 装饰图，丢弃
                             continue
                         items.append((fig.bbox[1], fig.bbox[0],
-                                      f"[[[IMAGE: {fig.filename} | 图注: {caption}]]]"))
+                                      f"[[[IMAGE: {fig.filename} | 图注: {caption}（第 {page_num + 1} 页）]]]"))
 
                     items.sort(key=lambda item: (item[0], item[1]))
                     page_text = "\n".join(item[2] for item in items)

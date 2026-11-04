@@ -321,7 +321,8 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         md_text = getattr(result, "markdown", "") or ""
         job.result = {"output_path": str(result.output_path),
                       "metrics": getattr(result, "metrics", {}) or {},
-                      "quality": audit_markdown(md_text) if md_text else None}
+                      "quality": audit_markdown(md_text, source_tags=text.count("[[[IMAGE:"))
+                      if md_text else None}
         if md_text and not job.result["quality"]["passed"]:
             job.message = "完成（自检有问题）"
     except Exception as exc:  # noqa: BLE001
