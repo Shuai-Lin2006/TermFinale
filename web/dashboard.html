@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TermFinale · 今日冲刺</title>
 <link rel="stylesheet" href="assets/app.css?v=13">
+<script>
+fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
+  if(!p.onboarded){ location.replace('welcome.html'); return; }
+  if(p.name){
+    document.addEventListener('DOMContentLoaded', function(){
+      var t=document.querySelector('.page-title');
+      if(t) t.textContent = (new Date().getHours()<12?'上午好，':(new Date().getHours()<18?'下午好，':'晚上好，')) + p.name;
+      document.querySelectorAll('b').forEach(function(el){ if(el.textContent==='林同学') el.textContent=p.name; });
+    });
+  }
+}).catch(function(){});
+</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
