@@ -160,6 +160,29 @@
     else toast('复制失败');
   });
 
+
+  /* 图片点击放大 */
+  var lightbox = null;
+  document.addEventListener('click', function (e) {
+    var img = e.target.closest && e.target.closest('.doc figure img');
+    if (img) {
+      if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.className = 'tf-lightbox';
+        lightbox.innerHTML = '<img alt=""><div class="hint">点击任意处关闭 · Esc</div>';
+        document.body.appendChild(lightbox);
+        lightbox.addEventListener('click', function () { lightbox.classList.remove('show'); });
+      }
+      lightbox.querySelector('img').src = img.src;
+      lightbox.classList.add('show');
+      return;
+    }
+    if (lightbox && e.target === lightbox) lightbox.classList.remove('show');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && lightbox) lightbox.classList.remove('show');
+  });
+
   /* 导航高亮 */
   document.querySelectorAll('.nav-item').forEach(function (item) {
     item.addEventListener('click', function () {

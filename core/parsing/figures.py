@@ -81,9 +81,22 @@ def _is_decorative(rect: fitz.Rect, page: fitz.Page) -> bool:
 
 def _collect_candidates(page: fitz.Page) -> list[_Cand]:
     cands: list[_Cand] = []
+    pw, ph = page.rect.width, page.rect.height
     for d in page.get_drawings():
         rect = fitz.Rect(d["rect"])
         if _is_decorative(rect, page):
+            continue
+        area_ratio = rect.width * rect.height / max(1.0, pw * ph)
+        # 整页宽/高的细线（页眉横线、边框、分隔线）会把多个图连成一张，直接忽略
+        if rect.height < 4 and rect.width > pw * 0.5:
+            continue
+        if rect.width < 4 and rect.height > ph * 0.5:
+            continue
+        # 全页背景板（常见于 PPT 导出的 PDF）：白色或接近铺满，绝不能参与聚簇
+        if area_ratio > 0.9:
+            continue
+        fill = d.get("fill")
+        if fill and min(fill) > 0.95 and area_ratio > 0.25:
             continue
         cands.append(_Cand(rect, "vector"))
     for info in page.get_image_info():
