@@ -1,6 +1,7 @@
 import markdown
 import re
 import os
+import json
 import base64
 
 
@@ -440,5 +441,34 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     </script>
 </body>
 </html>"""
+    # 阅读器增强：三栏目录/速查 + 选中提问（问答令牌由本地桥提供）
+    try:
+        assets = _Path(__file__).resolve().parent / "assets"
+        reader_css = (assets / "reader.css").read_text(encoding="utf-8")
+        reader_js = (assets / "reader.js").read_text(encoding="utf-8")
+    except OSError:
+        reader_css = reader_js = ""
+
+    bridge = None
+    try:
+        from core.local_bridge import bridge_config
+        bridge = bridge_config()
+    except Exception:  # noqa: BLE001
+        bridge = None
+    course_name = ""
+    if course:
+        course_name = course.get("name", "") if isinstance(course, dict) else getattr(course, "name", "")
+
+    head_extra = (f"<style>{reader_css}</style>\n"
+                  f"<script>window.TF_BRIDGE={json.dumps(bridge)};"
+                  f"window.TF_COURSE={json.dumps(course_name, ensure_ascii=False)};</script>")
+    head_at = html_template.rfind("</head>")
+    if head_at != -1:
+        html_template = html_template[:head_at] + head_extra + "\n" + html_template[head_at:]
+    body_at = html_template.rfind("</body>")
+    if body_at != -1:
+        html_template = (html_template[:body_at] + f"<script>{reader_js}</script>\n"
+                         + html_template[body_at:])
+
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html_template)

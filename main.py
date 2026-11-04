@@ -194,6 +194,14 @@ class TermFinaleApp(ctk.CTk):
         else:
             self.show_dashboard()
 
+        try:
+            from core.local_bridge import start_bridge
+            start_bridge()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("问答桥启动失败: {}", exc)
+
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
     def t(self, key):
         return TRANSLATIONS[self.current_lang].get(key, key)
 
@@ -1411,6 +1419,14 @@ class TermFinaleApp(ctk.CTk):
 
         ctk.CTkButton(scroll, text=self.t("generate_btn"), font=FONT_H2, height=50, fg_color=ACCENT_COLOR,
                       command=start).pack(anchor="e", pady=30, padx=60)
+
+    def _on_close(self):
+        try:
+            from core.local_bridge import stop_bridge
+            stop_bridge()
+        except Exception:
+            pass
+        self.destroy()
 
     def _parse_and_run(self, course, index, task_type, **kwargs):
         """在后台解析选中的资料（扫描件 OCR 很慢），完成后再进入生成流程。"""
