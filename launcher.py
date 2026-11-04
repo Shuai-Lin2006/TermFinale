@@ -58,6 +58,15 @@ def _notify(text: str, where: str | None) -> None:
 
 def main() -> None:
     try:
+        if os.getenv("TERMFINALE_UI", "web").strip().lower() != "tk":
+            try:
+                from desktop import main as web_main
+
+                if web_main() == 0:
+                    return
+            except Exception:
+                write_crash("WebView 外壳启动失败，回退 Tk 界面\n" + traceback.format_exc())
+
         import main as app_main
 
         app_main.run()

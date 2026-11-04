@@ -13,7 +13,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 datas = []
 datas += collect_data_files("customtkinter")   # 主题/皮肤资源，缺了会启动即崩
 datas += collect_data_files("certifi")
-datas += [("core/assets", "core/assets")]         # HTTPS 证书
+datas += [("core/assets", "core/assets")]
+datas += [("web", "web")]                         # 新 Web UI 静态资源
 
 hiddenimports = [
     "fitz",
@@ -25,6 +26,12 @@ hiddenimports = [
     "openai",
     "httpx",
     "loguru",
+    "webview",
+    "webview.platforms.cocoa",
+    "uvicorn",
+    "fastapi",
+    "starlette",
+    "python_multipart",
 ]
 
 # 音频转写：dashscope 内部有动态导入，显式收集
