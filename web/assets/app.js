@@ -4,7 +4,17 @@
   var drawer = document.getElementById('drawer');
   var quoteEl = document.getElementById('quote');
   var answerEl = document.getElementById('answer');
+  function chapterOf(node) {
+    var found = '';
+    var heads = document.querySelectorAll('#content h2, .chapter-title');
+    Array.prototype.forEach.call(heads, function (h) {
+      if (h.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) found = h.textContent.trim();
+    });
+    return found;
+  }
+
   var selectedText = '';
+  var currentChapter = '';
   var lastQuestion = '';
 
   /* 主题与强调色 */
@@ -87,6 +97,7 @@
           toolbar.classList.remove('show'); return;
         }
         selectedText = text;
+        currentChapter = chapterOf(sel.anchorNode) || '';
         var r = sel.getRangeAt(0).getBoundingClientRect();
         toolbar.classList.add('show');
       }, 10);
