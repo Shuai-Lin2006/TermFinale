@@ -106,6 +106,7 @@
   <button data-mode="explain"><svg class="icon sm"><use href="#i-bulb"/></svg>解释一下</button>
   <button data-mode="example"><svg class="icon sm"><use href="#i-spark"/></svg>举个例子</button>
   <button data-mode="quiz"><svg class="icon sm"><use href="#i-bulb"/></svg>出题考我</button>
+  <button data-mode="mistake"><svg class="icon sm"><use href="#i-edit"/></svg>加入错题</button>
 </div>
 
 <aside class="drawer" id="drawer">
@@ -158,6 +159,7 @@
   function render(d){
     var c = d.course;
     window.TF_COURSE = c.name;
+    window.TF_COURSE_ID = c.id;
     $('tocCourse').textContent = c.name;
     $('tocMeta').textContent = '目标 ' + c.target_score + ' 分 · 剩 ' + c.days_left + ' 天';
     $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';

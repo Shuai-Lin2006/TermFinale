@@ -58,6 +58,14 @@ def _notify(text: str, where: str | None) -> None:
 
 def main() -> None:
     try:
+        from core.single_instance import acquire
+
+        if not acquire():
+            _notify("TermFinale 已经在运行，请先退出旧窗口再重新打开。", None)
+            return
+    except Exception:
+        pass
+    try:
         if os.getenv("TERMFINALE_UI", "web").strip().lower() != "tk":
             try:
                 from desktop import main as web_main

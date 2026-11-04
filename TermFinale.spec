@@ -8,7 +8,13 @@
     dist/TermFinale.app          (macOS)
     dist/TermFinale/TermFinale.exe (Windows)
 """
+import os as _os
+import sys as _sys
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
+_ICON = _os.path.join(SPECPATH, "assets", "icon.icns" if _sys.platform == "darwin" else "icon.ico")
+if not _os.path.exists(_ICON):
+    _ICON = None
 
 datas = []
 datas += collect_data_files("customtkinter")   # 主题/皮肤资源，缺了会启动即崩
@@ -89,7 +95,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name="TermFinale.app",
-    icon=None,
+    icon=_ICON,
     bundle_identifier="com.termfinale.desktop",
     info_plist={
         "NSHighResolutionCapable": True,

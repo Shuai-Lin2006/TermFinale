@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from core import config, paths  # noqa: E402
-from core.database import Course, GeneratedFile, Material, Note, get_db_session  # noqa: E402
+from core.database import Course, GeneratedFile, Material, Mistake, Note, get_db_session, init_db  # noqa: E402
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from core.quality.report import audit_markdown
@@ -30,6 +30,7 @@ from services.task import ProgressEvent  # noqa: E402
 
 WEB = ROOT / "web"
 app = FastAPI(title="TermFinale API", version="0.3.0")
+init_db()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 JOBS: dict[str, "Job"] = {}
@@ -519,6 +520,85 @@ def delete_note(note_id: int):
         db.close()
 
 
+@app.get("/api/mistakes")
+def list_mistakes(course_id: int | None = None):
+    import datetime
+    today = datetime.date.today().isoformat()
+    db = get_db_session()
+    try:
+        q = db.query(Mistake, Course).join(Course, Mistake.course_id == Course.id)
+        if course_id:
+            q = q.filter(Mistake.course_id == course_id)
+        rows = q.order_by(Mistake.id.desc()).limit(300).all()
+        out = []
+        for m, c in rows:
+            out.append({"id": m.id, "course": c.name, "course_id": c.id,
+                        "question": m.question or "", "answer": m.answer or "",
+                        "note": m.note or "", "stage": m.stage or 0,
+                        "mastered": bool(m.mastered), "created_at": m.created_at or "",
+                        "due_at": m.due_at or "", "due": (m.due_at or today) <= today and not m.mastered})
+        return out
+    finally:
+        db.close()
+
+
+@app.post("/api/mistakes")
+def add_mistake(payload: dict):
+    import datetime
+    db = get_db_session()
+    try:
+        cid = int(payload.get("course_id") or 0)
+        if not db.query(Course).filter(Course.id == cid).first():
+            raise HTTPException(404, "课程不存在")
+        today = datetime.date.today()
+        m = Mistake(course_id=cid,
+                    question=(payload.get("question") or "")[:3000],
+                    answer=(payload.get("answer") or "")[:3000],
+                    note=(payload.get("note") or "")[:1000],
+                    stage=0, mastered=False,
+                    created_at=today.isoformat(),
+                    due_at=(today + datetime.timedelta(days=1)).isoformat())
+        db.add(m); db.commit()
+        return {"id": m.id}
+    finally:
+        db.close()
+
+
+@app.post("/api/mistakes/{mistake_id}/review")
+def review_mistake(mistake_id: int, payload: dict):
+    import datetime
+    intervals = [1, 2, 4, 7, 15, 30]
+    db = get_db_session()
+    try:
+        m = db.query(Mistake).filter(Mistake.id == mistake_id).first()
+        if not m:
+            raise HTTPException(404, "错题不存在")
+        today = datetime.date.today()
+        if payload.get("known"):
+            m.stage = min(len(intervals) - 1, (m.stage or 0) + 1)
+        else:
+            m.stage = 0
+        m.mastered = (m.stage or 0) >= len(intervals) - 1
+        m.due_at = (today + datetime.timedelta(days=intervals[m.stage or 0])).isoformat()
+        db.commit()
+        return {"stage": m.stage, "due_at": m.due_at, "mastered": m.mastered}
+    finally:
+        db.close()
+
+
+@app.delete("/api/mistakes/{mistake_id}")
+def delete_mistake(mistake_id: int):
+    db = get_db_session()
+    try:
+        m = db.query(Mistake).filter(Mistake.id == mistake_id).first()
+        if not m:
+            raise HTTPException(404, "错题不存在")
+        db.delete(m); db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
 @app.get("/api/practice")
 def practice_data():
     db = get_db_session()
@@ -532,7 +612,12 @@ def practice_data():
                   "has_md": Path(g.file_path).with_suffix(".md").is_file(),
                   "created_at": g.created_at or ""} for g, c in rows]
         note_count = db.query(Note).count()
-        return {"exams": exams, "notes": note_count}
+        import datetime
+        today = datetime.date.today().isoformat()
+        mistakes = db.query(Mistake).filter(Mistake.mastered == False).all()  # noqa: E712
+        due = sum(1 for m in mistakes if (m.due_at or today) <= today)
+        return {"exams": exams, "notes": note_count,
+                "mistakes": len(mistakes), "due": due}
     finally:
         db.close()
 

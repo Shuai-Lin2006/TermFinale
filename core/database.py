@@ -44,6 +44,7 @@ class Course(Base):
     materials = relationship("Material", back_populates="course", cascade="all, delete-orphan")
     generated_files = relationship("GeneratedFile", back_populates="course", cascade="all, delete-orphan")
     notes = relationship("Note", back_populates="course", cascade="all, delete-orphan")
+    mistakes = relationship("Mistake", back_populates="course", cascade="all, delete-orphan")
 
 
 class Material(Base):
@@ -67,6 +68,21 @@ class Note(Base):
     created_at = Column(String(50))
 
     course = relationship("Course", back_populates="notes")
+
+
+class Mistake(Base):
+    __tablename__ = 'mistakes'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'), nullable=False)
+    question = Column(String(3000), default="")
+    answer = Column(String(3000), default="")
+    note = Column(String(1000), default="")
+    stage = Column(Integer, default=0)
+    mastered = Column(Boolean, default=False)
+    created_at = Column(String(50))
+    due_at = Column(String(50))
+
+    course = relationship("Course", back_populates="mistakes")
 
 
 class GeneratedFile(Base):

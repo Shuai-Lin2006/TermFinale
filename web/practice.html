@@ -41,19 +41,15 @@
           <div class="serif" style="font-size:34px;margin-top:6px" id="statExams">—</div></div>
         <div class="card" style="padding:20px"><div class="tiny muted">笔记</div>
           <div class="serif" style="font-size:34px;margin-top:6px" id="statNotes">—</div></div>
-        <div class="card" style="padding:20px"><div class="tiny muted">错题</div>
-          <div class="serif" style="font-size:34px;margin-top:6px">0</div></div>
+        <div class="card" style="padding:20px"><div class="tiny muted">待复习</div>
+          <div class="serif" style="font-size:34px;margin-top:6px" id="statDue">—</div></div>
       </section>
 
       <div class="section-head"><h2>训练试卷</h2><div class="line"></div></div>
       <div id="exams" class="course-grid"></div>
 
-      <div class="section-head"><h2>错题本</h2><div class="line"></div></div>
-      <div class="card"><div style="padding:36px;text-align:center">
-        <div class="serif" style="font-size:20px;margin-bottom:6px">还没有错题</div>
-        <p class="muted" style="margin:0 0 16px">做完试卷后，把做错的题收进来，系统会按 1/2/4/7 天提醒你复习。</p>
-        <a class="btn" href="generate.html">先生成一套试卷</a>
-      </div></div>
+      <div class="section-head"><h2>错题本</h2><div class="line"></div><span class="tiny muted" id="dueTip"></span></div>
+      <div id="mistakes"></div>
     </div>
   </main>
 </div>
@@ -66,6 +62,7 @@
     $('apiState').textContent='已连接';
     $('statExams').textContent=d.exams.length;
     $('statNotes').textContent=d.notes;
+    if(d.mistakes !== undefined){ $('statDue').textContent = d.due + ' / ' + d.mistakes; }
     if(!d.exams.length){ $('exams').innerHTML='<article class="card course"><div class="meta">还没有试卷，去生成一套。</div><div class="course-foot"><a class="btn sm" href="generate.html">去生成</a></div></article>'; return; }
     $('exams').innerHTML=d.exams.map(function(e){
       return '<article class="card hover course"><div class="course-top"><span class="chip">'+e.course+'</span>'+
@@ -75,6 +72,42 @@
         '<a class="btn sm" href="reader.html?course='+e.course_id+'">打开</a></div></article>';
     }).join('');
   }).catch(function(){ $('apiState').textContent='未连接'; });
+
+  function loadMistakes(){
+    fetch('/api/mistakes').then(function(r){return r.json();}).then(function(list){
+      var box=$('mistakes');
+      var due=list.filter(function(m){return m.due && !m.mastered;}).length;
+      $('dueTip').textContent = list.length ? ('共 ' + list.length + ' 题 · 今天该复习 ' + due + ' 题') : '';
+      if(!list.length){
+        box.innerHTML='<div class="card"><div style="padding:36px;text-align:center">'+
+          '<div class="serif" style="font-size:20px;margin-bottom:6px">还没有错题</div>'+
+          '<p class="muted" style="margin:0 0 16px">阅读时选中题目，点「加入错题」；之后按 1/2/4/7 天提醒复习。</p>'+
+          '<a class="btn" href="courses.html">去阅读</a></div></div>';
+        return;
+      }
+      box.innerHTML=list.map(function(m){
+        var badge = m.mastered ? '已掌握' : (m.due ? '今天复习' : ('第 ' + (m.stage+1) + ' 轮'));
+        return '<article class="card course" style="margin-bottom:12px"><div class="course-top">'+
+          '<span class="chip">'+m.course+'</span><span class="tiny muted">'+badge+' · 下次 '+m.due_at+'</span></div>'+
+          '<p style="font-size:13.5px;line-height:1.85;margin:10px 0">'+m.question+'</p>'+
+          (m.note ? '<p class="tiny muted">'+m.note+'</p>' : '')+
+          '<div class="course-foot"><span class="tiny muted">第 '+(m.stage+1)+' 轮</span>'+
+          '<span style="display:flex;gap:6px">'+
+          '<button class="btn sm" data-known="'+m.id+'">记住了</button>'+
+          '<button class="btn ghost sm" data-forgot="'+m.id+'">忘了</button>'+
+          '<button class="btn ghost sm" data-del="'+m.id+'">删除</button></span></div></article>';
+      }).join('');
+      box.querySelectorAll('[data-known]').forEach(function(b){ b.addEventListener('click', function(){ review(b.dataset.known, true); }); });
+      box.querySelectorAll('[data-forgot]').forEach(function(b){ b.addEventListener('click', function(){ review(b.dataset.forgot, false); }); });
+      box.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click', function(){
+        fetch('/api/mistakes/'+b.dataset.del,{method:'DELETE'}).then(loadMistakes); }); });
+    });
+  }
+  function review(id, known){
+    fetch('/api/mistakes/'+id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({known: known})}).then(loadMistakes);
+  }
+  loadMistakes();
 })();
 </script>
 </body></html>

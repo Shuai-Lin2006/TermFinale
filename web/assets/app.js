@@ -108,6 +108,14 @@
     toolbar.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () {
         toolbar.classList.remove('show');
+        if (b.dataset.mode === 'mistake') {
+          if (!window.TF_COURSE_ID) { if (window.__toast) window.__toast('请从课程进入阅读器'); return; }
+          fetch('/api/mistakes', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course_id: window.TF_COURSE_ID, question: selectedText }) })
+            .then(function () { if (window.__toast) window.__toast('已加入错题本，明天开始复习'); })
+            .catch(function () { if (window.__toast) window.__toast('加入失败'); });
+          return;
+        }
         openDrawer(selectedText, { explain: '解释这段内容', example: '给一个期末可能考的例子', quiz: '出一道小题并给答案' }[b.dataset.mode] || '解释这段内容');
       });
     });
@@ -197,6 +205,25 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && lightbox) lightbox.classList.remove('show');
   });
+
+
+  /* 名词点击解释 */
+  var kwPop = null;
+  document.addEventListener('click', function (e) {
+    var kw = e.target.closest && e.target.closest('.kw');
+    if (kw && kw.title) {
+      if (!kwPop) { kwPop = document.createElement('div'); kwPop.className = 'kw-pop'; document.body.appendChild(kwPop); }
+      kwPop.textContent = kw.title;
+      var r = kw.getBoundingClientRect();
+      kwPop.style.left = Math.min(Math.max(8, r.left), innerWidth - 330) + 'px';
+      kwPop.style.top = (r.bottom + 8) + 'px';
+      kwPop.style.display = 'block';
+      e.stopPropagation();
+      return;
+    }
+    if (kwPop) kwPop.style.display = 'none';
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && kwPop) kwPop.style.display = 'none'; });
 
   /* 导航高亮 */
   document.querySelectorAll('.nav-item').forEach(function (item) {
