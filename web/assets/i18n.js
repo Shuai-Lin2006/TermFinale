@@ -89,7 +89,8 @@
     "关于":"About","版本":"Version","构建":"Build","开发者":"Developer",
     "已配置 · 尾号":"Configured · ends","只存本机":"Local only","测试连接":"Test",
     "阿里云百炼":"DashScope","适配":"Adapt",
-    "课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
+    "继续阅读":"Continue reading","问一下":"Ask AI","预计提分":"Projected",
+    "生成中…":"Generating…","重写中":"Rewriting","课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
     "思考中…":"Thinking…","完成":"Done","讲义生成好了":"Guide ready","提取完成":"Extraction done",
     "试卷生成好了":"Paper ready","分析完成":"Analysis done","准备中…":"Preparing…",
     "下午好":"Good afternoon","上午好":"Good morning","晚上好":"Good evening"
@@ -113,7 +114,11 @@
     [/^得分：(\d+) \/ (\d+)/, "Score: $1 / $2"],
     [/^共 (\d+) 题 · 今天该复习 (\d+) 题$/, "$1 questions · $2 due today"],
     [/^共 (\d+) 门课[·，,]\s*最近考试在 (\d+) 天后$/, "$1 courses · next exam in $2 days"],
-    [/^已配置 · 尾号 (\w+)$/, "Configured · ends $1"]
+    [/^已配置 · 尾号 (\w+)$/, "Configured · ends $1"],
+    [/^距 (.+?) 考试 · (\d+) 天$/, "$1 exam in $2 days"],
+    [/^还有 (\d+) 天，目标 (\d+) 分$/, "$1 days left · Target $2"],
+    [/^还有 (\d+) 天，Target (\d+)$/, "$1 days left · Target $2"],
+    [/^已有 (\d+) 份资料、(\d+) 份生成材料。先把重点章节过一遍，再做题。$/, "$1 files · $2 generated. Skim key chapters, then practice."]
   ];
   var PRE = [
     [/ 份资料/g, " files"], [/ 份已生成/g, " generated"], [/目标 (\d+) 分/g, "Target $1"],
@@ -127,12 +132,12 @@
     var key = (raw || '').trim();
     if (!key) return null;
     if (DICT[key] !== undefined) return raw.replace(key, DICT[key]);
-    var pre = key;
-    PRE.forEach(function (r) { pre = pre.replace(r[0], r[1]); });
-    if (pre !== key) return raw.replace(key, pre);
     for (var i = 0; i < RULES.length; i++) {
       if (RULES[i][0].test(key)) return raw.replace(key, key.replace(RULES[i][0], RULES[i][1]));
     }
+    var pre = key;
+    PRE.forEach(function (r) { pre = pre.replace(r[0], r[1]); });
+    if (pre !== key) return raw.replace(key, pre);
     if (key.indexOf('下午好，') === 0) return raw.replace(key, 'Good afternoon, ' + key.slice(4));
     if (key.indexOf('上午好，') === 0) return raw.replace(key, 'Good morning, ' + key.slice(4));
     if (key.indexOf('晚上好，') === 0) return raw.replace(key, 'Good evening, ' + key.slice(4));
