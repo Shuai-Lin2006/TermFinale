@@ -238,7 +238,11 @@
     });
     var bar = document.querySelector('.topbar');
     if (bar) bar.insertBefore(btn, bar.firstChild);
-    else document.body.appendChild(btn);
+    else {
+      var host = document.getElementById('doc') || document.body;
+      host.insertBefore(btn, host.firstChild);
+      btn.classList.add('nav-back-inline');
+    }
   })();
 
   /* 导航高亮 */

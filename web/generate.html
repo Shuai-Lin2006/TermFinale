@@ -239,11 +239,24 @@
     var box = $('materials');
     if(!state.materials.length){ box.innerHTML = '<div class="tiny muted">这门课还没有资料，先去「我的课程」上传。</div>'; return; }
     box.innerHTML = state.materials.map(function(m){
-      return '<label class="mat"><input type="checkbox" value="' + m.id + '" checked>' +
+      return '<div class="mat"><input type="checkbox" value="' + m.id + '" checked>' +
         '<span class="grow">' + m.filename + '</span>' +
+        '<select class="mat-role" data-id="' + m.id + '">' +
+          '<option value="core"' + (m.role === 'core' ? ' selected' : '') + '>重点</option>' +
+          '<option value="support"' + (m.role === 'support' ? ' selected' : '') + '>辅助</option></select>' +
+        '<select class="mat-weight" data-id="' + m.id + '">' +
+          [1,2,3,4,5].map(function(w){ return '<option value="'+w+'"'+(m.weight===w?' selected':'')+'>权重 '+w+'</option>'; }).join('') +
+        '</select>' +
         '<span class="tiny muted">' + m.size_kb + ' KB</span>' +
-        (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') + '</label>';
+        (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') + '</div>';
     }).join('');
+    box.querySelectorAll('.mat-role,.mat-weight').forEach(function(el){
+      el.addEventListener('change', function(){
+        fetch('/api/materials/' + el.dataset.id, { method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ role: (box.querySelector('.mat-role[data-id="'+el.dataset.id+'"]')||{}).value,
+                                 weight: (box.querySelector('.mat-weight[data-id="'+el.dataset.id+'"]')||{}).value }) });
+      });
+    });
   }
 
   $('selectAll').addEventListener('click', function(){

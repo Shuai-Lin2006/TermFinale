@@ -7,11 +7,11 @@ load_env()
 client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_url="https://api.deepseek.com")
 
 
-def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
+def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
     """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
     max_retries = 3
     for attempt in range(max_retries):
-        budget = max_tokens()
+        budget = max(max_tokens(), min_budget)
         for _ in range(2):
             try:
                 response = client.chat.completions.create(
@@ -23,10 +23,14 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
                 choice = response.choices[0]
                 content = choice.message.content or ""
                 if content.strip():
+                    if getattr(choice, "finish_reason", None) == "length" and budget < 32768:
+                        logger.warning("输出被截断（budget={}），加倍预算重试", budget)
+                        budget = min(32768, budget * 2)
+                        continue
                     return content
-                if getattr(choice, "finish_reason", None) == "length" and budget < 16384:
+                if getattr(choice, "finish_reason", None) == "length" and budget < 32768:
                     logger.warning("输出为空（budget={}），加倍预算重试", budget)
-                    budget = min(16384, budget * 2)
+                    budget = min(32768, budget * 2)
                     continue
                 return ""
             except Exception as exc:  # noqa: BLE001
@@ -139,7 +143,6 @@ graph TD
 ## 📊 概念-公式-题型对照
 | 概念 | 核心公式 | 常见题型 | 重要度 |
 |---|---|---|---|
-    sys_prompt = _note_block(user_note) + sys_prompt
 | 转动惯量 | $J=\\sum m_i r_i^2$ | 计算题 | ★★★ |
 
 【红线】
@@ -189,7 +192,6 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
 
 🚨【跨页规则】
 资料里页与页之间可能有页眉/页码，同一道题可能被拆在两页。
-    sys_prompt = _note_block(user_note) + sys_prompt
 块首若出现"【接上页…】"，说明这道题上一段已在前面出现过：**必须合并成一道完整题目输出，不要重复输出两道**。
 
 🚨【完整性规则】
@@ -209,7 +211,12 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     elif blueprint is not None:
         paper_structure = "【试卷结构（必须严格遵守，不得增删题型）】：\n" + blueprint.render()
     else:
-        paper_structure = "【试卷结构】：自动规划合理的题型及数量，满分100分。"
+        paper_structure = ("【试卷结构（必须严格遵守）】：\n"
+                           "一、选择题 8 题 × 3 分 = 24 分\n"
+                           "二、填空题 4 题 × 4 分 = 16 分\n"
+                           "三、计算题 4 题 × 12 分 = 48 分\n"
+                           "四、综合题 1 题 × 12 分 = 12 分\n"
+                           "合计必须为 100 分，四个大题一个都不能少。")
 
     # 🚨 针对不同模式，注入极强的“变异”指令
     if train_type == "original":
@@ -223,7 +230,7 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
 
     lang_req = "🚨【STRICT ENGLISH ONLY】: You must output entirely in English. No Chinese characters." if lang == "English" else "🚨【语言要求】：请必须使用纯正的中文输出。"
 
-    sys_prompt = f"""
+    sys_prompt = _note_block(user_note) + f"""
     【系统角色】大学期末考试命题组长。你有着极其丰富的出题经验，非常厌恶只会换数字的劣质题。
     【任务】生成 {num_sets} 套期末试卷。难度：{difficulty} 星。
     {type_req}
@@ -233,7 +240,6 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     🚨【出题红线：绝对防幻觉与反模板】🚨
     1. **严格贴合资料**：你只能考察资料中出现的知识点！符合大学期末考真实难度，不出弱智题，不出超纲题。
     2. **拒绝千篇一律**：同一套试卷中，不允许出现两道套路完全一样的题。可以尝试从计算题、证明题、概念辨析题中灵活切换。
-    sys_prompt = _note_block(user_note) + sys_prompt
     3. **严禁乱标页码**：这些题目是你新编的，原资料里根本不存在！所以**绝对不准**写“参考原资料第X页”！
     4. **图形文字化建模（极重要）**：如果新出的题需要配图（如受力分析、滑轮），你**必须用极其详尽的文字把图形描述出来**（例如：“一根长为L的杆，左端通过铰链固定，右端受水平向右的拉力F，此时杆与竖直方向夹角为θ...”）。确保学生不看图，光看文字就能列出方程。
     5. 选项独立换行。公式必须用 `$` 包裹。
@@ -241,6 +247,10 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     7. 🚨 每题末尾必须标注考点：`【考点：具体知识点】`，不得省略。
     8. 🚨 资料里的 `[[[IMAGE: 文件名 | 图注: xxx]]]` 标记若与该题相关，必须原样保留在题干中。
     9. 🚨 各大题分值合计必须等于卷面满分（默认 100 分），题数与分值必须严格按上方结构执行。
+    10. 🚨 输出格式：第一行必须是 `# <课程名> 期末试卷`，第二行必须是 `**满分：100 分**`；
+        每个大题必须用二级标题，例如 `## 一、选择题（共 8 题，每题 3 分，共 24 分）`；
+        小题用 `1.` 编号，选项 A/B/C/D 各占一行。
+    11. 🚨 必须写全四个大题（选择/填空/计算/综合），任何一类都不能省略；写完题目后再写 `# 答案与解析`。
     """
     # 🚨 温度提升到 0.7，激发 AI 的创造力，不再只会套死模板
-    return call_ai_with_retry(sys_prompt, raw_text, temp=0.7)
+    return call_ai_with_retry(sys_prompt, raw_text, temp=0.7, min_budget=16384)

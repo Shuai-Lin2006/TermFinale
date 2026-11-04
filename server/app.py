@@ -196,6 +196,23 @@ async def upload_material(course_id: int, file: UploadFile = File(...)):
         db.close()
 
 
+@app.patch("/api/materials/{material_id}")
+def update_material(material_id: int, payload: dict):
+    db = get_db_session()
+    try:
+        m = db.query(Material).filter(Material.id == material_id).first()
+        if not m:
+            raise HTTPException(404, "资料不存在")
+        if payload.get("role") in ("core", "support"):
+            m.file_type = payload["role"]
+        if payload.get("weight") is not None:
+            m.weight = max(1, min(5, int(payload["weight"])))
+        db.commit()
+        return {"id": m.id, "role": m.file_type, "weight": m.weight}
+    finally:
+        db.close()
+
+
 @app.delete("/api/courses/{course_id}/materials/{material_id}")
 def delete_material(course_id: int, material_id: int):
     db = get_db_session()
@@ -303,7 +320,7 @@ def get_course(course_id: int):
         if not c:
             raise HTTPException(404, "课程不存在")
         return {**_course_dict(c),
-                "materials": [{"id": m.id, "filename": m.filename, "type": m.file_type,
+                "materials": [{"id": m.id, "filename": m.filename, "type": m.file_type, "role": m.file_type, "weight": m.weight or 3,
                                "exists": Path(m.file_path).exists(),
                                "size_kb": round(Path(m.file_path).stat().st_size / 1024) if Path(m.file_path).exists() else 0}
                               for m in c.materials]}
@@ -327,6 +344,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         materials = _selected_materials(course["id"], options.get("material_ids"))
         if not materials:
             raise RuntimeError("没有可用的资料")
+        materials.sort(key=lambda m: (0 if (m.file_type or "core") == "core" else 1, -(m.weight or 3)))
 
         pages: list[str] = []
         for i, m in enumerate(materials):
@@ -336,7 +354,9 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 frac = (done / max(1, total)) if total else 0
                 job.emit(ProgressEvent(f"正在解析 {m.filename}（{done}/{total}）",
                                        0.02 + 0.06 * (_i + frac) / _n))
-            pages.extend(extract_text_from_file(m.file_path, on_progress=on_parse))
+            body = extract_text_from_file(m.file_path, on_progress=on_parse)
+            tag = "重点资料" if (m.file_type or "core") == "core" else "辅助资料"
+            pages.extend(f"【{tag}·权重{m.weight or 3}：{m.filename}】\n" + p for p in body)
         text = "\n\n".join(pages)
         if task == "parse":
             job.status = "done"
@@ -466,7 +486,8 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         md_text = getattr(result, "markdown", "") or ""
         job.result = {"output_path": str(result.output_path),
                       "metrics": getattr(result, "metrics", {}) or {},
-                      "quality": audit_markdown(md_text, source_tags=text.count("[[[IMAGE:"))
+                      "quality": audit_markdown(md_text, source_tags=text.count("[[[IMAGE:"),
+                                                       require_headings=(task == "guide"))
                       if md_text else None}
         if md_text and not job.result["quality"]["passed"]:
             job.message = "完成（自检有问题）"

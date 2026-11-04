@@ -6,7 +6,8 @@ import re
 BAD_TEMPLATES = ("为什么学这个", "核心原理与公式", "深度拆解", "零基础大白话", "考场避坑与拿分套路")
 
 
-def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0) -> dict:
+def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0,
+                   require_headings: bool = True) -> dict:
     text = md or ""
     issues: list[str] = []
     checks: list[tuple[str, bool]] = []
@@ -46,7 +47,8 @@ def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0) -
     add("重复段落<15%", dup_ratio < 0.15, f"重复段落占 {dup_ratio:.0%}，建议重新生成")
 
     chapters = len(re.findall(r"(?m)^##\s", text))
-    add("章节完整", chapters >= 1, "没有识别到章节标题")
+    if require_headings:
+        add("章节完整", chapters >= 1, "没有识别到章节标题")
 
     actual_tags = text.count("[[[IMAGE:")
     if expect_images:

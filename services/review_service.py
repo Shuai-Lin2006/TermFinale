@@ -233,8 +233,10 @@ def run_review(
         blueprint = None
         if not diy_config:
             blueprint = build_blueprint(difficulty, (user_context or {}).get("target_score", 80), lang)
-        markdown = generate_exam_paper(text, train_type, num_sets, difficulty, diy_config,
-                                       user_context, lang, blueprint=blueprint)
+        markdown = generate_exam_paper(
+            text, train_type, num_sets, difficulty,
+            diy_config=diy_config, user_note=user_note,
+            user_context=user_context, lang=lang, blueprint=blueprint)
         if stop_event.is_set():
             return None
         report = validate_paper(markdown or "", blueprint)

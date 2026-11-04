@@ -445,5 +445,9 @@ button{font-family:inherit}
   .doc-cover{border-bottom:1px solid #ddd}
 }
 .nav-back{white-space:nowrap;margin-right:4px}
-body > .nav-back{position:fixed;left:16px;top:14px;z-index:9000;background:color-mix(in srgb,var(--card) 88%,transparent);
-  backdrop-filter:blur(10px);border:1px solid var(--line)}
+.nav-back-inline{margin:2px 0 14px;align-self:flex-start}
+
+.mat{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.mat:last-child{border-bottom:0}
+.mat select{border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:11.5px;background:var(--paper);color:var(--ink)}
+.mat-role{width:64px}.mat-weight{width:76px}

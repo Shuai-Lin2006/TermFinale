@@ -52,7 +52,8 @@ class Material(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'), nullable=False)
     file_path = Column(String(500), nullable=False)
-    file_type = Column(String(50), default="core")
+    file_type = Column(String(50), default="core")  # core=重点资料, support=辅助资料
+    weight = Column(Integer, default=3)
     filename = Column(String(200), nullable=False)
 
     course = relationship("Course", back_populates="materials")
@@ -105,6 +106,14 @@ class UserConfig(Base):
 def init_db():
     try:
         Base.metadata.create_all(engine)
+        try:
+            with engine.connect() as conn:
+                cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(materials)")]
+                if "weight" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE materials ADD COLUMN weight INTEGER DEFAULT 3")
+                    conn.commit()
+        except Exception:
+            pass
         logger.success("数据库初始化成功！")
     except Exception as e:
         logger.error(f"数据库初始化失败: {e}")
