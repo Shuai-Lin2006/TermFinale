@@ -102,8 +102,9 @@
       '<div class="meta">'+c.materials+' 份资料 · '+c.generated+' 份已生成 · 目标 '+c.target_score+' 分</div>'+
       '<div class="bar"><i style="width:'+(c.generated?Math.min(92, 30+c.generated*12):8)+'%"></i></div>'+
       '<div class="course-foot"><span>'+(ready?'资料就绪':'资料缺失')+'</span>'+
-      '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="generate.html?course='+c.id+'">生成</a>'+
-      '<button class="btn sm" data-toast="阅读器下一步接入真实内容">打开</button></span></div>'+
+      '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course='+c.id+'">资料</a>'+
+      '<a class="btn ghost sm" href="generate.html?course='+c.id+'">生成</a>'+
+      '<a class="btn sm" href="reader.html?course='+c.id+'">打开</a></span></div>'+
       '</article>';
   }
 

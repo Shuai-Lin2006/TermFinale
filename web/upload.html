@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上传资料 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=7">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><div class="brand-mark">TF</div>
+      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item active"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot"><div class="user"><div class="avatar">林</div>
+      <div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tiny muted">课程</span>
+        <select class="select" id="courseSelect"></select>
+      </div>
+      <div class="spacer"></div>
+      <span class="chip" id="apiState">连接中…</span>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div><h1 class="page-title">上传资料</h1>
+          <div class="page-sub" id="sub">PDF / 扫描件 / PPTX / Word / 音频，都可以直接丢进来</div></div>
+        <div class="spacer"></div>
+        <a class="btn" id="goGenerate" href="generate.html"><svg class="icon sm"><use href="#i-spark"/></svg>去生成</a>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <section class="card" style="padding:18px 20px">
+            <div class="drop" id="drop">
+              <svg class="icon"><use href="#i-upload"/></svg>
+              <b>拖文件到这里，或点击选择</b>
+              <span>支持多选；单个文件不超过 500MB</span>
+              <input type="file" id="fileInput" multiple hidden
+                     accept=".pdf,.pptx,.docx,.txt,.md,.mp3,.wav,.m4a,.aac,.flac,.ogg,.amr">
+            </div>
+            <div id="queue" style="margin-top:14px"></div>
+          </section>
+        </div>
+
+        <aside>
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 10px"><h2>已有资料</h2><div class="line"></div>
+              <span class="tiny muted" id="count">0 份</span></div>
+            <div id="materials"><div class="tiny muted">加载中…</div></div>
+          </section>
+          <section class="card" style="padding:16px 18px">
+            <div class="tiny muted" style="margin-bottom:6px">说明</div>
+            <p class="note" style="margin:0">扫描件和音频需要额外转写，首次会慢一点；转写结果会缓存，之后再生成不会重复花钱。</p>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=7"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var toast = window.__toast || function(){};
+  var courseId = null;
+
+  function loadCourses(){
+    return fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
+      $('apiState').textContent = '已连接';
+      var sel = $('courseSelect'); sel.innerHTML = '';
+      list.forEach(function(c){
+        var o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name + ' · ' + c.days_left + ' 天后考试';
+        sel.appendChild(o);
+      });
+      var want = new URLSearchParams(location.search).get('course');
+      if(want) sel.value = want;
+      if(list.length) selectCourse(sel.value);
+    }).catch(function(){
+      $('apiState').textContent = '未连接';
+      $('materials').innerHTML = '<div class="tiny" style="color:var(--danger)">本地服务未启动</div>';
+    });
+  }
+
+  function selectCourse(id){
+    courseId = id;
+    $('goGenerate').href = 'generate.html?course=' + id;
+    loadMaterials();
+  }
+
+  function loadMaterials(){
+    fetch('/api/courses/' + courseId).then(function(r){ return r.json(); }).then(function(c){
+      var box = $('materials');
+      $('count').textContent = (c.materials || []).length + ' 份';
+      if(!c.materials || !c.materials.length){ box.innerHTML = '<div class="tiny muted">还没有资料，先上传一份。</div>'; return; }
+      box.innerHTML = c.materials.map(function(m){
+        var ext = (m.filename.split('.').pop() || '').toUpperCase().slice(0, 4);
+        return '<div class="file-row"><span class="badge">' + ext + '</span>' +
+          '<span class="grow">' + m.filename + '</span>' +
+          '<span class="tiny muted">' + (m.size_kb || 0) + ' KB</span>' +
+          (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') +
+          '<button class="btn ghost sm" data-del="' + m.id + '" title="删除">' +
+          '<svg class="icon sm"><use href="#i-trash"/></svg></button></div>';
+      }).join('');
+      box.querySelectorAll('[data-del]').forEach(function(b){
+        b.addEventListener('click', function(){
+          if(!confirm('删除这份资料？')) return;
+          fetch('/api/courses/' + courseId + '/materials/' + b.dataset.del, { method:'DELETE' })
+            .then(function(){ loadMaterials(); toast('已删除'); });
+        });
+      });
+    });
+  }
+
+  function uploadOne(file, row, bar){
+    return new Promise(function(resolve){
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/courses/' + courseId + '/materials');
+      xhr.upload.onprogress = function(e){
+        if(e.lengthComputable) bar.style.width = Math.round(e.loaded / e.total * 100) + '%';
+      };
+      xhr.onload = function(){
+        if(xhr.status >= 200 && xhr.status < 300){ row.dataset.ok = '1'; bar.style.width = '100%'; }
+        else { row.style.color = 'var(--danger)'; row.textContent = file.name + ' · 上传失败'; }
+        resolve();
+      };
+      xhr.onerror = function(){ row.style.color = 'var(--danger)'; row.textContent = file.name + ' · 网络错误'; resolve(); };
+      var fd = new FormData(); fd.append('file', file);
+      xhr.send(fd);
+    });
+  }
+
+  function handleFiles(files){
+    if(!courseId){ toast('先选择课程'); return; }
+    var queue = $('queue');
+    var tasks = [];
+    Array.prototype.forEach.call(files, function(file){
+      var row = document.createElement('div');
+      row.className = 'up-item';
+      row.innerHTML = '<span class="grow" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+        file.name + '</span><span class="track"><i></i></span>';
+      queue.appendChild(row);
+      tasks.push(uploadOne(file, row, row.querySelector('i')));
+    });
+    Promise.all(tasks).then(function(){
+      setTimeout(loadMaterials, 300);
+      toast('上传完成');
+    });
+  }
+
+  $('drop').addEventListener('click', function(){ $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function(e){ handleFiles(e.target.files); e.target.value = ''; });
+  ['dragenter','dragover'].forEach(function(ev){
+    $('drop').addEventListener(ev, function(e){ e.preventDefault(); $('drop').classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    $('drop').addEventListener(ev, function(e){ e.preventDefault(); $('drop').classList.remove('over'); });
+  });
+  $('drop').addEventListener('drop', function(e){ if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+  $('courseSelect').addEventListener('change', function(){ selectCourse(this.value); });
+
+  loadCourses();
+})();
+</script>
+</body>
+</html>

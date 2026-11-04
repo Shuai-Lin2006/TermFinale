@@ -12,7 +12,7 @@ import time
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -133,6 +133,71 @@ def list_courses():
                         "materials_ok": sum(1 for m in c.materials if Path(m.file_path).exists()),
                         "generated": len(c.generated_files)})
         return out
+    finally:
+        db.close()
+
+
+
+
+ALLOWED_UPLOAD = {".pdf", ".pptx", ".docx", ".txt", ".md",
+                  ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".amr"}
+MAX_UPLOAD_MB = 500
+
+
+@app.post("/api/courses/{course_id}/materials")
+async def upload_material(course_id: int, file: UploadFile = File(...)):
+    db = get_db_session()
+    try:
+        course = db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise HTTPException(404, "课程不存在")
+        name = Path(file.filename or "upload").name
+        ext = Path(name).suffix.lower()
+        if ext not in ALLOWED_UPLOAD:
+            raise HTTPException(400, f"不支持的文件类型：{ext or '未知'}")
+
+        target_dir = paths.data_dir() / "uploads" / str(course_id)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / name
+        stem, n = target.stem, 1
+        while target.exists():
+            target = target_dir / f"{stem}_{n}{ext}"
+            n += 1
+
+        size = 0
+        with target.open("wb") as out:
+            while True:
+                chunk = await file.read(1 << 20)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > MAX_UPLOAD_MB * 1024 * 1024:
+                    out.close()
+                    target.unlink(missing_ok=True)
+                    raise HTTPException(400, f"文件超过 {MAX_UPLOAD_MB}MB")
+                out.write(chunk)
+
+        material = Material(course_id=course_id, file_path=str(target),
+                            file_type="core", filename=name)
+        db.add(material)
+        db.commit()
+        return {"id": material.id, "filename": name, "size_kb": round(size / 1024),
+                "type": ext.lstrip(".")}
+    finally:
+        db.close()
+
+
+@app.delete("/api/courses/{course_id}/materials/{material_id}")
+def delete_material(course_id: int, material_id: int):
+    db = get_db_session()
+    try:
+        m = db.query(Material).filter(Material.id == material_id,
+                                      Material.course_id == course_id).first()
+        if not m:
+            raise HTTPException(404, "资料不存在")
+        db.delete(m)
+        db.commit()
+        return {"ok": True}
     finally:
         db.close()
 
@@ -397,6 +462,11 @@ def _page(name: str) -> FileResponse:
 @app.get("/dashboard.html")
 def dashboard():
     return _page("dashboard.html")
+
+
+@app.get("/upload.html")
+def upload_page():
+    return _page("upload.html")
 
 
 @app.get("/generate.html")

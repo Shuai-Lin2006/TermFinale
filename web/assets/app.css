@@ -379,3 +379,19 @@ button{font-family:inherit}
 .doc .example{background:var(--paper);border:1px solid var(--line);border-radius:10px;
   padding:14px 16px;margin:18px 0}
 .doc .ex-label{font-weight:700;font-size:13.5px;color:var(--brand);margin-bottom:6px}
+/* ---------- 上传资料 ---------- */
+.drop{border:1.5px dashed var(--line);border-radius:var(--r-lg);padding:40px 20px;text-align:center;
+  background:var(--paper);transition:all .18s var(--ease);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+.drop .icon{width:32px;height:32px;color:var(--faint);margin-bottom:8px}
+.drop b{display:block;font-size:15px;margin-bottom:4px}
+.drop span{font-size:12.5px;color:var(--muted)}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:10px;margin-bottom:8px;background:var(--card);font-size:13px}
+.file-row .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:22px;
+  padding:0 7px;border-radius:6px;background:var(--paper-2);color:var(--muted);font-size:10.5px;
+  font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.up-item{display:flex;align-items:center;gap:10px;font-size:12.5px;margin:8px 0}
+.up-item .track{flex:1;height:5px;border-radius:99px;background:var(--paper-2);overflow:hidden}
+.up-item .track i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
