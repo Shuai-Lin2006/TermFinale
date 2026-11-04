@@ -212,17 +212,17 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 
     custom_info = ""
     if course:
-        lbl_target = "Target Score" if lang == "English" else "目标分数"
-        lbl_days = "Days Left" if lang == "English" else "剩余天数"
-        lbl_tutor = "Tutor" if lang == "English" else "专属导师"
+        import time as _time
         unit_score = "pts" if lang == "English" else "分"
         unit_day = "days" if lang == "English" else "天"
-
+        chapter_count = html_content.count('class="chapter-title"')
         custom_info = f"""
-        <div class="custom-info">
-            <div class="info-item"><span>🎯 {lbl_target}</span> <strong>{course.target_score} {unit_score}</strong></div>
-            <div class="info-item"><span>⏳ {lbl_days}</span> <strong>{course.days_left} {unit_day}</strong></div>
-            <div class="info-item"><span>💼 {lbl_tutor}</span> <strong>{persona}</strong></div>
+        <div class="doc-stats">
+            <div><span>本次目标</span><b>{course.target_score} {unit_score}</b></div>
+            <div><span>剩余天数</span><b>{course.days_left} {unit_day}</b></div>
+            <div><span>讲解人设</span><b>{persona}</b></div>
+            <div><span>章节</span><b>{chapter_count} 章</b></div>
+            <div><span>生成</span><b>{_time.strftime('%m-%d %H:%M')}</b></div>
         </div>
         """
 
@@ -426,8 +426,12 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     .cover h1 {{ font-family: "Songti SC","STSong",serif; font-size: 44px; line-height: 1.2;
       color: #14161a; margin: 6px 0 10px; border: 0; }}
     .cover p {{ color: #6f7480; font-size: 15px; letter-spacing: .02em; margin: 0 0 6px; }}
-    .designer {{ font-size: 11px; letter-spacing: .18em; color: #9aa0aa; text-transform: uppercase; }}
-    .custom-info {{ justify-content: flex-start; gap: 10px; margin-top: 18px; }}
+    .designer {{ font-size: 11.5px; letter-spacing: .06em; color: #9aa0aa; }}
+    .doc-stats {{ display: flex; flex-wrap: wrap; gap: 10px 30px; margin-top: 20px; padding-top: 14px;
+      border-top: 1px solid #e6e4de; }}
+    .doc-stats div {{ min-width: 76px; }}
+    .doc-stats span {{ display: block; font-size: 11px; color: #9aa0aa; letter-spacing: .04em; }}
+    .doc-stats b {{ display: block; font-size: 15px; color: #14161a; font-weight: 600; margin-top: 2px; }}
     .info-item {{ background: transparent; border: 1px solid #e6e4de; border-radius: 10px;
       padding: 8px 14px; font-size: 13px; color: #3a3d44; }}
     .info-item strong {{ color: #14161a; }}

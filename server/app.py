@@ -96,12 +96,23 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
         html = html.replace(f"@@MATH{i}@@", tex)
 
     toc = []
+    chapter_no = 0
     def tag(m):
-        level, text = m.group(1), _re.sub(r"<[^>]+>", "", m.group(2))
+        nonlocal chapter_no
+        level, raw = m.group(1), m.group(2)
+        text = _re.sub(r"<[^>]+>", "", raw)
         anchor = f"h{len(toc)}"
         toc.append({"level": level, "text": text, "id": anchor})
-        return f'<h{level} id="{anchor}">{m.group(2)}</h{level}>'
+        body = raw
+        if level == "2":
+            m2 = _re.match(r"\s*核心考点[:：]\s*(.*)", text)
+            if m2:
+                chapter_no += 1
+                body = f'<span class="chap-no">第 {chapter_no} 章</span>{m2.group(1)}'
+        return f'<h{level} id="{anchor}">{body}</h{level}>'
     html = _re.sub(r"<h([23])>(.*?)</h\1>", tag, html, flags=_re.S)
+    html = _re.sub(r'<blockquote>\s*<p>(📌 出处[^<]*)</p>\s*</blockquote>',
+                   r'<div class="meta-info">\1</div>', html)
     return html, toc
 
 @app.get("/api/health")
@@ -338,8 +349,11 @@ def latest_content(course_id: int):
             return {"exists": False, "reason": "旧文件没有 Markdown 源，请重新生成",
                     "course": _course_dict(c)}
         html, toc = _render_markdown(md_path.read_text(encoding="utf-8"))
+        import datetime
+        generated_at = datetime.datetime.fromtimestamp(path.stat().st_mtime).strftime("%m-%d %H:%M")
         return {"exists": True, "course": _course_dict(c), "html": html, "toc": toc,
-                "filename": path.name, "type": f.file_type}
+                "filename": path.name, "type": f.file_type,
+                "materials": len(c.materials), "generated_at": generated_at}
     finally:
         db.close()
 

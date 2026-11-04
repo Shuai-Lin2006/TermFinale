@@ -44,8 +44,9 @@
       <span class="chip brand" id="coverChip">最近生成</span>
       <h1 id="coverTitle">正在加载…</h1>
       <p id="coverDesc"></p>
-      <div class="doc-meta">
-        <span id="metaDays">—</span><span id="metaTarget">—</span><span id="metaFile">—</span>
+      <div class="doc-stats" id="docStats"></div>
+      <div class="doc-meta" style="margin-top:14px">
+        <span id="metaFile">—</span>
         <span style="margin-left:auto;display:flex;gap:6px">
           <button class="btn sm" onclick="window.print()"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
           <button class="btn sm" id="themeBtn"><svg class="icon sm"><use href="#i-moon"/></svg>主题</button>
@@ -143,10 +144,14 @@
     $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';
     $('coverTitle').textContent = c.name;
     var typeLabel = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '学习材料';
-    $('coverDesc').textContent = typeLabel + ' · TermFinale 精品讲义 · 目标 ' + c.target_score + ' 分';
-    $('metaDays').textContent = c.days_left + ' 天后考试';
-    $('metaTarget').textContent = '目标 ' + c.target_score + ' 分';
+    $('coverDesc').textContent = 'TermFinale 精品讲义 · 目标 ' + c.target_score + ' 分';
     $('metaFile').textContent = d.filename;
+    var stats = [['本次目标', c.target_score + ' 分'], ['剩余天数', c.days_left + ' 天'],
+                 ['讲解人设', c.persona || '—'], ['资料', (d.materials || 0) + ' 份'],
+                 ['生成', d.generated_at || '—']];
+    $('docStats').innerHTML = stats.map(function(x){
+      return '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>';
+    }).join('');
     $('content').innerHTML = d.html;
     if(window.renderMathInElement){
       try { renderMathInElement($('content'), { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false }); } catch(e){}
@@ -162,7 +167,8 @@
     toc.forEach(function(item){
       if(item.level !== '2') return;
       var a = document.createElement('a');
-      a.href = '#' + item.id; a.textContent = item.text;
+      a.href = '#' + item.id;
+      a.textContent = item.text.replace(/^核心考点[:：]\s*/, '');
       box.appendChild(a);
     });
     var links = Array.prototype.slice.call(box.querySelectorAll('a'));
