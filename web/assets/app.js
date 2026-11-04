@@ -225,6 +225,21 @@
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && kwPop) kwPop.style.display = 'none'; });
 
+
+  /* 统一返回按钮 */
+  (function () {
+    var btn = document.createElement('button');
+    btn.className = 'btn ghost sm nav-back';
+    btn.innerHTML = '← <span data-back-label>返回</span>';
+    btn.addEventListener('click', function () {
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0 && history.length > 1) history.back();
+      else location.href = 'courses.html';
+    });
+    var bar = document.querySelector('.topbar');
+    if (bar) bar.insertBefore(btn, bar.firstChild);
+    else document.body.appendChild(btn);
+  })();
+
   /* 导航高亮 */
   document.querySelectorAll('.nav-item').forEach(function (item) {
     item.addEventListener('click', function () {

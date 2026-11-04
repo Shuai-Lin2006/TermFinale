@@ -89,7 +89,7 @@
     "关于":"About","版本":"Version","构建":"Build","开发者":"Developer",
     "已配置 · 尾号":"Configured · ends","只存本机":"Local only","测试连接":"Test",
     "阿里云百炼":"DashScope","适配":"Adapt",
-    "继续阅读":"Continue reading","问一下":"Ask AI","预计提分":"Projected",
+    "返回":"Back","继续阅读":"Continue reading","问一下":"Ask AI","预计提分":"Projected",
     "生成中…":"Generating…","重写中":"Rewriting","课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
     "思考中…":"Thinking…","完成":"Done","讲义生成好了":"Guide ready","提取完成":"Extraction done",
     "试卷生成好了":"Paper ready","分析完成":"Analysis done","准备中…":"Preparing…",

@@ -444,3 +444,6 @@ button{font-family:inherit}
   .doc-meta .btn,.ask-fab,.tf-toolbar,.theme-panel{display:none!important}
   .doc-cover{border-bottom:1px solid #ddd}
 }
+.nav-back{white-space:nowrap;margin-right:4px}
+body > .nav-back{position:fixed;left:16px;top:14px;z-index:9000;background:color-mix(in srgb,var(--card) 88%,transparent);
+  backdrop-filter:blur(10px);border:1px solid var(--line)}
