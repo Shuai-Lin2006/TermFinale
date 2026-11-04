@@ -75,7 +75,7 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">下午好，林同学</h1>
-          <div class="page-sub">距离最近的考试还有 <b>12 天</b> · 今天建议先看电化学</div>
+          <div class="page-sub" id="homeSub">正在读取课程库…</div>
         </div>
         <div class="spacer"></div>
         <span class="chip"><svg class="icon sm"><use href="#i-flame"/></svg>连续学习 4 天</span>
@@ -83,11 +83,11 @@
 
       <section class="hero">
         <div class="hero-main">
-          <div class="hero-kicker">距 物理化学 考试 · 12 天</div>
-          <h2 class="hero-title">第 3 章 电化学<br><b>还剩 2 个考点没掌握</b></h2>
-          <p class="hero-desc">上次学到「可逆电池」，建议先花 18 分钟看完本节，再做 5 道自测题。</p>
+          <div class="hero-kicker" id="heroKicker">距 物理化学 考试 · 12 天</div>
+          <h2 class="hero-title" id="heroTitle">第 3 章 电化学<br><b>还剩 2 个考点没掌握</b></h2>
+          <p class="hero-desc" id="heroDesc">上次学到「可逆电池」，建议先花 18 分钟看完本节，再做 5 道自测题。</p>
           <div class="hero-actions">
-            <a class="btn solid" href="reader.html"><svg class="icon sm"><use href="#i-book"/></svg>继续阅读</a>
+            <a class="btn solid" id="heroRead" href="reader.html"><svg class="icon sm"><use href="#i-book"/></svg>继续阅读</a>
             <a class="btn" href="reader.html"><svg class="icon sm"><use href="#i-spark"/></svg>问一下</a>
             <span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;font-size:12.5px;opacity:.8">
               预计提分 <b style="font-size:15px;color:#d9c7a6">+8</b>
@@ -101,18 +101,18 @@
               <circle cx="56" cy="56" r="48" fill="none" stroke="var(--brand)" stroke-width="10"
                       stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="96"/>
             </svg>
-            <div class="ring-num"><div><b>68%</b><span>本周目标</span></div></div>
+            <div class="ring-num"><div><b id="ringPct">—</b><span id="ringLabel">材料就绪</span></div></div>
           </div>
           <div class="stat-row">
-            <div class="stat"><b>3</b><span>待复习</span></div>
-            <div class="stat"><b>12</b><span>讲义页</span></div>
-            <div class="stat"><b>5</b><span>错题</span></div>
+            <div class="stat"><b id="statMaterials">—</b><span>资料</span></div>
+            <div class="stat"><b id="statGenerated">—</b><span>已生成</span></div>
+            <div class="stat"><b id="statCourses">—</b><span>课程</span></div>
           </div>
         </div>
       </section>
 
       <div class="section-head"><h2>进行中的课</h2><div class="line"></div><a class="btn ghost sm">全部课程 <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
-      <section class="course-grid">
+      <section class="course-grid" id="courseGrid">
         <article class="card hover course">
           <div class="course-top"><span class="chip brand">重点</span><span class="tiny muted">12 天后考试</span></div>
           <h3>物理化学</h3>
@@ -157,7 +157,226 @@
       </section>
 
       <div class="section-head"><h2>最近生成</h2><div class="line"></div></div>
-      <section class="course-grid">
+      <section class="course-grid" id="courseGrid">
+        <article class="card hover course"><h3>大学物理 · 精简讲义</h3><div class="meta">8 章 · 36 张图 · 今天 16:40</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
+        <article class="card hover course"><h3>物理化学 · 练习卷</h3><div class="meta">55 题 · 无答案 · 昨天</div><div class="course-foot"><span class="chip">已打印</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
+        <article class="card hover course"><h3>数据结构 · 逻辑分析</h3><div class="meta">知识图谱 · 因果链 · 昨天</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
+      </section>
+    </div>
+  </main>
+</div>
+
+<nav class="mobile-tab">
+  <a class="active"><svg class="icon"><use href="#i-home"/></svg>首页</a>
+  <a><svg class="icon"><use href="#i-book"/></svg>课程</a>
+  <a><svg class="icon"><use href="#i-spark"/></svg>练习</a>
+  <a><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=3"></script>
+
+<script>
+(function(){
+  function esc(t){ return String(t).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function courseCard(c){
+    return '<article class="card hover course"><div class="course-top"><span class="chip">'
+      + (c.days_left <= 3 ? '临近考试' : '进行中') + '</span><span class="tiny muted">'
+      + c.days_left + ' 天后考试</span></div><h3>' + esc(c.name) + '</h3>'
+      + '<div class="meta">' + c.materials + ' 份资料 · ' + c.generated + ' 份已生成 · 目标 ' + c.target_score + ' 分</div>'
+      + '<div class="bar"><i style="width:' + Math.min(92, 8 + c.generated * 14) + '%"></i></div>'
+      + '<div class="course-foot"><span>' + (c.materials ? '资料就绪' : '待上传') + '</span>'
+      + '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course=' + c.id + '">资料</a>'
+      + '<a class="btn ghost sm" href="generate.html?course=' + c.id + '">生成</a>'
+      + '<a class="btn sm" href="reader.html?course=' + c.id + '">打开</a></span></div></article>';
+  }
+  fetch('/api/overview').then(function(r){ return r.json(); }).then(function(d){
+    var focus = d.stats.focus || d.courses[0];
+    if(focus){
+      document.getElementById('heroKicker').textContent = '距 ' + focus.name + ' 考试 · ' + focus.days_left + ' 天';
+      document.getElementById('heroTitle').innerHTML = esc(focus.name) + '<br><b>还有 ' + focus.days_left + ' 天，目标 ' + focus.target_score + ' 分</b>';
+      document.getElementById('heroDesc').textContent = '已有 ' + focus.materials + ' 份资料、' + focus.generated + ' 份生成材料。先把重点章节过一遍，再做题。';
+      document.getElementById('heroRead').href = 'reader.html?course=' + focus.id;
+      document.getElementById('homeSub').textContent = '共 ' + d.stats.courses + ' 门课 · 最近考试在 ' + (d.stats.nearest === null ? '—' : d.stats.nearest + ' 天后');
+      document.getElementById('ringPct').textContent = Math.min(99, 10 + focus.generated * 18) + '%';
+      document.getElementById('ringLabel').textContent = '材料就绪';
+      document.getElementById('statMaterials').textContent = d.stats.materials;
+      document.getElementById('statGenerated').textContent = d.courses.reduce(function(a,c){ return a + c.generated; }, 0);
+      document.getElementById('statCourses').textContent = d.stats.courses;
+    }
+    if(d.courses.length) document.getElementById('courseGrid').innerHTML = d.courses.slice(0,6).map(courseCard).join('');
+    var labels = {guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'};
+    if(d.recent.length){
+      document.getElementById('recentGrid').innerHTML = d.recent.map(function(r){
+        return '<article class="card hover course"><h3>' + esc(r.course) + ' · ' + (labels[r.type] || '材料') + '</h3>'
+          + '<div class="meta">' + esc(r.filename) + '</div><div class="course-foot">'
+          + '<span class="chip">' + (r.has_md ? '可阅读' : '需重生成') + '</span>'
+          + '<a class="btn ghost sm" href="reader.html?course=' + r.course_id + '">打开</a></div></article>';
+      }).join('');
+    }
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html><section class="course-grid" id="recentGrid">zh-CN" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TermFinale · 今日冲刺</title>
+<link rel="stylesheet" href="assets/app.css?v=3">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3s5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 1.5 0 1-4 1-7.5Z"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">TF</div>
+      <div>
+        <div class="brand-name">TermFinale</div>
+        <div class="brand-sub">期末冲刺工作台</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item active"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot">
+      <div class="card" style="padding:14px">
+        <div class="tiny muted">本周学习</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+          <b class="serif" style="font-size:24px">6.5</b><span class="tiny muted">小时</span>
+        </div>
+        <div class="bar" style="margin-top:10px"><i style="width:62%"></i></div>
+        <div class="tiny muted" style="margin-top:6px">比上周多 1.2 小时</div>
+      </div>
+      <div class="user">
+        <div class="avatar">林</div>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600">林同学</div>
+          <div class="tiny muted">大二 · 环境工程</div>
+        </div>
+        <button class="btn ghost sm" style="margin-left:auto;padding:6px" id="themeBtn" title="切换主题">
+          <svg class="icon sm"><use href="#i-moon"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="search" id="searchBox">
+        <svg class="icon sm"><use href="#i-search"/></svg>
+        搜索课程、章节、笔记…
+        <span class="kbd">⌘K</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+      <a class="btn primary" href="reader.html"><svg class="icon sm"><use href="#i-plus"/></svg>新建冲刺</a>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">下午好，林同学</h1>
+          <div class="page-sub" id="homeSub">正在读取课程库…</div>
+        </div>
+        <div class="spacer"></div>
+        <span class="chip"><svg class="icon sm"><use href="#i-flame"/></svg>连续学习 4 天</span>
+      </div>
+
+      <section class="hero">
+        <div class="hero-main">
+          <div class="hero-kicker" id="heroKicker">距 物理化学 考试 · 12 天</div>
+          <h2 class="hero-title" id="heroTitle">第 3 章 电化学<br><b>还剩 2 个考点没掌握</b></h2>
+          <p class="hero-desc" id="heroDesc">上次学到「可逆电池」，建议先花 18 分钟看完本节，再做 5 道自测题。</p>
+          <div class="hero-actions">
+            <a class="btn solid" id="heroRead" href="reader.html"><svg class="icon sm"><use href="#i-book"/></svg>继续阅读</a>
+            <a class="btn" href="reader.html"><svg class="icon sm"><use href="#i-spark"/></svg>问一下</a>
+            <span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;font-size:12.5px;opacity:.8">
+              预计提分 <b style="font-size:15px;color:#d9c7a6">+8</b>
+            </span>
+          </div>
+        </div>
+        <div class="hero-side card">
+          <div class="ring">
+            <svg width="112" height="112" viewBox="0 0 112 112">
+              <circle cx="56" cy="56" r="48" fill="none" stroke="var(--paper-2)" stroke-width="10"/>
+              <circle cx="56" cy="56" r="48" fill="none" stroke="var(--brand)" stroke-width="10"
+                      stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="96"/>
+            </svg>
+            <div class="ring-num"><div><b id="ringPct">—</b><span id="ringLabel">材料就绪</span></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat"><b id="statMaterials">—</b><span>资料</span></div>
+            <div class="stat"><b id="statGenerated">—</b><span>已生成</span></div>
+            <div class="stat"><b id="statCourses">—</b><span>课程</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-head"><h2>进行中的课</h2><div class="line"></div><a class="btn ghost sm">全部课程 <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
+      <section class="course-grid" id="courseGrid">
+        <article class="card hover course">
+          <div class="course-top"><span class="chip brand">重点</span><span class="tiny muted">12 天后考试</span></div>
+          <h3>物理化学</h3>
+          <div class="meta">3 章 · 18 页讲义 · 5 个错题</div>
+          <div class="bar"><i style="width:42%"></i></div>
+          <div class="course-foot"><span>已学 42%</span><a class="btn ghost sm" href="reader.html">继续</a></div>
+        </article>
+        <article class="card hover course">
+          <div class="course-top"><span class="chip ok">稳</span><span class="tiny muted">5 天后考试</span></div>
+          <h3>大学物理</h3>
+          <div class="meta">刚体力学 · 36 张配图 · 已生成</div>
+          <div class="bar"><i style="width:88%"></i></div>
+          <div class="course-foot"><span>已学 88%</span><a class="btn ghost sm" href="reader.html">复习</a></div>
+        </article>
+        <article class="card hover course">
+          <div class="course-top"><span class="chip accent">刚开始</span><span class="tiny muted">20 天后考试</span></div>
+          <h3>数据结构</h3>
+          <div class="meta">0 页讲义 · 待上传资料</div>
+          <div class="bar"><i style="width:6%;background:var(--faint)"></i></div>
+          <div class="course-foot"><span>未开始</span><button class="btn ghost sm">上传资料</button></div>
+        </article>
+      </section>
+
+
+      <div class="section-head"><h2>这次考试，分都在哪</h2><div class="line"></div><span class="tiny muted">按你上传的 3 份资料统计</span></div>
+      <section class="card" style="padding:18px 20px">
+        <div class="marks">
+          <div class="mark-row"><span>电化学</span><div class="track"><i style="width:35%"></i></div><b>35%</b></div>
+          <div class="mark-row"><span>热力学</span><div class="track"><i style="width:25%"></i></div><b>25%</b></div>
+          <div class="mark-row"><span>化学动力学</span><div class="track"><i style="width:20%"></i></div><b>20%</b></div>
+          <div class="mark-row"><span>统计热力学</span><div class="track"><i style="width:12%"></i></div><b>12%</b></div>
+          <div class="mark-row"><span>其他</span><div class="track"><i style="width:8%"></i></div><b>8%</b></div>
+        </div>
+        <p class="note" style="margin:12px 0 0">优先攻「电化学 + 热力学」= 60% 的分值；你现在电化学掌握度 3/5，把这章补完预计能多拿 8 分。</p>
+      </section>
+
+      <div class="section-head"><h2>今天做什么</h2><div class="line"></div><span class="tiny muted">按考试紧迫度排序</span></div>
+      <section class="task-list">
+        <div class="task"><span class="dot"></span><div class="grow"><b>看完「电化学 · 可逆电池」</b><p>约 18 分钟 · 物理化学</p></div><a class="btn sm" href="reader.html">开始</a></div>
+        <div class="task"><span class="dot orange"></span><div class="grow"><b>做 5 道电化学自测</b><p>约 12 分钟 · 覆盖 3 个考点</p></div><button class="btn sm" data-toast="练习模块还在开发中">去练习</button></div>
+        <div class="task"><span class="dot green"></span><div class="grow"><b>复习 3 个错题</b><p>约 8 分钟 · 遗忘曲线提醒</p></div><button class="btn sm" data-toast="错题本即将上线">复习</button></div>
+      </section>
+
+      <div class="section-head"><h2>最近生成</h2><div class="line"></div></div>
+      <section class="course-grid" id="courseGrid">
         <article class="card hover course"><h3>大学物理 · 精简讲义</h3><div class="meta">8 章 · 36 张图 · 今天 16:40</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
         <article class="card hover course"><h3>物理化学 · 练习卷</h3><div class="meta">55 题 · 无答案 · 昨天</div><div class="course-foot"><span class="chip">已打印</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
         <article class="card hover course"><h3>数据结构 · 逻辑分析</h3><div class="meta">知识图谱 · 因果链 · 昨天</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>

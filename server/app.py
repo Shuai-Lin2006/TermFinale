@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from core import config, paths  # noqa: E402
-from core.database import Course, Material, get_db_session  # noqa: E402
+from core.database import Course, GeneratedFile, Material, get_db_session  # noqa: E402
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from services.task import ProgressEvent  # noqa: E402
@@ -198,6 +198,31 @@ def delete_material(course_id: int, material_id: int):
         db.delete(m)
         db.commit()
         return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.get("/api/overview")
+def overview():
+    courses = list_courses()
+    db = get_db_session()
+    try:
+        rows = (db.query(GeneratedFile, Course)
+                .join(Course, GeneratedFile.course_id == Course.id)
+                .order_by(GeneratedFile.id.desc()).limit(6).all())
+        recent = []
+        for gen, course in rows:
+            path = Path(gen.file_path)
+            recent.append({"course": course.name, "course_id": course.id,
+                           "filename": path.name, "type": gen.file_type,
+                           "exists": path.is_file(),
+                           "has_md": path.with_suffix(".md").is_file()})
+        materials = sum(c["materials"] for c in courses)
+        nearest = min((c["days_left"] for c in courses), default=None)
+        top = sorted(courses, key=lambda c: (c["days_left"], -c["generated"]))[:1]
+        return {"courses": courses, "recent": recent,
+                "stats": {"courses": len(courses), "materials": materials,
+                          "nearest": nearest, "focus": top[0] if top else None}}
     finally:
         db.close()
 

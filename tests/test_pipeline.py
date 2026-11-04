@@ -83,6 +83,16 @@ class ParserTest(unittest.TestCase):
         self.assertIn("测试幻灯片标题", "\n".join(pages))
 
 
+class DedupeTest(unittest.TestCase):
+    def test_repeated_section_removed(self):
+        from core.quality.dedupe import dedupe_markdown
+        md = ("## 核心考点：甲\n\n### 1. 概念\n\n这是重复的一段内容，长度足够触发相似度比较。" * 1
+              + "\n\n### 2. 原理\n\n另一段不同的内容。"
+              + "\n\n### 1. 概念\n\n这是重复的一段内容，长度足够触发相似度比较。")
+        out = dedupe_markdown(md)
+        self.assertEqual(out.count("这是重复的一段内容"), 1)
+
+
 class PromptTest(unittest.TestCase):
     def test_user_note_reaches_prompt(self):
         from unittest.mock import patch

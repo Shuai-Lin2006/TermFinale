@@ -21,6 +21,7 @@ from core.ai_engine import generate_super_guide
 from core.database import GeneratedFile as DBGeneratedFile, Material as DBMaterial, get_db_session
 from core.exam_engine import call_ai_with_retry
 from core.exporter import export_to_html
+from core.quality.dedupe import dedupe_markdown
 from core.generate import outline_store
 from core.generate.outline import Chapter, Outline, generate_outline
 from core.parser import extract_text_from_file
@@ -315,7 +316,7 @@ def run_guide(
             parts.append(strip_ai_outros(markdown))
         chapter_md = "\n\n".join(p for p in parts if p)
         if chapter_md:
-            chapter_mds.append((chapter.title, chapter_md))
+            chapter_mds.append((chapter.title, dedupe_markdown(chapter_md)))
 
     if not chapter_mds:
         raise RuntimeError("未提取到有效考点（所有章节均生成失败）")
