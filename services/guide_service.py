@@ -38,13 +38,13 @@ from services.task import (
 )
 
 MAX_PAGES = 15
-PAGES_PER_CALL = 3          # 单次请求最多塞 3 页，避免输入过长导致输出被挤压
+PAGES_PER_CALL = 5          # 单次请求最多塞 4 页，减少往返次数
 
 
 def _concurrency() -> int:
     """并发生成度：默认 2，可用 TERMFINALE_CONCURRENCY 调整（1~4）。"""
     try:
-        return max(1, min(4, int(os.getenv("TERMFINALE_CONCURRENCY", "2"))))
+        return max(1, min(4, int(os.getenv("TERMFINALE_CONCURRENCY", "4"))))
     except ValueError:
         return 1
 
@@ -82,8 +82,36 @@ def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
     missing = [t for t in tags if t not in markdown]
     if not missing:
         return markdown, 0
+    # 丢失较多时不强行堆到章末：那会把不同页的图挤在一起，造成张冠李戴
+    if len(missing) > 2:
+        return markdown, 0
     block = "#### 📷 配图\n\n" + "\n\n".join(missing)
     return markdown.rstrip() + "\n\n" + block + "\n", len(missing)
+
+
+
+def limit_image_stacking(markdown: str, min_gap: int = 400) -> str:
+    """任意 3 张图不得挤在 400 字符内；超出的图直接丢弃，避免张冠李戴。"""
+    import re
+    positions = [m.start() for m in re.finditer(r"\[\[\[IMAGE:", markdown)]
+    drop = []
+    kept = []
+    for pos in positions:
+        if len(kept) >= 2 and pos - kept[-2] < min_gap:
+            drop.append(pos)
+            continue
+        kept.append(pos)
+    if not drop:
+        return markdown
+    out, last = [], 0
+    for pos in drop:
+        line_end = markdown.find("\n", pos)
+        if line_end == -1:
+            line_end = len(markdown)
+        out.append(markdown[last:pos])
+        last = line_end + 1
+    out.append(markdown[last:])
+    return "".join(out)
 
 
 def strip_ai_outros(markdown: str) -> str:
@@ -327,7 +355,7 @@ def run_guide(
     for issue in qa.issues:
         logger.warning("质量校验: {}", issue)
 
-    final_markdown = "\n\n---\n\n".join(md for _, md in chapter_mds)
+    final_markdown = "\n\n---\n\n".join(limit_image_stacking(md) for _, md in chapter_mds)
     outro_lang = "en" if lang == "English" else "zh"
     final_markdown += "\n\n---\n\n" + OUTROS[outro_lang].get(persona, OUTROS[outro_lang]["温柔小姐姐"])
 

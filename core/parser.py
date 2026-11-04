@@ -222,7 +222,7 @@ def clean_text_lines(slide_text: str) -> list:
     return cleaned_lines
 
 
-def process_image(img_bytes, img_filename):
+def process_image(img_bytes, img_filename, with_caption=True, caption_text=None):
     try:
         img = Image.open(io.BytesIO(img_bytes))
         w, h = img.size
@@ -238,7 +238,9 @@ def process_image(img_bytes, img_filename):
         f.write(img_bytes)
 
     # 🚨 核心修复：无论视觉模型识别出什么，都强制加上标签
-    if _DISABLE_VISION:
+    if caption_text:
+        caption = caption_text
+    elif _DISABLE_VISION or not with_caption:
         caption = ""
     else:
         try:
@@ -248,7 +250,7 @@ def process_image(img_bytes, img_filename):
             caption = ""
 
     if not caption or len(caption.strip()) < 2:
-        caption = "原题配图"
+        caption = "PPT 图示" if not with_caption else "原题配图"
 
     return f"[[[IMAGE: {img_filename} | 图注: {caption}]]]"
 
@@ -303,20 +305,40 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                 all_pages.append(f"【《{file_name}》】\n{text}")
         elif ext == 'pptx':
             prs = Presentation(file_path)
+            total_slides = len(prs.slides)
+            caption_budget = 0
             for index, slide in enumerate(prs.slides):
+                if on_progress:
+                    on_progress(index, total_slides, "slide")
                 slide_text = ""
+                candidates = []
                 for shape in slide.shapes:
                     if hasattr(shape, "text") and shape.text.strip():
                         slide_text += shape.text + "\n"
                     elif shape.shape_type == 13:
                         try:
                             image = shape.image
-                            if len(image.blob) < 5 * 1024: continue  # 🚨 降至 5KB
-                            img_filename = f"slide{index + 1}_{len(os.listdir(IMG_DIR)) + 1}.{image.ext.lower()}"
-                            img_tag = process_image(image.blob, img_filename)
-                            if img_tag: slide_text += f"\n{img_tag}\n"
-                        except:
+                            if len(image.blob) < 5 * 1024:
+                                continue
+                            probe = Image.open(io.BytesIO(image.blob))
+                            w, h = probe.size
+                            if w < 160 or h < 120 or w * h < 40000:
+                                continue
+                            candidates.append((w * h, image.blob, image.ext.lower()))
+                        except Exception:
                             pass
+                # 每页最多保留 2 张最大的图，避免把 logo/装饰图当正文配图
+                candidates.sort(key=lambda x: x[0], reverse=True)
+                slide_title = next((ln.strip() for ln in slide_text.splitlines() if ln.strip()), "")
+                for _area, blob, ext in candidates[:2]:
+                    try:
+                        img_filename = f"slide{index + 1}_{len(os.listdir(IMG_DIR)) + 1}.{ext}"
+                        cap = f"{slide_title}（第 {index + 1} 页）" if slide_title else f"第 {index + 1} 页图示"
+                        img_tag = process_image(blob, img_filename, with_caption=False, caption_text=cap)
+                        if img_tag:
+                            slide_text += f"\n{img_tag}\n"
+                    except Exception:
+                        pass
                 if slide_text.strip():
                     cleaned = "\n".join(clean_text_lines(slide_text))
                     if cleaned.strip(): all_pages.append(f"【《{file_name}》第 {index + 1} 页】\n{cleaned}")

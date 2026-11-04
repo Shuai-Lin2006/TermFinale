@@ -117,24 +117,35 @@ def dedupe_markdown(markdown: str) -> tuple[str, int]:
 def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                  on_progress: ProgressCb, stop_event: threading.Event,
                  started: float, user_note: str = "") -> tuple[str, dict]:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     pages = split_pages(text)
     chunks = pack_pages(pages) if pages else []
-    results: list[str] = []
-    ok_chunks = 0
+    if not chunks:
+        return "", {"coverage": 0}
+    results: list[str] = [""] * len(chunks)
+    done = 0
 
-    for i, chunk in enumerate(chunks):
+    def work(i: int, chunk: str) -> tuple[int, str]:
         if stop_event.is_set():
-            break
-        eta = int((time.time() - started) / i * (len(chunks) - i)) if i > 0 else None
-        on_progress(ProgressEvent(
-            f"🔍 正在提取区块 {i + 1}/{len(chunks)}（每块约 3 页）...",
-            (i + 1) / max(1, len(chunks)), eta))
-        markdown = generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
-        if markdown:
-            markdown = re.sub(r"以下是.*?考题。", "", markdown)
-            markdown = re.sub(r"以下是.*?提取.*?：", "", markdown)
-            results.append(markdown)
-            ok_chunks += 1
+            return i, ""
+        return i, generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
+
+    with ThreadPoolExecutor(max_workers=min(3, len(chunks))) as pool:
+        futures = [pool.submit(work, i, c) for i, c in enumerate(chunks)]
+        for fut in as_completed(futures):
+            try:
+                i, md = fut.result()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("提取区块失败: {}", exc)
+                continue
+            if md:
+                md = re.sub(r"以下是.*?考题。", "", md)
+                md = re.sub(r"以下是.*?提取.*?：", "", md)
+                results[i] = md
+            done += 1
+            on_progress(ProgressEvent(
+                f"🔍 已提取 {done}/{len(chunks)} 个区块（并发 3）...",
+                done / len(chunks)))
 
     merged, removed = dedupe_markdown("\n\n".join(results))
     coverage = {

@@ -8,6 +8,7 @@ import asyncio
 import json
 import os
 import re
+import hashlib
 import shutil
 import subprocess
 import threading
@@ -339,6 +340,30 @@ def _selected_materials(course_id: int, ids: list[int] | None) -> list[Material]
         db.close()
 
 
+
+def _parse_material_cached(m, on_parse):
+    """同一文件只解析一次；mtime/size 变化才重新解析。"""
+    try:
+        st = os.stat(m.file_path)
+        key = hashlib.md5(f"v3|{m.file_path}|{st.st_mtime}|{st.st_size}".encode()).hexdigest()
+    except OSError:
+        return extract_text_from_file(m.file_path, on_progress=on_parse)
+    cache_dir = paths.data_dir() / "parse_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / f"{key}.json"
+    if cache_file.is_file():
+        try:
+            return json.loads(cache_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    pages = extract_text_from_file(m.file_path, on_progress=on_parse)
+    try:
+        cache_file.write_text(json.dumps(pages, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+    return pages
+
+
 def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
     try:
         materials = _selected_materials(course["id"], options.get("material_ids"))
@@ -354,7 +379,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 frac = (done / max(1, total)) if total else 0
                 job.emit(ProgressEvent(f"正在解析 {m.filename}（{done}/{total}）",
                                        0.02 + 0.06 * (_i + frac) / _n))
-            body = extract_text_from_file(m.file_path, on_progress=on_parse)
+            body = _parse_material_cached(m, on_parse)
             tag = "重点资料" if (m.file_type or "core") == "core" else "辅助资料"
             pages.extend(f"【{tag}·权重{m.weight or 3}：{m.filename}】\n" + p for p in body)
         text = "\n\n".join(pages)

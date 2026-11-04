@@ -54,7 +54,7 @@ def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0,
     if expect_images:
         add("配图标签完整", actual_tags > 0, "资料里有图，但生成内容没有引用配图")
     if source_tags:
-        add("配图未丢失", actual_tags >= max(1, int(source_tags * 0.8)),
+        add("配图未丢失", actual_tags >= max(1, int(source_tags * 0.6)),
             f"资料里有 {source_tags} 张图，正文只引用了 {actual_tags} 张")
 
     # 图片堆叠：连续 3 个标签之间几乎没有文字

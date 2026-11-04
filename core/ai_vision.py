@@ -15,11 +15,16 @@ client = OpenAI(
 def analyze_image_with_ai(image_path: str) -> str:
     logger.info(f"正在调用视觉模型识别图片: {os.path.basename(image_path)}")
     try:
-        with open(image_path, "rb") as f:
-            img_base = base64.b64encode(f.read()).decode('utf-8')
-
-        ext = image_path.split('.')[-1].lower()
-        if ext == 'jpg': ext = 'jpeg'
+        # 压缩后送模型：原图/GIF 动辄数 MB，会把单次识别拖到几十秒
+        import io
+        from PIL import Image
+        img = Image.open(image_path).convert("RGB")
+        if max(img.size) > 1280:
+            img.thumbnail((1280, 1280), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=82)
+        img_base = base64.b64encode(buf.getvalue()).decode('utf-8')
+        ext = "jpeg"
 
         # 可用 QWEN_VL_MODEL 覆盖；默认 qwen-vl-max（旧值 qwen3.8-max 会 404）
         response = client.chat.completions.create(
