@@ -516,7 +516,6 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 user_context={"target_score": course["target_score"]},
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
-                max_pages=(int(options["page_limit"]) if options.get("page_limit") else None),
                 on_progress=job.emit, stop_event=job.stop)
 
         if result is None:

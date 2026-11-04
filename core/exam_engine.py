@@ -10,6 +10,9 @@ client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_u
 def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
     """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
     max_retries = 3
+    # 输入过长时模型容易返回空；保留前 14000 字符，保证能出卷
+    if len(user_content or "") > 14000:
+        user_content = user_content[:14000]
     for attempt in range(max_retries):
         budget = max(max_tokens(), min_budget)
         for _ in range(2):
