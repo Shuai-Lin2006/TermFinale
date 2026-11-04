@@ -1035,25 +1035,7 @@ class TermFinaleApp(ctk.CTk):
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump(cfg, f, ensure_ascii=False)
 
-        self.clear_ui()
-        self.stop_event.clear()
-        self.start_time = time.time()
-
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.place(relx=0.5, rely=0.4, anchor="center")
-        ctk.CTkLabel(center, text=self.t("gen_ing"), font=FONT_H1).pack(pady=(0, 20))
-        self.progress_label = ctk.CTkLabel(center, text="🚀 正在初始化 AI 引擎...", font=FONT_H2,
-                                           text_color=ACCENT_COLOR)
-        self.progress_label.pack(pady=(0, 10))
-        self.time_label = ctk.CTkLabel(center, text=self.t("time_est").format("计算中..."), font=FONT_SUBTITLE,
-                                       text_color=SUB_TEXT_COLOR)
-        self.time_label.pack(pady=(0, 10))
-        self.progressbar = ctk.CTkProgressBar(center, width=400)
-        self.progressbar.pack(pady=20)
-        self.progressbar.set(0)
-        ctk.CTkLabel(center, text=self.t("do_not_leave"), font=FONT_H2, text_color=DANGER_COLOR).pack(pady=(10, 10))
-        ctk.CTkButton(center, text=self.t("stop_btn"), font=FONT_H2, fg_color=DANGER_COLOR,
-                      command=self.stop_generation).pack(pady=10)
+        self._show_progress_page("🚀 正在初始化 AI 引擎...")
 
         threading.Thread(target=self.run_backend_task,
                          args=(course, index, mode, persona, self.core_ratio, lang)).start()
