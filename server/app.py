@@ -114,7 +114,7 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
         toc.append({"level": level, "text": text, "id": anchor})
         body = raw
         if level == "2":
-            m2 = _re.match(r"\s*核心考点[:：]\s*(.*)", text)
+            m2 = _re.match(r"\s*(?:核心考点|Core Concept)[:：]\s*(.*)", text)
             if m2:
                 chapter_no += 1
                 body = f'<span class="chap-no">第 {chapter_no} 章</span>{m2.group(1)}'
