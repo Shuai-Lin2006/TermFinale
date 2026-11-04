@@ -146,7 +146,9 @@
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (x) {
         if (!x.ok) throw new Error(x.d.error || '请求失败');
-        ans.textContent = x.d.answer || '（空）';
+        var raw = x.d.answer || '（空）';
+        var safe = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        ans.innerHTML = safe.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         if (window.renderMathInElement) {
           try { renderMathInElement(ans, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {}
         }
