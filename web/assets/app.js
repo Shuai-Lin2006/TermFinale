@@ -7,16 +7,62 @@
   var selectedText = '';
   var lastQuestion = '';
 
-  /* 主题 */
-  var saved = localStorage.getItem('tf-theme');
-  if (saved) document.documentElement.dataset.theme = saved;
-  function toggleTheme() {
-    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('tf-theme', next);
+  /* 主题与强调色 */
+  var html = document.documentElement;
+  html.dataset.theme = localStorage.getItem('tf-theme') || 'light';
+  html.dataset.accent = localStorage.getItem('tf-accent') || 'graphite';
+
+  var params = new URLSearchParams(location.search);
+  if (params.get('theme')) html.dataset.theme = params.get('theme');
+  if (params.get('accent')) html.dataset.accent = params.get('accent');
+
+  var panel = document.createElement('div');
+  panel.className = 'theme-panel';
+  panel.innerHTML =
+    '<div class="tp-label">模式</div>' +
+    '<div class="tp-seg"><button data-t="light">亮色</button><button data-t="dark">暗色</button></div>' +
+    '<div class="tp-label">强调色</div>' +
+    '<div class="swatches">' +
+    ['graphite', 'indigo', 'teal', 'clay', 'plum'].map(function (a) {
+      return '<button data-accent="' + a + '" title="' + a + '"></button>';
+    }).join('') + '</div>';
+  document.body.appendChild(panel);
+
+  function syncPanel() {
+    panel.querySelectorAll('.tp-seg button').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.t === html.dataset.theme);
+    });
+    panel.querySelectorAll('.swatches button').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.accent === html.dataset.accent);
+    });
   }
+  syncPanel();
+  if (params.get('panel') === '1') panel.classList.add('show');
+  panel.querySelectorAll('.tp-seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      html.dataset.theme = b.dataset.t;
+      localStorage.setItem('tf-theme', b.dataset.t);
+      syncPanel();
+    });
+  });
+  panel.querySelectorAll('.swatches button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      html.dataset.accent = b.dataset.accent;
+      localStorage.setItem('tf-accent', b.dataset.accent);
+      syncPanel();
+    });
+  });
   ['themeBtn', 'themeBtn2'].forEach(function (id) {
-    var b = document.getElementById(id); if (b) b.addEventListener('click', toggleTheme);
+    var b = document.getElementById(id);
+    if (b) b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      panel.classList.toggle('show');
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.theme-panel') && !e.target.closest('#themeBtn') && !e.target.closest('#themeBtn2')) {
+      panel.classList.remove('show');
+    }
   });
 
   /* Toast */
