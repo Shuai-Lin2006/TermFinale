@@ -13,6 +13,7 @@ from core.parser import extract_text_from_file
 from core.database import init_db, get_db_session, Course as DBCourse, GeneratedFile as DBGeneratedFile, \
     Material as DBMaterial, UserConfig as DBUserConfig
 from core import config, paths
+from core.build_info import BUILD_TIME, VERSION
 from core.logger import setup_logging, install_exception_hooks
 from core.personas import PERSONA_LABELS, persona_from_label
 from core.platform_utils import open_path
@@ -155,7 +156,7 @@ LEGACY_CONFIG_FILES = [str(paths.project_root() / "user_config.json")]
 class TermFinaleApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("TermFinale")
+        self.title(f"TermFinale v{VERSION}")
         self.geometry("1200x800")
         self.minsize(1000, 700)
         self.configure(fg_color=BG_COLOR)
@@ -528,7 +529,7 @@ class TermFinaleApp(ctk.CTk):
         self.build_top_nav(show_back=True, back_command=self.show_dashboard)
         scroll = self._page_scroll()
         SectionTitle(scroll, "设置 · API Key",
-                     "Key 只保存在本机用户数据目录，不会上传；换 Key 直接覆盖即可").pack(
+                     f"版本 v{VERSION} · 构建 {BUILD_TIME} · Key 只保存在本机").pack(
             fill="x", pady=(10, 12))
 
         card = Card(scroll)

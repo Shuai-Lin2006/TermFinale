@@ -25,6 +25,21 @@ def main() -> int:
         print("❌ Python 版本过低，至少需要 3.10")
         return 1
 
+    # 写入构建信息，界面上可直接确认版本
+    import datetime
+    import subprocess as _sp
+    try:
+        git_hash = _sp.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
+                                    text=True, stderr=_sp.DEVNULL).strip()
+    except Exception:
+        git_hash = "dev"
+    build_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    (ROOT / "core" / "build_info.py").write_text(
+        f'"""构建信息：由 tools/build.py 自动生成。"""\n'
+        f'VERSION = "0.2.0"\nBUILD_TIME = "{build_time}"\nGIT_HASH = "{git_hash}"\n',
+        encoding="utf-8")
+    print(f"构建信息：v0.2.0 · {build_time} · {git_hash}")
+
     if shutil.which("pyinstaller") is None and not _has_module("PyInstaller"):
         print("❌ 未安装 PyInstaller，请先执行：pip install pyinstaller")
         return 1
