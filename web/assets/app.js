@@ -113,8 +113,25 @@
     drawer.classList.add('open');
     answerEl.innerHTML = '<span class="loading">思考中…</span>';
     lastQuestion = question;
-    setTimeout(function () { mockAnswer(question); }, 650);
+    fetch('/api/ask', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context: (context || '') + '\n' + (currentChapter || ''),
+                             question: question, mode: 'explain',
+                             course: window.TF_COURSE || '', chapter: currentChapter || '' })
+    }).then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.answer) throw new Error('没有返回内容');
+        var safe = d.answer.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        answerEl.innerHTML = safe.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        if (window.renderMathInElement) {
+          try { renderMathInElement(answerEl, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {}
+        }
+      })
+      .catch(function (err) {
+        answerEl.innerHTML = '<span class="err">' + (err.message || '问答服务不可用') + '</span>';
+      });
   }
+  window.TF_ASK = openDrawer;
   function closeDrawer() { if (drawer) drawer.classList.remove('open'); }
   document.getElementById('drawerClose')?.addEventListener('click', closeDrawer);
   document.addEventListener('keydown', function (e) {
@@ -124,14 +141,6 @@
     }
   });
 
-  function mockAnswer(question) {
-    var body = question.indexOf('出题') >= 0
-      ? '<h5>自测题</h5><p>某电池在 25 ℃ 时 E° = 1.10 V，转移电子数 n = 2，求平衡常数 K°。</p><p><b>答案</b>：由 ln K° = nFE°/RT ≈ 85.9，得 K° ≈ 2.1×10³⁷。</p><p><b>考点</b>：E° 与 K° 的换算，注意 n 和单位。</p>'
-      : question.indexOf('例子') >= 0
-      ? '<h5>一个期末常见的例子</h5><p>丹尼尔电池 Zn|Zn²⁺‖Cu²⁺|Cu，已知 E° = 1.10 V。若 Zn²⁺ 浓度降到 0.01 mol/L，电动势怎么变？</p><p>用能斯特方程：E = E° − (0.0592/2)·lg([Zn²⁺]/[Cu²⁺])，代入得 E ≈ 1.16 V。浓度降低，电动势反而升高——这是最容易记反的地方。</p>'
-      : '<h5>先给结论</h5><p>这段在讲「可逆电池」的三个条件：电极反应可逆、能量转换可逆、电流无限小。考试里常拿“有电流通过”来挖坑。</p><h5>怎么理解</h5><p>把电池想成一座双向都能走的桥：正向走能放电，反向走能充电，而且来回都不损耗能量，才叫可逆。实际电池做不到，所以只能“近似可逆”。</p><h5>易错点</h5><p>ΔG = −nFE 的负号。E 为正说明反应自发，ΔG 必须为负；写成正号就全错。</p>';
-    answerEl.innerHTML = body;
-  }
 
   /* 右侧提问 */
   var railAsk = document.getElementById('railAsk');

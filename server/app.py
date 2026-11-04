@@ -70,6 +70,39 @@ def _course_dict(course: Course) -> dict:
             "persona": course.persona or "温柔小姐姐"}
 
 
+
+
+import re as _re
+import markdown as _markdown
+from urllib.parse import quote as _quote
+
+
+def _render_markdown(md: str) -> tuple[str, list[dict]]:
+    """把讲义 Markdown 转成阅读器 HTML（数学公式保留给 KaTeX 客户端渲染）。"""
+    md = _re.sub(r"\[\[\[IMAGE:\s*([^|\]]+?)\s*\|\s*图注:\s*(.*?)\]\]\]",
+                 lambda m: f'\n\n<figure class="figure"><img src="/api/assets/{_quote(m.group(1).strip())}"'
+                           f' alt="{m.group(2).strip()}"><figcaption>{m.group(2).strip()}</figcaption></figure>\n\n',
+                 md)
+    md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]", r'<span class="kw">\1</span>', md)
+
+    math: list[str] = []
+    def stash(m):
+        math.append(m.group(0))
+        return f"@@MATH{len(math) - 1}@@"
+    md = _re.sub(r"(\$\$.*?\$\$|\$[^$\n]+?\$)", stash, md, flags=_re.S)
+    html = _markdown.markdown(md, extensions=["tables", "fenced_code", "sane_lists"])
+    for i, tex in enumerate(math):
+        html = html.replace(f"@@MATH{i}@@", tex)
+
+    toc = []
+    def tag(m):
+        level, text = m.group(1), _re.sub(r"<[^>]+>", "", m.group(2))
+        anchor = f"h{len(toc)}"
+        toc.append({"level": level, "text": text, "id": anchor})
+        return f'<h{level} id="{anchor}">{m.group(2)}</h{level}>'
+    html = _re.sub(r"<h([23])>(.*?)</h\1>", tag, html, flags=_re.S)
+    return html, toc
+
 @app.get("/api/health")
 def health():
     return {"ok": True, "time": time.strftime("%Y-%m-%d %H:%M")}
@@ -169,6 +202,12 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
             job.status = "cancelled"
             job.message = "已取消"
             return
+        try:
+            md_text = getattr(result, "markdown", "") or ""
+            if md_text and result.output_path:
+                Path(result.output_path).with_suffix(".md").write_text(md_text, encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
         job.status = "done"
         job.progress = 1.0
         job.message = "完成"
@@ -279,6 +318,37 @@ def job_file(job_id: str):
     if not target.is_file():
         raise HTTPException(404, "文件已被移动或删除")
     return FileResponse(target, media_type="text/html", filename=target.name)
+
+
+@app.get("/api/courses/{course_id}/latest")
+def latest_content(course_id: int):
+    db = get_db_session()
+    try:
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
+            raise HTTPException(404, "课程不存在")
+        files = sorted(c.generated_files, key=lambda f: f.id, reverse=True)
+        if not files:
+            return {"exists": False, "course": _course_dict(c)}
+        f = files[0]
+        path = Path(f.file_path)
+        md_path = path.with_suffix(".md")
+        if not md_path.is_file():
+            return {"exists": False, "reason": "旧文件没有 Markdown 源，请重新生成",
+                    "course": _course_dict(c)}
+        html, toc = _render_markdown(md_path.read_text(encoding="utf-8"))
+        return {"exists": True, "course": _course_dict(c), "html": html, "toc": toc,
+                "filename": path.name, "type": f.file_type}
+    finally:
+        db.close()
+
+
+@app.get("/api/assets/{name}")
+def asset(name: str):
+    target = paths.assets_dir() / Path(name).name
+    if not target.is_file():
+        raise HTTPException(404, "资源不存在")
+    return FileResponse(target)
 
 
 @app.get("/api/courses/{course_id}/preview")

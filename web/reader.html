@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>物理化学 · 第 3 章 电化学 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=3">
+<title>阅读 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=6">
+<link rel="stylesheet" href="assets/katex/katex.inline.css">
+<script src="assets/katex/katex.min.js"></script>
+<script src="assets/katex/auto-render.min.js"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></symbol>
   <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
   <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z"/></symbol>
-  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.5v.5"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 16h10v5H7z"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></symbol>
@@ -22,89 +23,48 @@
 <div class="reader">
   <aside class="toc">
     <div style="display:flex;align-items:center;gap:8px;padding:0 8px 14px">
-      <a class="btn ghost sm" href="dashboard.html" style="padding:6px"><svg class="icon sm"><use href="#i-back"/></svg></a>
+      <a class="btn ghost sm" href="courses.html" style="padding:6px"><svg class="icon sm"><use href="#i-back"/></svg></a>
       <div>
-        <div style="font-size:13px;font-weight:650">物理化学</div>
-        <div class="tiny muted">精简讲义 · 目标 80 分</div>
+        <div style="font-size:13px;font-weight:650" id="tocCourse">加载中…</div>
+        <div class="tiny muted" id="tocMeta"></div>
       </div>
     </div>
     <h4>章节目录</h4>
-    <a href="#c1"><small>第 1 章</small>气体的 pVT 性质</a>
-    <a href="#c2"><small>第 2 章</small>热力学第一定律</a>
-    <a class="active" href="#c3"><small>第 3 章</small>电化学</a>
-    <a href="#c3-3"><small>3.3</small>电极电势</a>
-    <a href="#c3-4"><small>3.4</small>原电池热力学</a>
-    <a href="#c4"><small>第 4 章</small>化学动力学</a>
+    <div id="tocList"></div>
     <div style="margin-top:18px;padding:0 8px">
       <div class="tiny muted" style="margin-bottom:8px">阅读进度</div>
-      <div class="bar"><i style="width:64%"></i></div>
-      <div class="tiny muted" style="margin-top:6px">64% · 上次读到 3.2</div>
+      <div class="bar"><i id="readProgress" style="width:0%"></i></div>
+      <div class="tiny muted" style="margin-top:6px" id="readPct">0%</div>
     </div>
   </aside>
 
   <main class="doc" id="doc">
-    <div class="doc-cover">
-      <span class="chip brand">第 3 章 · 电化学</span>
-      <h1>可逆电池与<span style="color:var(--brand)">能斯特方程</span></h1>
-      <p>本章是电化学的计算核心：从电池符号到电动势，再到平衡常数，一条线串起来。考试里 80% 的分在这里。</p>
+    <div class="doc-cover" id="cover">
+      <span class="chip brand" id="coverChip">最近生成</span>
+      <h1 id="coverTitle">正在加载…</h1>
+      <p id="coverDesc"></p>
       <div class="doc-meta">
-        <span>预计 22 分钟</span><span>5 个考点</span><span>3 道自测</span>
+        <span id="metaDays">—</span><span id="metaTarget">—</span><span id="metaFile">—</span>
         <span style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn sm" data-toast="已加入打印队列"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
+          <button class="btn sm" onclick="window.print()"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
           <button class="btn sm" id="themeBtn"><svg class="icon sm"><use href="#i-moon"/></svg>主题</button>
         </span>
       </div>
     </div>
+    <div id="content"></div>
 
-    <h2 id="c3-1">3.1 可逆电池与电动势</h2>
-    <p>可逆电池要求：电极反应可逆、能量转换可逆、无电流通过或电流无限小。只有满足这三条，才能用热力学公式处理。</p>
-
-    <div class="callout">
-      <svg class="icon"><use href="#i-bulb"/></svg>
-      <div><b>必背</b><p>电池电动势 <b>E</b> 等于正极电势减负极电势；书写电池符号时，负极在左、正极在右，单竖线表示相界面，双竖线表示盐桥。</p></div>
+    <div id="emptyState" style="display:none;padding:60px 0">
+      <div class="card" style="padding:40px;text-align:center;max-width:560px;margin:0 auto">
+        <div class="serif" style="font-size:24px;margin-bottom:8px">还没有可读的内容</div>
+        <p class="muted" style="margin:0 0 20px" id="emptyHint">先为这门课生成一份讲义，再回来阅读。</p>
+        <a class="btn primary" id="emptyBtn" href="generate.html">去生成 →</a>
+      </div>
     </div>
-
-    <div class="formula">E = E° − (RT / nF) ln Q<small>能斯特方程 · 25 ℃ 时可写成 E = E° − (0.0592 / n) lg Q</small></div>
-
-    <h3>怎么写电池符号</h3>
-    <p>以丹尼尔电池为例：<code>Zn(s) | Zn²⁺(a₁) ‖ Cu²⁺(a₂) | Cu(s)</code>。左边发生氧化，右边发生还原。</p>
-
-    <div class="callout warn">
-      <svg class="icon"><use href="#i-warn"/></svg>
-      <div><b>易错点</b><p>算 <b>ΔG</b> 时符号最容易错：<b>ΔG = −nFE</b>。E 为正时 ΔG 为负，反应自发。考试里至少有一道选择题考这个符号。</p></div>
-    </div>
-
-    <h2 id="c3-2">3.2 能斯特方程的三种考法</h2>
-    <p>第一种：给浓度求电动势；第二种：给电动势反求浓度或 <b>K°</b>；第三种：判断反应方向。三种都绕不开同一个式子。</p>
-
-    <figure class="figure">
-      <div class="ph">配图占位 · 原图会从课件原位提取</div>
-      <figcaption>图 3-2　丹尼尔电池电子流向与离子迁移方向</figcaption>
-    </figure>
-
-    <h3>自测</h3>
-    <div class="quiz" data-answer="B"><span class="num">1</span>下列电池中，属于可逆电池的是（　）</div>
-    <div class="quiz" data-answer="C"><span class="num">2</span>Zn|Zn²⁺‖Cu²⁺|Cu 电池的负极反应是（　）</div>
-    <div class="quiz" data-answer="A"><span class="num">3</span>若 E° 增大，平衡常数 K° 会（　）</div>
-
-    <h2 id="c3-3">3.3 电极电势</h2>
-    <p>标准氢电极规定 <b>E°(H⁺/H₂) = 0 V</b>，其他电极与之组成电池测得的电动势即为该电极的标准电极电势。</p>
-
-    <h2 id="c3-4">3.4 原电池热力学</h2>
-    <p>由 <b>ΔG = −nFE</b> 和 <b>ΔG° = −RT ln K°</b> 可得 <b>ln K° = nFE°/RT</b>。这一组关系是计算题的固定套路。</p>
   </main>
 
   <aside class="rail-right">
     <h4>本章速查</h4>
-    <div class="rail-card">
-      <ol>
-        <li>可逆电池三个条件</li>
-        <li>电池符号书写规则</li>
-        <li>能斯特方程（浓度/分压）</li>
-        <li>ΔG = −nFE 的符号</li>
-        <li>K° 与 E° 的关系</li>
-      </ol>
-    </div>
+    <div class="rail-card"><ol id="quickList"><li class="tiny muted">加载中…</li></ol></div>
     <div class="rail-card">
       <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:8px">
         <svg class="icon sm" style="color:var(--brand)"><use href="#i-spark"/></svg>问 AI
@@ -124,15 +84,15 @@
 
 <nav class="mobile-tab">
   <a href="dashboard.html">首页</a>
+  <a href="courses.html">课程</a>
   <a class="active">阅读</a>
   <a href="#" id="mAsk">问 AI</a>
-  <a href="#" data-toast="设置页开发中">设置</a>
 </nav>
 
 <div class="toolbar" id="toolbar">
   <button data-mode="explain"><svg class="icon sm"><use href="#i-bulb"/></svg>解释一下</button>
   <button data-mode="example"><svg class="icon sm"><use href="#i-spark"/></svg>举个例子</button>
-  <button data-mode="quiz"><svg class="icon sm"><use href="#i-warn"/></svg>出题考我</button>
+  <button data-mode="quiz"><svg class="icon sm"><use href="#i-bulb"/></svg>出题考我</button>
 </div>
 
 <aside class="drawer" id="drawer">
@@ -144,7 +104,7 @@
   <div class="quote" id="quote">选中一段正文，我会结合上下文解释。</div>
   <div class="answer" id="answer">你可以先选中一句话，或者直接在右侧输入问题。</div>
   <footer>
-    <button class="btn sm" data-toast="已存为笔记（演示）">存为笔记</button>
+    <button class="btn sm" data-toast="笔记功能下一步接入">存为笔记</button>
     <button class="btn sm" id="copyBtn">复制</button>
     <span class="spacer"></span>
     <span class="tiny muted">回答仅供参考</span>
@@ -152,6 +112,122 @@
 </aside>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=3"></script>
+<script src="assets/app.js?v=6"></script>
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  var cid = params.get('course');
+  var $ = function(id){ return document.getElementById(id); };
+
+  function load(id){
+    fetch('/api/courses/' + id + '/latest').then(function(r){ return r.json(); }).then(function(d){
+      if(!d.exists){ showEmpty(d); return; }
+      render(d);
+    }).catch(function(){ showEmpty({ reason: '本地服务没有启动' }); });
+  }
+
+  function showEmpty(d){
+    $('cover').style.display = 'none';
+    $('content').style.display = 'none';
+    $('emptyState').style.display = 'block';
+    $('emptyHint').textContent = d.reason || '先为这门课生成一份讲义，再回来阅读。';
+    if(d.course){ $('emptyBtn').href = 'generate.html?course=' + d.course.id; $('tocCourse').textContent = d.course.name; }
+  }
+
+  function render(d){
+    var c = d.course;
+    window.TF_COURSE = c.name;
+    $('tocCourse').textContent = c.name;
+    $('tocMeta').textContent = '目标 ' + c.target_score + ' 分 · 剩 ' + c.days_left + ' 天';
+    $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';
+    $('coverTitle').textContent = c.name;
+    $('coverDesc').textContent = '为你生成的学习材料 · ' + d.filename;
+    $('metaDays').textContent = c.days_left + ' 天后考试';
+    $('metaTarget').textContent = '目标 ' + c.target_score + ' 分';
+    $('metaFile').textContent = d.filename;
+    $('content').innerHTML = d.html;
+    if(window.renderMathInElement){
+      try { renderMathInElement($('content'), { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false }); } catch(e){}
+    }
+    var toc = d.toc || [];
+    buildToc(toc);
+    var first = toc.filter(function(t){ return t.level === '2'; })[0];
+    buildQuick(toc, first ? first.id : null);
+  }
+
+  function buildToc(toc){
+    var box = $('tocList'); box.innerHTML = '';
+    toc.forEach(function(item){
+      if(item.level !== '2') return;
+      var a = document.createElement('a');
+      a.href = '#' + item.id; a.textContent = item.text;
+      box.appendChild(a);
+    });
+    var links = Array.prototype.slice.call(box.querySelectorAll('a'));
+    var heads = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+    if(!heads.length) return;
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(!en.isIntersecting) return;
+          var i = heads.indexOf(en.target);
+          links.forEach(function(l,j){ l.classList.toggle('active', i === j); });
+          buildQuick(LAST_TOC, en.target.id);
+        });
+      }, { rootMargin: '-10% 0px -75% 0px' });
+      heads.forEach(function(h){ io.observe(h); });
+    }
+    window.addEventListener('scroll', function(){
+      var max = document.documentElement.scrollHeight - innerHeight;
+      var pct = max > 0 ? Math.min(100, Math.round(scrollY / max * 100)) : 0;
+      $('readProgress').style.width = pct + '%';
+      $('readPct').textContent = pct + '%';
+    }, { passive: true });
+  }
+
+  var LAST_TOC = [];
+  function buildQuick(toc, chapterId){
+    LAST_TOC = toc || [];
+    var box = $('quickList'); box.innerHTML = '';
+    var start = -1;
+    for(var i = 0; i < LAST_TOC.length; i++){
+      if(LAST_TOC[i].id === chapterId){ start = i; break; }
+    }
+    if(start < 0){
+      for(var j = 0; j < LAST_TOC.length; j++){ if(LAST_TOC[j].level === '2'){ start = j; break; } }
+    }
+    var items = [];
+    for(var k = start + 1; k < LAST_TOC.length; k++){
+      if(LAST_TOC[k].level === '2') break;
+      if(LAST_TOC[k].level === '3') items.push(LAST_TOC[k]);
+    }
+    var seen = {};
+    items = items.filter(function(t){
+      if(seen[t.text]) return false; seen[t.text] = 1; return true;
+    });
+    if(!items.length){ box.innerHTML = '<li class="tiny muted">本章暂无小节</li>'; return; }
+    items.slice(0, 10).forEach(function(t){
+      var li = document.createElement('li');
+      var a = document.createElement('a'); a.href = '#' + t.id; a.textContent = t.text;
+      li.appendChild(a); box.appendChild(li);
+    });
+  }
+
+  $('railSend').addEventListener('click', function(){
+    var q = $('railAsk').value.trim();
+    if(!q){ return; }
+    if(window.TF_ASK) window.TF_ASK('', q);
+    $('railAsk').value = '';
+  });
+  if($('mAsk')) $('mAsk').addEventListener('click', function(e){ e.preventDefault(); if(window.TF_ASK) window.TF_ASK('', '解释这一节'); });
+
+  if(cid){ load(cid); }
+  else {
+    fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
+      if(list && list.length){ load(list[0].id); } else { showEmpty({}); }
+    }).catch(function(){ showEmpty({ reason: '本地服务没有启动' }); });
+  }
+})();
+</script>
 </body>
 </html>
