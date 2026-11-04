@@ -420,3 +420,17 @@ button{font-family:inherit}
   font-size:13px;box-shadow:0 10px 26px rgba(20,22,26,.22);font-weight:600}
 .ask-fab:hover{background:var(--brand-2)}
 @media(max-width:860px){.ask-fab{bottom:76px;right:16px}}
+/* ---------- 弹窗 ---------- */
+.modal-mask{position:fixed;inset:0;z-index:10000;background:rgba(15,18,22,.46);display:none;
+  align-items:center;justify-content:center;padding:20px}
+.modal-mask.show{display:flex}
+.modal{background:var(--card);border-radius:16px;width:540px;max-width:94vw;max-height:90vh;overflow:auto;
+  padding:22px 24px;box-shadow:var(--shadow-3)}
+.modal h3{margin:0 0 4px;font-size:18px;font-family:var(--serif)}
+.modal p.sub{margin:0 0 16px;font-size:12.5px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;
+  font-size:13px;background:var(--paper);color:var(--ink)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}

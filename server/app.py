@@ -228,6 +228,65 @@ def overview():
         db.close()
 
 
+@app.post("/api/courses")
+def create_course(payload: dict):
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "课程名不能为空")
+    db = get_db_session()
+    try:
+        c = Course(
+            name=name[:100],
+            major=(payload.get("major") or "未知")[:100],
+            school_level=payload.get("school_level") or "普通一本",
+            credits=float(payload.get("credits") or 3),
+            days_left=max(1, int(payload.get("days_left") or 7)),
+            target_score=max(0, min(100, int(payload.get("target_score") or 80))),
+            user_difficulty=max(1, min(5, int(payload.get("user_difficulty") or 3))),
+            is_major=bool(payload.get("is_major", True)),
+            persona=payload.get("persona") or "温柔小姐姐",
+        )
+        db.add(c); db.commit()
+        return _course_dict(c)
+    finally:
+        db.close()
+
+
+@app.patch("/api/courses/{course_id}")
+def update_course(course_id: int, payload: dict):
+    db = get_db_session()
+    try:
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
+            raise HTTPException(404, "课程不存在")
+        for field, cast in (("name", str), ("major", str), ("school_level", str),
+                            ("credits", float), ("days_left", int), ("target_score", int),
+                            ("user_difficulty", int)):
+            if payload.get(field) not in (None, ""):
+                setattr(c, field, cast(payload[field]))
+        if "is_major" in payload:
+            c.is_major = bool(payload["is_major"])
+        if payload.get("persona"):
+            c.persona = payload["persona"]
+        db.commit()
+        return _course_dict(c)
+    finally:
+        db.close()
+
+
+@app.delete("/api/courses/{course_id}")
+def delete_course(course_id: int):
+    db = get_db_session()
+    try:
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
+            raise HTTPException(404, "课程不存在")
+        db.delete(c); db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
 @app.get("/api/courses/{course_id}")
 def get_course(course_id: int):
     db = get_db_session()

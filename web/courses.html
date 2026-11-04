@@ -18,6 +18,8 @@
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14 6 4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 </svg>
 
@@ -48,7 +50,7 @@
       <div class="search"><svg class="icon sm"><use href="#i-search"/></svg>搜索课程…<span class="kbd">⌘K</span></div>
       <div class="spacer"></div>
       <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
-      <button class="btn primary" data-toast="新建课程表单下一步接入"><svg class="icon sm"><use href="#i-plus"/></svg>新建课程</button>
+      <button class="btn primary" data-new><svg class="icon sm"><use href="#i-plus"/></svg>新建课程</button>
     </header>
 
     <div class="page">
@@ -67,11 +69,42 @@
         <div style="padding:48px 24px;text-align:center">
           <div class="serif" style="font-size:22px;margin-bottom:8px">还没有课程</div>
           <p class="muted" style="margin:0 0 18px">上传第一份课件，5 分钟后就能开始冲刺。</p>
-          <button class="btn primary" data-toast="新建课程表单下一步接入">新建第一门课</button>
+          <button class="btn primary" data-new>新建第一门课</button>
         </div>
       </div>
     </div>
   </main>
+</div>
+
+
+<div class="modal-mask" id="courseModal">
+  <div class="modal">
+    <h3 id="modalTitle">新建课程</h3>
+    <p class="sub">这些信息会影响讲义的讲法和紧迫度</p>
+    <div class="field"><label>课程名</label><input id="fName" placeholder="例如：物理化学"></div>
+    <div class="field-row">
+      <div class="field"><label>学校层次</label>
+        <select id="fSchool"><option>普通一本</option><option>211</option><option>985</option><option>二本</option><option>专科</option></select></div>
+      <div class="field"><label>专业</label><input id="fMajor" placeholder="环境工程"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>学分</label><input id="fCredits" type="number" step="0.5" value="3"></div>
+      <div class="field"><label>剩余天数</label><input id="fDays" type="number" value="7"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>目标分数</label><input id="fTarget" type="number" value="80"></div>
+      <div class="field"><label>基础难度</label>
+        <select id="fDiff"><option value="1">1 · 很好</option><option value="2">2 · 还行</option>
+          <option value="3" selected>3 · 一般</option><option value="4">4 · 较弱</option><option value="5">5 · 很弱</option></select></div>
+    </div>
+    <label class="tiny" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="fMajorFlag" checked style="accent-color:var(--brand)"> 这是专业课
+    </label>
+    <div class="modal-actions">
+      <button class="btn" id="modalCancel">取消</button>
+      <button class="btn primary" id="modalSave">保存</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -93,14 +126,19 @@
   }
   skeleton();
 
+  var editingId = null;
+
   function card(c){
     var soon = c.days_left <= 3;
     var ready = c.materials > 0 && c.materials_ok === c.materials;
     return '<article class="card hover course">'+
       '<div class="course-top"><span class="chip">'+(soon?'临近考试':'进行中')+'</span>'+
-      '<span class="tiny muted">'+c.days_left+' 天后考试</span></div>'+
+      '<span style="display:flex;gap:2px">'+
+      '<button class="btn ghost sm" data-edit="'+c.id+'" title="编辑"><svg class="icon sm"><use href="#i-edit"/></svg></button>'+
+      '<button class="btn ghost sm" data-del="'+c.id+'" title="删除"><svg class="icon sm"><use href="#i-trash"/></svg></button>'+
+      '</span></div>'+
       '<h3>'+c.name+'</h3>'+
-      '<div class="meta">'+c.materials+' 份资料 · '+c.generated+' 份已生成 · 目标 '+c.target_score+' 分</div>'+
+      '<div class="meta">'+c.days_left+' 天后考试 · '+c.materials+' 份资料 · '+c.generated+' 份已生成 · 目标 '+c.target_score+' 分</div>'+
       '<div class="bar"><i style="width:'+(c.generated?Math.min(92, 30+c.generated*12):8)+'%"></i></div>'+
       '<div class="course-foot"><span>'+(ready?'资料就绪':'资料缺失')+'</span>'+
       '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course='+c.id+'">资料</a>'+
@@ -109,23 +147,71 @@
       '</article>';
   }
 
-  fetch('/api/courses').then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function(data){
-      state.textContent = '已连接';
-      sub.textContent = data.length ? ('共 '+data.length+' 门课，最近考试在 '+Math.min.apply(null,data.map(function(c){return c.days_left}))+' 天后') : '还没有课程';
-      if(!data.length){ list.innerHTML=''; empty.style.display='block'; return; }
-      list.innerHTML = data.map(card).join('');
-      list.querySelectorAll('[data-toast]').forEach(function(el){
-        el.addEventListener('click', function(e){ e.preventDefault(); if(window.__toast) window.__toast(el.dataset.toast); });
+  function load(){
+    fetch('/api/courses').then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(data){
+        state.textContent = '已连接';
+        sub.textContent = data.length ? ('共 '+data.length+' 门课，最近考试在 '+Math.min.apply(null,data.map(function(c){return c.days_left}))+' 天后') : '还没有课程';
+        if(!data.length){ list.innerHTML=''; empty.style.display='block'; return; }
+        empty.style.display='none';
+        list.innerHTML = data.map(card).join('');
+        list.querySelectorAll('[data-edit]').forEach(function(b){
+          b.addEventListener('click', function(){ openModal(data.filter(function(c){return c.id==b.dataset.edit;})[0]); });
+        });
+        list.querySelectorAll('[data-del]').forEach(function(b){
+          b.addEventListener('click', function(){
+            if(!confirm('删除这门课？课程资料和已生成文件不会删除，但课程记录会消失。')) return;
+            fetch('/api/courses/'+b.dataset.del,{method:'DELETE'}).then(function(){ load(); if(window.__toast) window.__toast('已删除'); });
+          });
+        });
+      })
+      .catch(function(e){
+        state.textContent = '未连接';
+        state.style.color = 'var(--danger)';
+        sub.textContent = '本地服务未启动，先运行 python server/app.py';
+        list.innerHTML = '<article class="card course" style="grid-column:1/-1"><b>无法连接本地服务</b>'+
+          '<p class="muted" style="margin:6px 0 0">在项目目录执行 <code>python server/app.py</code>，然后刷新本页。</p></article>';
       });
-    })
-    .catch(function(e){
-      state.textContent = '未连接';
-      state.style.color = 'var(--danger)';
-      sub.textContent = '本地服务未启动，先运行 python server/app.py';
-      list.innerHTML = '<article class="card course" style="grid-column:1/-1"><b>无法连接本地服务</b>'+
-        '<p class="muted" style="margin:6px 0 0">在项目目录执行 <code>python server/app.py</code>，然后刷新本页。</p></article>';
-    });
+  }
+
+  function openModal(c){
+    editingId = c ? c.id : null;
+    document.getElementById('modalTitle').textContent = c ? '编辑课程' : '新建课程';
+    document.getElementById('fName').value = c ? c.name : '';
+    document.getElementById('fSchool').value = c ? c.school : '普通一本';
+    document.getElementById('fMajor').value = c ? c.major : '';
+    document.getElementById('fCredits').value = c ? c.credits : 3;
+    document.getElementById('fDays').value = c ? c.days_left : 7;
+    document.getElementById('fTarget').value = c ? c.target_score : 80;
+    document.getElementById('fDiff').value = c ? c.difficulty : 3;
+    document.getElementById('fMajorFlag').checked = c ? c.is_major : true;
+    document.getElementById('courseModal').classList.add('show');
+  }
+  function closeModal(){ document.getElementById('courseModal').classList.remove('show'); }
+
+  function save(){
+    var payload = {
+      name: document.getElementById('fName').value.trim(),
+      school_level: document.getElementById('fSchool').value,
+      major: document.getElementById('fMajor').value.trim() || '未知',
+      credits: parseFloat(document.getElementById('fCredits').value) || 3,
+      days_left: parseInt(document.getElementById('fDays').value) || 7,
+      target_score: parseInt(document.getElementById('fTarget').value) || 80,
+      user_difficulty: parseInt(document.getElementById('fDiff').value) || 3,
+      is_major: document.getElementById('fMajorFlag').checked
+    };
+    if(!payload.name){ if(window.__toast) window.__toast('课程名不能为空'); return; }
+    var url = editingId ? '/api/courses/' + editingId : '/api/courses';
+    fetch(url, { method: editingId ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(function(r){ if(!r.ok) throw new Error(); closeModal(); load(); if(window.__toast) window.__toast('已保存'); })
+      .catch(function(){ if(window.__toast) window.__toast('保存失败'); });
+  }
+
+  document.querySelectorAll('[data-new]').forEach(function(b){ b.addEventListener('click', function(){ openModal(null); }); });
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalSave').addEventListener('click', save);
+  document.getElementById('courseModal').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
+  load();
 })();
 </script>
 </body>
