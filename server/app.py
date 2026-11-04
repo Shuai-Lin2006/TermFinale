@@ -65,6 +65,8 @@ class Job:
         return {"id": self.id, "task": self.task, "status": self.status,
                 "progress": self.progress, "message": self.message,
                 "elapsed": round(time.time() - self.started, 1),
+                "eta": (round((time.time() - self.started) * (1 - self.progress) / self.progress, 1)
+                        if self.progress > 0.05 else None),
                 "result": self.result, "error": self.error}
 
 
@@ -499,6 +501,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 core_ratio=float(options.get("core_ratio", 0.8)),
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
+                max_pages=(int(options["page_limit"]) if options.get("page_limit") else None),
                 on_progress=job.emit, stop_event=job.stop)
         else:
             result = review_service.run_review(
@@ -513,6 +516,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 user_context={"target_score": course["target_score"]},
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
+                max_pages=(int(options["page_limit"]) if options.get("page_limit") else None),
                 on_progress=job.emit, stop_event=job.stop)
 
         if result is None:
@@ -531,12 +535,22 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         md_text = getattr(result, "markdown", "") or ""
         job.result = {"output_path": str(result.output_path),
                       "metrics": getattr(result, "metrics", {}) or {},
-                      "quality": audit_markdown(md_text, source_tags=text.count("[[[IMAGE:"),
+                      "quality": audit_markdown(md_text, source_tags=((getattr(result, "metrics", {}) or {}).get("images_source") or text.count("[[[IMAGE:")),
                                                        require_headings=(task == "guide"),
                                                        source_text=text)
                       if md_text else None}
         if md_text and not job.result["quality"]["passed"]:
             job.message = "完成（自检有问题）"
+        if task == "guide" and options.get("strict"):
+            cov = ((getattr(result, "metrics", {}) or {}).get("coverage") or {}).get("coverage", 1.0)
+            issues = list(job.result["quality"].get("issues") or [])
+            if cov < 0.8:
+                issues.append(f"页覆盖率 {round(cov * 100)}% 低于 80%")
+            if issues:
+                job.status = "error"
+                job.error = "严格模式未通过：" + "；".join(issues[:4])
+                job.message = "严格校验未通过"
+                return
         if task == "guide" and options.get("persona"):
             db = get_db_session()
             try:

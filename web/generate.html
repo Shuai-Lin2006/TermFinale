@@ -81,6 +81,15 @@
               <select class="select" id="langSelect" style="margin-bottom:14px">
                 <option value="中文" selected>中文</option><option value="English">English</option>
               </select>
+              <div class="tiny muted" style="margin:14px 0 6px">页数上限（分册）</div>
+              <select class="select" id="pageLimit" style="margin-bottom:14px">
+                <option value="">全部页</option><option value="30">30 页 / 册</option>
+                <option value="60">60 页 / 册</option><option value="100">100 页 / 册</option>
+              </select>
+              <label class="tiny" style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <input type="checkbox" id="strictMode" style="accent-color:var(--brand)">
+                严格模式：覆盖率低于 80% 不交付
+              </label>
               <div class="tiny muted" style="margin:14px 0 6px">讲解人设</div>
               <select class="select" id="personaSelect">
                 <option>温柔小姐姐</option><option>老师</option><option>学术AI</option>
@@ -151,6 +160,7 @@
               <span class="tiny muted" id="elapsed">00:00</span>
             </div>
             <div class="bar" style="margin:10px 0 0"><i id="progressBar" style="width:0%"></i></div>
+            <div class="tiny muted" id="etaLine" style="margin-top:6px"></div>
             <div class="steps" id="steps"></div>
             <div class="log" id="log"></div>
             <button class="btn sm" id="cancelBtn" style="margin-top:12px;width:100%;justify-content:center">
@@ -291,6 +301,20 @@
     $('idleState').style.display = 'none'; $('doneState').style.display = 'none';
     $('errState').style.display = 'none'; $('runState').style.display = 'block';
     $('log').innerHTML = ''; $('progressBar').style.width = '0%'; $('pct').textContent = '0%';
+    $('etaLine').textContent = '';
+    var startedAt = Date.now();
+    if(window.__etaTimer) clearInterval(window.__etaTimer);
+    window.__etaTimer = setInterval(function(){
+      var el = Math.round((Date.now() - startedAt) / 1000);
+      var jobId = state.jobId;
+      if(!jobId) { $('etaLine').textContent = '已用 ' + el + ' 秒'; return; }
+      fetch('/api/jobs/' + jobId).then(function(r){ return r.json(); }).then(function(snap){
+        if(snap.status === 'running'){
+          var eta = snap.eta ? (' · 预计还需 ' + Math.round(snap.eta) + ' 秒') : '';
+          $('etaLine').textContent = '已用 ' + el + ' 秒' + eta;
+        }
+      }).catch(function(){});
+    }, 2000);
     renderSteps(0);
   }
   function showIdle(){
@@ -304,7 +328,8 @@
     if(!state.course){ toast('先选课程'); return; }
     showRunning();
     var options = { material_ids: ids, user_note: ($('userNote').value || '').trim() };
-    if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value; }
+    if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value;
+      options.strict = $('strictMode').checked; options.page_limit = $('pageLimit').value ? +$('pageLimit').value : null; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
     if(state.task === 'exam'){ options.num_sets = +$('setsSelect').value; options.difficulty = +$('diffSelect').value; options.train_type = $('trainSelect').value; }
 

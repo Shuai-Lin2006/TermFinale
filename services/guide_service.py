@@ -110,6 +110,32 @@ def limit_image_stacking(markdown: str, min_gap: int = 400) -> str:
     return markdown
 
 
+
+def validate_image_semantics(markdown: str, source_text: str, min_overlap: int = 2) -> tuple[str, int]:
+    """图片上下文必须与其来源页有词面重叠，否则丢弃，避免图文错配。"""
+    page_text = {}
+    for m in re.finditer(r"第\s*(\d+)\s*页】\s*\n(.*?)(?=【《|\Z)", source_text, re.S):
+        page_text[int(m.group(1))] = m.group(2)
+
+    def grams(s: str) -> set:
+        s = re.sub(r"[^\u4e00-\u9fffA-Za-z0-9]", "", s or "")
+        return {s[i:i + 2] for i in range(max(0, len(s) - 1))}
+
+    drop = 0
+    out_lines = []
+    for line in markdown.splitlines():
+        if line.strip().startswith("[[[IMAGE:"):
+            m = re.search(r"第\s*(\d+)\s*页", line)
+            if m:
+                page = int(m.group(1))
+                ctx = page_text.get(page, "")
+                if ctx and len(grams(ctx) & grams(line)) < min_overlap:
+                    drop += 1
+                    continue
+        out_lines.append(line)
+    return "\n".join(out_lines), drop
+
+
 _IMG_RE = re.compile(r"\[\[\[IMAGE:\s*([^|\]\n]+)")
 
 
@@ -207,6 +233,7 @@ def run_guide(
     outline: Outline | None = None,
     ai_call=None,
     guide_generator=None,
+    max_pages: int | None = None,
 ) -> RunResult | None:
     """生成一份讲义。被用户中断时返回 None。
 
@@ -253,6 +280,8 @@ def run_guide(
     weight_prompt = build_weight_prompt(core_pages, ref_pages, core_ratio)
     core_pages, ref_pages = truncate_pages(core_pages, ref_pages, core_ratio)
     pages = core_pages + ref_pages
+    if max_pages:
+        pages = pages[:max_pages]
     source_text = "\n\n".join(pages)
     img_totals = {"source": 0, "used": 0, "unknown": 0, "duplicate": 0}
     if not pages:
@@ -395,6 +424,7 @@ def run_guide(
     final_markdown = "\n\n---\n\n".join(limit_image_stacking(md) for _, md in chapter_mds)
     outro_lang = "en" if lang == "English" else "zh"
     final_markdown, _final_img = sanitize_images(final_markdown, source_text)
+    final_markdown, _sem_drop = validate_image_semantics(final_markdown, source_text)
     img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
@@ -433,6 +463,8 @@ def run_guide(
         "images_used": img_totals["used"],
         "images_unknown": img_totals["unknown"],
         "images_duplicate": img_totals["duplicate"],
+        "images_low_relevance": _sem_drop,
+        "page_limit": max_pages,
         "coverage": page_coverage(final_markdown, source_text),
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
