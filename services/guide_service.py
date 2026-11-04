@@ -283,6 +283,10 @@ def run_guide(
     if max_pages:
         pages = pages[:max_pages]
     source_text = "\n\n".join(pages)
+    page_labels = []
+    for _i, _p in enumerate(pages):
+        _m = re.search(r"第\s*(\d+)\s*页", _p)
+        page_labels.append(int(_m.group(1)) if _m else _i + 1)
     img_totals = {"source": 0, "used": 0, "unknown": 0, "duplicate": 0}
     if not pages:
         raise RuntimeError("未从资料中解析到任何内容")
@@ -326,6 +330,8 @@ def run_guide(
                 "neighbors": _neighbors(outline, ci),
                 "target_words": max(400, target_words // max(1, len(blocks))),
                 "urgency": urgency_text,
+                "must_cover": ([page_labels[p] for p in chapter.pages if p < len(page_labels)]
+                               if bi == 0 else []),
             }
             jobs.append((ci, bi, content, tags, context))
             tags_map[(ci, bi)] = tags

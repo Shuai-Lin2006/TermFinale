@@ -92,6 +92,11 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【紧迫度】{chapter.get('urgency', '未评估')}
     【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
     """
+    must_cover = chapter.get("must_cover") or []
+    if must_cover:
+        chapter_block += ("\n【必须引用页码】本章资料页码：" + "、".join(f"P.{n}" for n in must_cover) +
+                          "。每个知识点末尾必须标注来源页（如（P.12）），且只能使用这些页码；"
+                          "若某页没有可用内容，也要在该页对应处写一句『该页仅含图示/无新增考点』。")
 
     if lang == "English":
         heading = chapter_title or "[Title]"
