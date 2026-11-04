@@ -105,14 +105,21 @@
   </header>
   <div class="quote" id="quote">选中一段正文，我会结合上下文解释。</div>
   <div class="answer" id="answer">你可以先选中一句话，或者直接在右侧输入问题。</div>
-  <footer>
-    <button class="btn sm" id="saveNote">存为笔记</button>
-    <button class="btn sm" id="copyBtn">复制</button>
-    <span class="spacer"></span>
-    <span class="tiny muted">回答仅供参考</span>
+  <footer style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;gap:6px">
+      <input id="followUp" placeholder="继续追问…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:12.5px;background:var(--paper);color:var(--ink)">
+      <button class="btn primary sm" id="sendFollow">发送</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn sm" id="saveNote">存为笔记</button>
+      <button class="btn sm" id="copyBtn">复制</button>
+      <span class="spacer"></span>
+      <span class="tiny muted">回答仅供参考</span>
+    </div>
   </footer>
 </aside>
 
+<button class="ask-fab" id="askFab"><svg class="icon sm"><use href="#i-spark"/></svg>问 AI</button>
 <div class="toast" id="toast"></div>
 <script src="assets/app.js?v=6"></script>
 <script>
@@ -233,6 +240,16 @@
     $('railAsk').value = '';
   });
   if($('mAsk')) $('mAsk').addEventListener('click', function(e){ e.preventDefault(); if(window.TF_ASK) window.TF_ASK('', '解释这一节'); });
+
+  function sendFollow(){
+    var q = ($('followUp').value || '').trim();
+    if(!q){ toast('先写一个问题'); return; }
+    if(window.TF_ASK) window.TF_ASK('', q);
+    $('followUp').value = '';
+  }
+  $('sendFollow').addEventListener('click', sendFollow);
+  $('askFab').addEventListener('click', function(){ if(window.TF_ASK) window.TF_ASK('', '这一节的重点是什么？'); });
+  $('followUp').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); sendFollow(); } });
 
   $('saveNote').addEventListener('click', function(){
     if(!cid){ toast('请从课程进入阅读器再存笔记'); return; }

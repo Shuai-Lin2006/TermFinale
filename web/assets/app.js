@@ -97,7 +97,7 @@
     toolbar.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () {
         toolbar.classList.remove('show');
-        ask(selectedText, { explain: '解释这段内容', example: '给一个期末可能考的例子', quiz: '出一道小题并给答案' }[b.dataset.mode] || '解释这段内容');
+        openDrawer(selectedText, { explain: '解释这段内容', example: '给一个期末可能考的例子', quiz: '出一道小题并给答案' }[b.dataset.mode] || '解释这段内容');
       });
     });
   }
@@ -109,12 +109,15 @@
     drawer.classList.add('open');
     answerEl.innerHTML = '<span class="loading">思考中…</span>';
     lastQuestion = question;
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 90000);
     fetch('/api/ask', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({ context: (context || '') + '\n' + (currentChapter || ''),
                              question: question, mode: 'explain',
                              course: window.TF_COURSE || '', chapter: currentChapter || '' })
-    }).then(function (r) { return r.json(); })
+    }).then(function (r) { clearTimeout(timer); return r.json(); })
       .then(function (d) {
         if (!d.answer) throw new Error('没有返回内容');
         var safe = d.answer.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -124,7 +127,8 @@
         }
       })
       .catch(function (err) {
-        answerEl.innerHTML = '<span class="err">' + (err.message || '问答服务不可用') + '</span>';
+        clearTimeout(timer);
+        answerEl.innerHTML = '<span class="err">' + (err.name === 'AbortError' ? '回答超时，请重试' : (err.message || '问答服务不可用')) + '</span>';
       });
   }
   window.TF_ASK = openDrawer;

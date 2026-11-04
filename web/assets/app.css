@@ -415,3 +415,8 @@ button{font-family:inherit}
 .tf-lightbox img{max-width:94vw;max-height:90vh;width:auto;height:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);
   border-radius:8px;background:#fff}
 .tf-lightbox .hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);color:#cfd3d9;font-size:12px}
+.ask-fab{position:fixed;right:24px;bottom:28px;z-index:8500;display:inline-flex;align-items:center;gap:7px;
+  padding:10px 16px;border-radius:999px;background:var(--brand);color:#fff;border:0;cursor:pointer;
+  font-size:13px;box-shadow:0 10px 26px rgba(20,22,26,.22);font-weight:600}
+.ask-fab:hover{background:var(--brand-2)}
+@media(max-width:860px){.ask-fab{bottom:76px;right:16px}}
