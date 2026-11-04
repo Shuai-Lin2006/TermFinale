@@ -62,7 +62,8 @@ def main() -> int:
     for candidate in (ROOT / "dist" / "TermFinale.app", ROOT / "dist" / "TermFinale"):
         if candidate.exists():
             print(f"   产物：{candidate}")
-            app_path = candidate
+            if candidate.suffix == ".app":
+                app_path = candidate
 
     if "--desktop" in sys.argv and app_path and app_path.suffix == ".app":
         dest = Path.home() / "Desktop" / "TermFinale.app"
