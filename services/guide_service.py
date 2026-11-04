@@ -38,7 +38,7 @@ from services.task import (
 )
 
 MAX_PAGES = 15
-PAGES_PER_CALL = 5          # 单次请求最多塞 4 页，减少往返次数
+PAGES_PER_CALL = 8          # 单次请求最多塞 4 页，减少往返次数
 
 
 def _concurrency() -> int:

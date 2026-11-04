@@ -130,7 +130,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
             return i, ""
         return i, generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
 
-    with ThreadPoolExecutor(max_workers=min(3, len(chunks))) as pool:
+    with ThreadPoolExecutor(max_workers=min(4, len(chunks))) as pool:
         futures = [pool.submit(work, i, c) for i, c in enumerate(chunks)]
         for fut in as_completed(futures):
             try:

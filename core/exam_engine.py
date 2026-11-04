@@ -11,8 +11,8 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
     """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
     max_retries = 3
     # 输入过长时模型容易返回空；保留前 14000 字符，保证能出卷
-    if len(user_content or "") > 14000:
-        user_content = user_content[:14000]
+    if len(user_content or "") > 10000:
+        user_content = user_content[:10000]
     for attempt in range(max_retries):
         budget = max(max_tokens(), min_budget)
         for _ in range(2):
@@ -26,14 +26,14 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
                 choice = response.choices[0]
                 content = choice.message.content or ""
                 if content.strip():
-                    if getattr(choice, "finish_reason", None) == "length" and budget < 32768:
-                        logger.warning("输出被截断（budget={}），加倍预算重试", budget)
-                        budget = min(32768, budget * 2)
+                    if getattr(choice, "finish_reason", None) == "length":
+                        logger.warning("输出被截断（budget={}），改用精简提示重试", budget)
+                        user_content = user_content[:7000]
                         continue
                     return content
-                if getattr(choice, "finish_reason", None) == "length" and budget < 32768:
-                    logger.warning("输出为空（budget={}），加倍预算重试", budget)
-                    budget = min(32768, budget * 2)
+                if getattr(choice, "finish_reason", None) == "length":
+                    logger.warning("输出为空（budget={}），压缩输入重试", budget)
+                    user_content = user_content[:7000]
                     continue
                 return ""
             except Exception as exc:  # noqa: BLE001
@@ -250,6 +250,7 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     7. 🚨 每题末尾必须标注考点：`【考点：具体知识点】`，不得省略。
     8. 🚨 资料里的 `[[[IMAGE: 文件名 | 图注: xxx]]]` 标记若与该题相关，必须原样保留在题干中。
     9. 🚨 各大题分值合计必须等于卷面满分（默认 100 分），题数与分值必须严格按上方结构执行。
+    9.1 🚨 解析从简：每题解析不超过 2 句话，禁止长篇展开，否则会超长被截断。
     10. 🚨 输出格式：第一行必须是 `# <课程名> 期末试卷`，第二行必须是 `**满分：100 分**`；
         每个大题必须用二级标题，例如 `## 一、选择题（共 8 题，每题 3 分，共 24 分）`；
         小题用 `1.` 编号，选项 A/B/C/D 各占一行。
