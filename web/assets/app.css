@@ -1,13 +1,13 @@
 :root{
-  --paper:#f5f3ee; --paper-2:#efece4; --card:#ffffff;
-  --ink:#16181d; --ink-2:#3b3f47; --muted:#6f7480; --faint:#9aa0aa;
-  --line:#e6e1d7; --line-2:#efece5;
-  --brand:#1e3a8a; --brand-2:#2a4bb0; --brand-soft:#eef1fb;
-  --accent:#d9772f; --accent-soft:#fdf1e6;
+  --paper:#fafaf8; --paper-2:#f2f1ed; --card:#ffffff;
+  --ink:#14161a; --ink-2:#3a3d44; --muted:#6f7480; --faint:#9aa0aa;
+  --line:#e6e4de; --line-2:#efeee9;
+  --brand:#0f5b4c; --brand-2:#146c5a; --brand-soft:#eaf2ef;
+  --accent:#b4552d; --accent-soft:#f8eee8;
   --ok:#2f7d5a; --ok-soft:#eaf5ef; --warn:#a86a10; --danger:#b3261e;
-  --r-sm:8px; --r:12px; --r-lg:18px; --r-xl:24px;
+  --r-sm:7px; --r:10px; --r-lg:14px; --r-xl:18px;
   --shadow-1:0 1px 2px rgba(22,24,29,.05);
-  --shadow-2:0 2px 6px rgba(22,24,29,.06),0 12px 32px rgba(22,24,29,.07);
+  --shadow-2:0 2px 6px rgba(22,24,29,.05),0 10px 26px rgba(22,24,29,.06);
   --shadow-3:0 18px 60px rgba(22,24,29,.16);
   --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
   --serif:"Songti SC","STSong","SimSun",Georgia,"Times New Roman",serif;
@@ -70,7 +70,7 @@ button{font-family:inherit}
 .app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
 .rail{
   position:sticky;top:0;height:100vh;padding:20px 14px;border-right:1px solid var(--line);
-  background:linear-gradient(180deg,var(--paper-2),var(--paper));display:flex;flex-direction:column;gap:18px;
+  background:var(--card);display:flex;flex-direction:column;gap:18px;
 }
 .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 2px}
 .brand-mark{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#fff;
@@ -102,19 +102,17 @@ button{font-family:inherit}
 
 .page{padding:28px 28px 80px;max-width:1240px;width:100%;margin:0 auto}
 .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px}
-.page-title{font-family:var(--serif);font-size:30px;line-height:1.2;margin:0;letter-spacing:.5px}
+.page-title{font-family:var(--serif);font-size:27px;line-height:1.2;margin:0;letter-spacing:.5px}
 .page-sub{color:var(--muted);font-size:13px;margin-top:6px}
 
 /* ---------- 首页 ---------- */
 .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:16px;margin-bottom:20px}
 .hero-main{position:relative;overflow:hidden;padding:26px 28px;border-radius:var(--r-xl);
-  background:linear-gradient(135deg,#1e3a8a 0%,#2749a8 55%,#3560c9 100%);color:#fff;
-  box-shadow:0 18px 44px rgba(30,58,138,.28)}
-.hero-main::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;
-  border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.20),transparent 65%)}
-.hero-kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.72}
+  background:#0e3b33;color:#fff;box-shadow:0 10px 30px rgba(14,59,51,.18)}
+.hero-main::after{display:none}
+.hero-kicker{font-size:12.5px;letter-spacing:.02em;opacity:.7}
 .hero-title{font-family:var(--serif);font-size:34px;margin:8px 0 6px;line-height:1.15}
-.hero-title b{color:#ffd9b0;font-weight:700}
+.hero-title b{color:#d9c7a6;font-weight:700}
 .hero-desc{opacity:.82;font-size:13.5px;max-width:420px}
 .hero-actions{display:flex;gap:10px;margin-top:20px}
 .hero-main .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);color:#fff;box-shadow:none}
@@ -276,3 +274,18 @@ button{font-family:inherit}
   .topbar{padding:10px 14px;gap:8px}
   .page-title{font-size:25px}
 }
+/* ---- v2：更克制、更编辑化 ---- */
+.section-head h2{font-size:14px;letter-spacing:.04em}
+.chip{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.chip.brand,.chip.ok,.chip.accent{background:transparent;border-color:var(--line);color:var(--ink-2)}
+.chip.brand{border-color:color-mix(in srgb,var(--brand) 35%,var(--line));color:var(--brand)}
+.marks{display:grid;gap:10px}
+.mark-row{display:grid;grid-template-columns:120px 1fr 48px;align-items:center;gap:12px;font-size:12.5px}
+.mark-row .track{height:6px;background:var(--paper-2);border-radius:99px;overflow:hidden}
+.mark-row .track i{display:block;height:100%;background:var(--brand)}
+.mark-row b{text-align:right;font-weight:600;color:var(--ink-2)}
+.note{font-size:12px;color:var(--faint);line-height:1.7}
+.ring-num b{display:block;line-height:1}
+.ring-num span{display:block;margin-top:2px}
+.bar i{background:var(--brand)!important}
+.doc-cover .chip{display:inline-flex;width:fit-content;background:var(--brand-soft);border-color:transparent;color:var(--brand)}
