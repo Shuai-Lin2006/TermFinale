@@ -83,7 +83,8 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
                  lambda m: f'\n\n<figure class="figure"><img src="/api/assets/{_quote(m.group(1).strip())}"'
                            f' alt="{m.group(2).strip()}"><figcaption>{m.group(2).strip()}</figcaption></figure>\n\n',
                  md)
-    md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]", r'<span class="kw">\1</span>', md)
+    md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]",
+                 lambda m: f'<span class="kw" title="{m.group(2).strip()}">{m.group(1).strip()}</span>', md)
 
     math: list[str] = []
     def stash(m):

@@ -99,11 +99,13 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
         structure = f"""
     ## Core Concept: {heading}
     > 📌 Source: {source_str}
-    ### 1. Why Learn This?
-    ### 2. Core Principles & Formulas
-    {step3_title}
-    ### 4. Plain English Explanation
-    ### 5. Exam Traps & Scoring Tips
+
+    (Open with 2–3 sentences that set up the problem naturally. Do not use generic headings like "Why Learn This".)
+
+    ### {idx}.1 Definitions
+    ### {idx}.2 Principles & Formulas
+    ### {idx}.3 Worked Examples
+    ### {idx}.4 Pitfalls & Exam Usage
     """
         lang_req = "🚨【STRICT ENGLISH ONLY】: You must output entirely in English. Do NOT use any Chinese characters."
         keyword_req = "3. **Keyword Highlight**: Strictly wrap keywords with `[[English_Term | Plain English Explanation]]`."
@@ -113,11 +115,14 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
         structure = f"""
     ## 核心考点：{heading}
     > 📌 出处：{source_str}
-    ### 1. 为什么学这个？
-    ### 2. 核心原理与公式
-    {step3_title}
-    ### 4. 零基础大白话
-    ### 5. 考场避坑与拿分套路
+
+    （先用 2~3 句话自然引入：这一节要解决什么问题、它和前后知识的联系。
+    不要写“为什么学这个”“核心原理”这类空标题，直接进入正文。）
+
+    ### {idx}.1 概念与定义
+    ### {idx}.2 原理与公式
+    ### {idx}.3 例题与拆解
+    ### {idx}.4 易错与考场用法
     """
         lang_req = "🚨【语言强制令】：请必须全程使用纯正的中文输出！"
         keyword_req = "3. **名词高亮**：严格用 `[[名词 | 大白话解释]]` 包裹。"
@@ -140,6 +145,13 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     2. 允许补充通用背景/记忆技巧，但必须单独标注 `【延伸】`，且不得与资料冲突。
     3. 出处页码只能来自资料里标注的页码；没有就写"资料未标注页码"，绝不编造。
     4. 资料里的知识点不要遗漏：本批资料出现的概念、公式、结论都要覆盖到。
+
+    🚨【教材体格式（最高优先级）】🚨
+    1. 像正式教材一样连续行文，段落之间用过渡句衔接；禁止把内容拆成一堆短项目符号。
+    2. 小节标题必须是**具体知识点名称**（如「3.1 柱面坐标变换」），禁止「核心原理」「深度拆解」这种空话标题。
+    3. 定义、定理用 `> **定义**：…` 引用块；易错点用 `> **易错**：…`；例题用 `**例 3-1**` 开头，紧跟题目与解答。
+    4. 每个小节先给结论/定义，再解释为什么，再配一个例子；不要反过来堆铺垫。
+    5. 图片标签必须放在它真正对应的段落之后，不得集中到章末。
 
     🚨【讲义质量绝对红线】🚨
     1. {lang_req}
