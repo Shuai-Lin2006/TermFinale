@@ -439,3 +439,8 @@ button{font-family:inherit}
 .kw-pop{position:fixed;z-index:10001;max-width:320px;background:#14161b;color:#f2f4f7;padding:10px 12px;
   border-radius:10px;font-size:12.5px;line-height:1.75;box-shadow:0 16px 40px rgba(0,0,0,.28)}
 .search input{border:0;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--ink);flex:1;min-width:0}
+
+@media print{
+  .doc-meta .btn,.ask-fab,.tf-toolbar,.theme-panel{display:none!important}
+  .doc-cover{border-bottom:1px solid #ddd}
+}

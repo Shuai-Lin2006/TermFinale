@@ -89,6 +89,10 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
     md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]",
                  lambda m: f'<span class="kw" title="{m.group(2).strip()}">{m.group(1).strip()}</span>', md)
 
+    # 选项 A/B/C/D 强制换行（Markdown 默认会把单换行合并成空格）
+    md = _re.sub(r"(?m)^(.*?)\n(?=[A-D]\s*[.、．)])", r"\1  \n", md)
+    md = _re.sub(r"(?m)^([A-D])\s*([.、．)])\s*(.+?)\s*$", r"\1\2 \3  ", md)
+
     math: list[str] = []
     def stash(m):
         math.append(m.group(0))
