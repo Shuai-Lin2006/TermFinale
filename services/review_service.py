@@ -139,7 +139,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                 pass
         return i, md
 
-    with ThreadPoolExecutor(max_workers=min(4, len(chunks))) as pool:
+    with ThreadPoolExecutor(max_workers=min(2, len(chunks))) as pool:
         futures = [pool.submit(work, i, c) for i, c in enumerate(chunks)]
         for fut in as_completed(futures):
             try:
@@ -153,7 +153,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                 results[i] = md
             done += 1
             on_progress(ProgressEvent(
-                f"🔍 已提取 {done}/{len(chunks)} 个区块（并发 4）...",
+                f"🔍 已提取 {done}/{len(chunks)} 个区块（并发 2）...",
                 done / len(chunks)))
 
     ok_chunks = sum(1 for r in results if r and r.strip())

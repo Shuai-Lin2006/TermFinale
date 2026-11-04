@@ -9,7 +9,7 @@ client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_u
 
 def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
     """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
-    max_retries = 3
+    max_retries = 2
     # 输入过长时模型容易返回空；保留前 14000 字符，保证能出卷
     if len(user_content or "") > 10000:
         user_content = user_content[:10000]
@@ -21,7 +21,7 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
                     model=text_model(),
                     messages=[{"role": "system", "content": sys_prompt},
                               {"role": "user", "content": user_content}],
-                    temperature=temp, max_tokens=budget, timeout=120, **model_extra(),
+                    temperature=temp, max_tokens=budget, timeout=75, **model_extra(),
                 )
                 choice = response.choices[0]
                 content = choice.message.content or ""
@@ -40,7 +40,7 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
                 logger.warning(f"API 请求失败 (尝试 {attempt + 1}/{max_retries}): {exc}")
                 if attempt == max_retries - 1:
                     return ""
-                time.sleep(3)
+                time.sleep(1)
                 break
     return ""
 

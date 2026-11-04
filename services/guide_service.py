@@ -44,7 +44,7 @@ PAGES_PER_CALL = 4          # 单次请求最多塞 4 页，减少往返次数
 def _concurrency() -> int:
     """并发生成度：默认 2，可用 TERMFINALE_CONCURRENCY 调整（1~4）。"""
     try:
-        return max(1, min(4, int(os.getenv("TERMFINALE_CONCURRENCY", "4"))))
+        return max(1, min(4, int(os.getenv("TERMFINALE_CONCURRENCY", "2"))))
     except ValueError:
         return 1
 
