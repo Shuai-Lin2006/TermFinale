@@ -203,6 +203,12 @@ class TermFinaleApp(ctk.CTk):
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
+        if os.getenv("TERMFINALE_DEMO") == "progress":
+            self._show_progress_page("🖼️ 正在识别配图：demo.pdf（25/36）")
+            self._on_service_progress(ProgressEvent("🖼️ 正在识别配图：demo.pdf（25/36）", 0.25))
+            self.after(2600, self.destroy)
+            return
+
     def t(self, key):
         return TRANSLATIONS[self.current_lang].get(key, key)
 
