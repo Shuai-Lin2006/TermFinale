@@ -83,6 +83,34 @@ class ParserTest(unittest.TestCase):
         self.assertIn("测试幻灯片标题", "\n".join(pages))
 
 
+class PromptTest(unittest.TestCase):
+    def test_user_note_reaches_prompt(self):
+        from unittest.mock import patch
+        import core.ai_engine as ai
+        from models.user_profile import CourseInfo
+
+        captured = {}
+
+        class Msg:
+            content = "ok"
+
+        class Choice:
+            message = Msg()
+
+        class Resp:
+            choices = [Choice()]
+
+        def fake(**kwargs):
+            captured["p"] = kwargs["messages"][0]["content"]
+            return Resp()
+
+        course = CourseInfo("物理化学", "普通一本", "化学", True, 3, 7, 80, 3)
+        with patch.object(ai.client.chat.completions, "create", fake):
+            ai.generate_super_guide("原始资料", course, user_choice="option_1_保命流",
+                                    user_note="多给计算题，别讲英文缩写")
+        self.assertIn("多给计算题", captured["p"])
+
+
 class AudioTextTest(unittest.TestCase):
     def test_txt_parse(self):
         path = Path(tempfile.mkdtemp()) / "notes.txt"

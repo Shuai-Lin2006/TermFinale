@@ -116,7 +116,7 @@ def dedupe_markdown(markdown: str) -> tuple[str, int]:
 # --------------------------------------------------------------------------- #
 def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                  on_progress: ProgressCb, stop_event: threading.Event,
-                 started: float) -> tuple[str, dict]:
+                 started: float, user_note: str = "") -> tuple[str, dict]:
     pages = split_pages(text)
     chunks = pack_pages(pages) if pages else []
     results: list[str] = []
@@ -129,7 +129,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         on_progress(ProgressEvent(
             f"🔍 正在提取区块 {i + 1}/{len(chunks)}（每块约 3 页）...",
             (i + 1) / max(1, len(chunks)), eta))
-        markdown = generate_extraction(chunk, extract_type, with_answer)
+        markdown = generate_extraction(chunk, extract_type, with_answer, user_note=user_note)
         if markdown:
             markdown = re.sub(r"以下是.*?考题。", "", markdown)
             markdown = re.sub(r"以下是.*?提取.*?：", "", markdown)
@@ -190,6 +190,7 @@ def run_review(
     diy_config: str = "",
     user_context: dict | None = None,
     lang: str = "中文",
+    user_note: str = "",
     on_progress: ProgressCb = noop_progress,
     stop_event: threading.Event | None = None,
 ) -> RunResult | None:
@@ -203,7 +204,7 @@ def run_review(
 
     if task_type == "extract":
         markdown, coverage = _run_extract(
-            text, extract_type, with_answer, on_progress, stop_event, started)
+            text, extract_type, with_answer, on_progress, stop_event, started, user_note)
         if stop_event.is_set():
             return None
         doc_name = "练习卷" if (extract_type == "questions" and not with_answer) else "资料提取"

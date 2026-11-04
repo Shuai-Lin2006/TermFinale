@@ -142,6 +142,7 @@ def run_guide(
     persona: str = "温柔小姐姐",
     core_ratio: float = 0.8,
     lang: str = "中文",
+    user_note: str = "",
     on_progress: ProgressCb = noop_progress,
     stop_event: threading.Event | None = None,
     outline: Outline | None = None,
@@ -256,7 +257,7 @@ def run_guide(
             try:
                 markdown = generator(f"【本章资料】\n{payload}", info, persona=persona,
                                      user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
-                                     chapter=context)
+                                     chapter=context, user_note=user_note)
             except Exception as exc:  # noqa: BLE001
                 logger.error("第 {} 章第 {} 块生成异常: {}", ci + 1, bi + 1, exc)
                 markdown = ""

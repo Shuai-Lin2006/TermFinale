@@ -111,6 +111,14 @@
             </div>
           </section>
 
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 10px"><h2>补充要求（选填）</h2><div class="line"></div></div>
+            <textarea id="userNote" rows="3" placeholder="例如：老师强调第 3 章 / 多给计算题 / 我基础差，讲慢一点 / 不要英文缩写"
+              style="width:100%;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+              font:inherit;font-size:13px;background:var(--paper);color:var(--ink)"></textarea>
+            <p class="note" style="margin:8px 0 0">会作为偏好发给模型；与资料冲突时仍以资料为准。</p>
+          </section>
+
           <section class="card" style="padding:18px 20px">
             <div class="section-head" style="margin:0 0 10px">
               <h2>用哪些资料</h2><div class="line"></div>
@@ -276,7 +284,7 @@
     if(!ids.length){ toast('至少选一份资料'); return; }
     if(!state.course){ toast('先选课程'); return; }
     showRunning();
-    var options = { material_ids: ids };
+    var options = { material_ids: ids, user_note: ($('userNote').value || '').trim() };
     if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
     if(state.task === 'exam'){ options.num_sets = +$('setsSelect').value; options.difficulty = +$('diffSelect').value; options.train_type = $('trainSelect').value; }

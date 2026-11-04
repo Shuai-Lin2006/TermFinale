@@ -50,7 +50,7 @@ def build_learner_radar(course: CourseInfo) -> str:
 
 def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老师",
                          user_choice: str = "option_1_保命流", weight_prompt: str = "", lang: str = "中文",
-                         chapter: dict | None = None) -> str:
+                         chapter: dict | None = None, user_note: str = "") -> str:
     """生成一章讲义。
 
     chapter: {title, index, total, must_know, neighbors, target_words}
@@ -71,11 +71,11 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     file_match = re.search(r'【《(.*?)》第 (\d+) 页】', raw_text)
     source_str = f"《{file_match.group(1)}》第 {file_match.group(2)} 页" if file_match else "多页合并内容"
 
-    has_image = "[[[IMAGE:" in raw_text
     weight_instruction = f"\n【⚖️ 资料权重指令】：{weight_prompt}\n" if weight_prompt else ""
 
     chapter_title = ""
     chapter_block = ""
+    idx = 1
     if chapter:
         idx = int(chapter.get("index", 0)) + 1
         total = int(chapter.get("total", 1))
@@ -95,7 +95,6 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
 
     if lang == "English":
         heading = chapter_title or "[Title]"
-        step3_title = "### 3. Deep Dive (Examples & Figures)" if has_image else "### 3. Deep Dive"
         structure = f"""
     ## Core Concept: {heading}
     > 📌 Source: {source_str}
@@ -111,7 +110,6 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
         keyword_req = "3. **Keyword Highlight**: Strictly wrap keywords with `[[English_Term | Plain English Explanation]]`."
     else:
         heading = chapter_title or "[标题]"
-        step3_title = "### 3. 深度拆解（保留例题和配图）" if has_image else "### 3. 深度拆解"
         structure = f"""
     ## 核心考点：{heading}
     > 📌 出处：{source_str}
@@ -136,6 +134,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     ========================================
     【🎯 专属学情综合策略】：
     {learner_radar}
+    {("【用户补充要求】" + user_note.strip() + "（与资料冲突时以资料为准，不要因此编造）") if user_note.strip() else ""}
     {mode_prompt}
     {weight_instruction}
     {chapter_block}

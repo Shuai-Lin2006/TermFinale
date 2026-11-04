@@ -38,7 +38,16 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1):
     return ""
 
 
-def generate_logic_analysis(raw_text: str, mode: str) -> str:
+
+
+def _note_block(user_note: str) -> str:
+    note = (user_note or "").strip()
+    if not note:
+        return ""
+    return (f"【用户补充要求】{note}\n"
+            "（在不违背资料事实的前提下尽量满足；与资料冲突时以资料为准，不得因此编造。）\n\n")
+
+def generate_logic_analysis(raw_text: str, mode: str, user_note: str = "") -> str:
     if mode == "mindmap":
         sys_prompt = """
         【系统角色】知识架构师。
@@ -66,7 +75,7 @@ def generate_logic_analysis(raw_text: str, mode: str) -> str:
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
-def generate_logic_bundle(raw_text: str, lang: str = "中文") -> str:
+def generate_logic_bundle(raw_text: str, lang: str = "中文", user_note: str = "") -> str:
     """一次生成「宏观架构 + 知识图谱 + 因果链 + 对照表」的复合逻辑分析。
 
     旧实现把「思维导图」和「文本逻辑」拆成两次生成：费钱、且图文常常对不上。
@@ -130,6 +139,7 @@ graph TD
 ## 📊 概念-公式-题型对照
 | 概念 | 核心公式 | 常见题型 | 重要度 |
 |---|---|---|---|
+    sys_prompt = _note_block(user_note) + sys_prompt
 | 转动惯量 | $J=\\sum m_i r_i^2$ | 计算题 | ★★★ |
 
 【红线】
@@ -142,7 +152,7 @@ graph TD
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.3)
 
 
-def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = True) -> str:
+def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = True, user_note: str = "") -> str:
     if extract_type == "nouns":
         sys_prompt = (
             "【任务】提取核心名词，每个都要能直接背。格式：\n"
@@ -179,6 +189,7 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
 
 🚨【跨页规则】
 资料里页与页之间可能有页眉/页码，同一道题可能被拆在两页。
+    sys_prompt = _note_block(user_note) + sys_prompt
 块首若出现"【接上页…】"，说明这道题上一段已在前面出现过：**必须合并成一道完整题目输出，不要重复输出两道**。
 
 🚨【完整性规则】
@@ -191,7 +202,7 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
-def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficulty: int = 3, diy_config: str = "",
+def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficulty: int = 3, diy_config: str = "", user_note: str = "",
                         user_context: dict = None, lang: str = "中文", blueprint=None) -> str:
     if diy_config:
         paper_structure = f"【试卷结构（必须严格遵守）】：{diy_config}"
@@ -222,6 +233,7 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     🚨【出题红线：绝对防幻觉与反模板】🚨
     1. **严格贴合资料**：你只能考察资料中出现的知识点！符合大学期末考真实难度，不出弱智题，不出超纲题。
     2. **拒绝千篇一律**：同一套试卷中，不允许出现两道套路完全一样的题。可以尝试从计算题、证明题、概念辨析题中灵活切换。
+    sys_prompt = _note_block(user_note) + sys_prompt
     3. **严禁乱标页码**：这些题目是你新编的，原资料里根本不存在！所以**绝对不准**写“参考原资料第X页”！
     4. **图形文字化建模（极重要）**：如果新出的题需要配图（如受力分析、滑轮），你**必须用极其详尽的文字把图形描述出来**（例如：“一根长为L的杆，左端通过铰链固定，右端受水平向右的拉力F，此时杆与竖直方向夹角为θ...”）。确保学生不看图，光看文字就能列出方程。
     5. 选项独立换行。公式必须用 `$` 包裹。

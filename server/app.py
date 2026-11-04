@@ -139,7 +139,7 @@ def list_courses():
 
 
 
-ALLOWED_UPLOAD = {".pdf", ".pptx", ".docx", ".txt", ".md",
+ALLOWED_UPLOAD = {".pdf", ".pptx", ".docx", ".txt", ".md", ".jpg", ".jpeg", ".png", ".webp",
                   ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".amr"}
 MAX_UPLOAD_MB = 500
 
@@ -262,6 +262,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 persona=options.get("persona") or course.get("persona", "温柔小姐姐"),
                 core_ratio=float(options.get("core_ratio", 0.8)),
                 lang=options.get("lang", "中文"),
+                user_note=options.get("user_note", ""),
                 on_progress=job.emit, stop_event=job.stop)
         else:
             result = review_service.run_review(
@@ -275,6 +276,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 diy_config=options.get("diy_config", ""),
                 user_context={"target_score": course["target_score"]},
                 lang=options.get("lang", "中文"),
+                user_note=options.get("user_note", ""),
                 on_progress=job.emit, stop_event=job.stop)
 
         if result is None:

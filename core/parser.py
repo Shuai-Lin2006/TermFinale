@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import re
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import docx
 import fitz
@@ -252,13 +253,45 @@ def process_image(img_bytes, img_filename):
     return f"[[[IMAGE: {img_filename} | 图注: {caption}]]]"
 
 
+
+
+IMAGE_EXTS = {'jpg', 'jpeg', 'png', 'webp', 'bmp'}
+
+
+def _ocr_image_file(file_path: str) -> str:
+    """拍照/截图导入：把图片里的文字转成 Markdown 文本。"""
+    import base64
+    from openai import OpenAI
+    from core.config import get_key
+
+    data = Path(file_path).read_bytes()
+    b64 = base64.b64encode(data).decode()
+    mime = "image/png" if file_path.lower().endswith(".png") else "image/jpeg"
+    client = OpenAI(api_key=get_key("DASHSCOPE_API_KEY", "sk-not-configured"),
+                    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+    resp = client.chat.completions.create(
+        model=os.getenv("TERMFINALE_OCR_MODEL", "qwen-vl-ocr"),
+        max_tokens=4096,
+        messages=[{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}},
+            {"type": "text", "text": ("把图片里的所有文字按阅读顺序转录为 Markdown。保留标题、编号、表格与公式。"
+                                      "普通文字用纯文本，不要包进 $\\text{}$ 或 aligned；只有真正的数学公式才用 $...$。"
+                                      "不要总结、不要解释、不要遗漏。")},
+        ]}],
+    )
+    return _clean_ocr_text(resp.choices[0].message.content or "")
+
 def extract_text_from_file(file_path: str, on_progress=None) -> list:
     file_name = os.path.basename(file_path)
     ext = file_path.lower().split('.')[-1]
     all_pages = []
 
     try:
-        if ext in ('mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'amr'):
+        if ext in IMAGE_EXTS:
+            text = _ocr_image_file(file_path)
+            if text.strip():
+                all_pages.append(f"【《{file_name}》 图片转写】\n{text}")
+        elif ext in ('mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'amr'):
             from core.asr import transcribe_audio
             text = transcribe_audio(file_path, on_progress=on_progress)
             if text.strip():
