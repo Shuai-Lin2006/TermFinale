@@ -97,6 +97,15 @@ class GeneratedFile(Base):
     course = relationship("Course", back_populates="generated_files")
 
 
+class Profile(Base):
+    __tablename__ = 'profile'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), default="")
+    identity = Column(String(50), default="学生")
+    onboarded = Column(Boolean, default=False)
+    created_at = Column(String(50))
+
+
 class UserConfig(Base):
     __tablename__ = 'user_config'
     id = Column(Integer, primary_key=True, autoincrement=True)

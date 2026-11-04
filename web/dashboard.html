@@ -191,6 +191,13 @@
       + '<a class="btn ghost sm" href="generate.html?course=' + c.id + '">生成</a>'
       + '<a class="btn sm" href="reader.html?course=' + c.id + '">打开</a></span></div></article>';
   }
+  fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
+    if(p.name){
+      var t=document.querySelector('.page-title');
+      if(t) t.textContent = (new Date().getHours()<12?'上午好，':(new Date().getHours()<18?'下午好，':'晚上好，')) + p.name;
+      document.querySelectorAll('.rail-foot b, aside b').forEach(function(el){ if(el.textContent==='林同学') el.textContent=p.name; });
+    }
+  }).catch(function(){});
   fetch('/api/overview').then(function(r){ return r.json(); }).then(function(d){
     var focus = d.stats.focus || d.courses[0];
     if(focus){

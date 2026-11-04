@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from core import config, paths  # noqa: E402
-from core.database import Course, GeneratedFile, Material, Mistake, Note, get_db_session, init_db  # noqa: E402
+from core.database import Course, GeneratedFile, Material, Mistake, Note, Profile, get_db_session, init_db  # noqa: E402
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from core.quality.report import audit_markdown
@@ -953,6 +953,39 @@ async def test_keys(payload: dict):
     return out
 
 
+@app.get("/api/profile")
+def get_profile():
+    db = get_db_session()
+    try:
+        p = db.query(Profile).order_by(Profile.id).first()
+        if not p:
+            return {"onboarded": False}
+        return {"onboarded": bool(p.onboarded), "name": p.name or "", "identity": p.identity or "学生"}
+    finally:
+        db.close()
+
+
+@app.post("/api/profile")
+def save_profile(payload: dict):
+    import datetime
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "名字不能为空")
+    db = get_db_session()
+    try:
+        p = db.query(Profile).order_by(Profile.id).first()
+        if not p:
+            p = Profile(created_at=datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
+            db.add(p)
+        p.name = name[:50]
+        p.identity = (payload.get("identity") or "学生")[:50]
+        p.onboarded = True
+        db.commit()
+        return {"ok": True, "name": p.name}
+    finally:
+        db.close()
+
+
 @app.get("/api/settings/keys")
 def key_status():
     def mask(name: str):
@@ -1042,6 +1075,11 @@ def _page(name: str) -> FileResponse:
 
 
 @app.get("/")
+@app.get("/welcome.html")
+def welcome_page():
+    return _page("welcome.html")
+
+
 @app.get("/dashboard.html")
 def dashboard():
     return _page("dashboard.html")
