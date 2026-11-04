@@ -58,9 +58,20 @@ def main() -> int:
         return result.returncode
 
     print("\n✅ 打包完成")
+    app_path = None
     for candidate in (ROOT / "dist" / "TermFinale.app", ROOT / "dist" / "TermFinale"):
         if candidate.exists():
             print(f"   产物：{candidate}")
+            app_path = candidate
+
+    if "--desktop" in sys.argv and app_path and app_path.suffix == ".app":
+        dest = Path.home() / "Desktop" / "TermFinale.app"
+        if dest.exists():
+            shutil.rmtree(dest)
+        subprocess.run(["ditto", str(app_path), str(dest)], check=True)
+        subprocess.run(["xattr", "-dr", "com.apple.quarantine", str(dest)],
+                       check=False, stderr=subprocess.DEVNULL)
+        print(f"   已安装到桌面：{dest}")
     return 0
 
 

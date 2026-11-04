@@ -577,8 +577,13 @@ class TermFinaleApp(ctk.CTk):
             if not config.get_key("DEEPSEEK_API_KEY"):
                 result.configure(text="请先填写 DeepSeek Key（必填）", text_color=DANGER_COLOR)
                 return
+            ds_entry.delete(0, "end")
+            qw_entry.delete(0, "end")
+            ds_entry.configure(placeholder_text="已配置，留空表示不修改")
+            qw_entry.configure(placeholder_text="已配置，留空表示不修改")
+            result.configure(text="✅ 已保存到本机。建议点『测试连接』确认可用，完成后返回主页。",
+                             text_color=SUCCESS_COLOR)
             Toast.show(self, "已保存", "success")
-            self.show_dashboard()
 
         def clear():
             config.clear_key("DEEPSEEK_API_KEY")
@@ -622,7 +627,7 @@ class TermFinaleApp(ctk.CTk):
         PrimaryButton(btns, text="保存", command=save, width=110).pack(side="left")
         GhostButton(btns, text="测试连接", command=test, width=110).pack(side="left", padx=theme.SPACE["sm"])
         GhostButton(btns, text="清除本机 Key", command=clear, width=130).pack(side="left")
-        GhostButton(btns, text="稍后配置", command=self.show_dashboard, width=110).pack(side="right")
+        GhostButton(btns, text="返回主页", command=self.show_dashboard, width=110).pack(side="right")
 
     def edit_motto(self):
         dialog = ctk.CTkInputDialog(text="请输入新的励志名言：", title="修改名言")
