@@ -270,6 +270,17 @@ def save_keys(payload: dict):
     return {"ok": True}
 
 
+@app.get("/api/jobs/{job_id}/file")
+def job_file(job_id: str):
+    job = JOBS.get(job_id)
+    if not job or not job.result or not job.result.get("output_path"):
+        raise HTTPException(404, "结果不存在")
+    target = Path(job.result["output_path"])
+    if not target.is_file():
+        raise HTTPException(404, "文件已被移动或删除")
+    return FileResponse(target, media_type="text/html", filename=target.name)
+
+
 @app.get("/api/courses/{course_id}/preview")
 def preview(course_id: int):
     """最近一次生成的 HTML 路径（给阅读器/预览用）。"""
@@ -299,6 +310,11 @@ def _page(name: str) -> FileResponse:
 @app.get("/dashboard.html")
 def dashboard():
     return _page("dashboard.html")
+
+
+@app.get("/generate.html")
+def generate_page():
+    return _page("generate.html")
 
 
 @app.get("/courses.html")

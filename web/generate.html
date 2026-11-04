@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>生成工作台 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=5">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8V4Z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5 11-11"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">TF</div>
+      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot">
+      <div class="user"><div class="avatar">林</div>
+        <div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tiny muted">课程</span>
+        <select class="select" id="courseSelect"></select>
+      </div>
+      <div class="spacer"></div>
+      <span class="chip" id="apiState">连接中…</span>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">生成工作台</h1>
+          <div class="page-sub" id="courseSub">选好资料和模式，剩下的交给流水线</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 12px"><h2>要生成什么</h2></div>
+            <div class="seg" id="taskSeg">
+              <button data-task="guide" class="on">讲义</button>
+              <button data-task="extract">考点提取</button>
+              <button data-task="exam">训练试卷</button>
+              <button data-task="analysis">逻辑分析</button>
+            </div>
+
+            <div id="optGuide" style="margin-top:16px">
+              <div class="tiny muted" style="margin-bottom:6px">讲解深度</div>
+              <div class="seg" id="modeSeg">
+                <button data-mode="key" class="on">精简 · 只讲拿分</button>
+                <button data-mode="full">全量 · 讲透原理</button>
+              </div>
+              <div class="tiny muted" style="margin:14px 0 6px">讲解人设</div>
+              <select class="select" id="personaSelect">
+                <option>温柔小姐姐</option><option>老师</option><option>学术AI</option>
+                <option>暴力极客</option><option>阳光小哥哥</option>
+              </select>
+            </div>
+
+            <div id="optExtract" style="display:none;margin-top:16px">
+              <div class="tiny muted" style="margin-bottom:6px">提取类型</div>
+              <div class="seg" id="extractSeg">
+                <button data-type="points" class="on">考点</button>
+                <button data-type="nouns">名词</button>
+                <button data-type="questions">原题</button>
+              </div>
+              <label class="tiny" style="display:flex;align-items:center;gap:8px;margin-top:14px">
+                <input type="checkbox" id="withAnswer" checked style="accent-color:var(--brand)"> 包含答案与解析
+              </label>
+            </div>
+
+            <div id="optExam" style="display:none;margin-top:16px">
+              <div style="display:flex;gap:18px;flex-wrap:wrap">
+                <div><div class="tiny muted" style="margin-bottom:6px">套数</div>
+                  <select class="select" id="setsSelect"><option>1</option><option>2</option><option>3</option></select></div>
+                <div><div class="tiny muted" style="margin-bottom:6px">难度</div>
+                  <select class="select" id="diffSelect">
+                    <option value="2">2 星 · 基础</option><option value="3" selected>3 星 · 常规期末</option>
+                    <option value="4">4 星 · 拔高</option><option value="5">5 星 · 地狱</option></select></div>
+                <div><div class="tiny muted" style="margin-bottom:6px">出题方式</div>
+                  <select class="select" id="trainSelect">
+                    <option value="mock">模拟练习</option><option value="original">原题改数</option>
+                    <option value="variant">原题变式</option><option value="predict">预测仿真</option></select></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" style="padding:18px 20px">
+            <div class="section-head" style="margin:0 0 10px">
+              <h2>用哪些资料</h2><div class="line"></div>
+              <button class="btn ghost sm" id="selectAll">全选</button>
+            </div>
+            <div id="materials"><div class="tiny muted">加载中…</div></div>
+            <p class="note" style="margin:10px 0 0">资料越多，讲义越全；只有一份也能生成，缺的部分会标【延伸】。</p>
+          </section>
+        </div>
+
+        <aside class="card" id="statusCard" style="position:sticky;top:80px;padding:20px">
+          <div id="idleState">
+            <div class="tiny muted" style="letter-spacing:.1em">READY</div>
+            <div class="serif" style="font-size:22px;margin:6px 0 8px">准备好就开始</div>
+            <p class="muted" style="font-size:13px;margin:0 0 14px">生成过程会实时显示阶段和进度；中途可以取消，已完成的章节不会浪费。</p>
+            <button class="btn primary" id="startBtn" style="width:100%;justify-content:center">
+              <svg class="icon sm"><use href="#i-play"/></svg>开始生成
+            </button>
+            <p class="note" style="margin-top:10px">预计耗时 2~6 分钟，取决于资料页数和配图数量。</p>
+          </div>
+
+          <div id="runState" style="display:none">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div class="status-num" id="pct">0%</div>
+              <span class="tiny muted" id="elapsed">00:00</span>
+            </div>
+            <div class="bar" style="margin:10px 0 0"><i id="progressBar" style="width:0%"></i></div>
+            <div class="steps" id="steps"></div>
+            <div class="log" id="log"></div>
+            <button class="btn sm" id="cancelBtn" style="margin-top:12px;width:100%;justify-content:center">
+              <svg class="icon sm"><use href="#i-stop"/></svg>取消任务
+            </button>
+          </div>
+
+          <div id="doneState" style="display:none">
+            <div class="chip ok" style="margin-bottom:10px"><svg class="icon sm"><use href="#i-check"/></svg>已完成</div>
+            <div class="serif" style="font-size:20px;margin-bottom:4px" id="doneTitle">讲义生成好了</div>
+            <p class="muted" style="font-size:13px" id="doneMeta"></p>
+            <a class="btn primary" id="openResult" target="_blank" style="width:100%;justify-content:center;margin-top:8px">
+              打开结果
+            </a>
+            <button class="btn ghost sm" id="againBtn" style="width:100%;justify-content:center;margin-top:8px">再生成一份</button>
+          </div>
+
+          <div id="errState" style="display:none">
+            <div class="chip" style="color:var(--danger);border-color:var(--danger);margin-bottom:10px">失败</div>
+            <p class="muted" style="font-size:13px" id="errMsg"></p>
+            <button class="btn sm" id="retryBtn" style="margin-top:8px">重试</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=5"></script>
+<script>
+(function(){
+  var state = { task:'guide', mode:'key', persona:'温柔小姐姐', extractType:'points',
+                withAnswer:true, course:null, materials:[], jobId:null };
+  var $ = function(id){ return document.getElementById(id); };
+  var toast = window.__toast || function(){};
+
+  function seg(el, key, attr){
+    el.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      el.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      state[key] = b.dataset[attr || key];
+      syncOptions();
+    });
+  }
+  seg($('taskSeg'), 'task'); seg($('modeSeg'), 'mode');
+  seg($('extractSeg'), 'extractType', 'type');
+
+  function syncOptions(){
+    $('optGuide').style.display = state.task === 'guide' ? 'block' : 'none';
+    $('optExtract').style.display = state.task === 'extract' ? 'block' : 'none';
+    $('optExam').style.display = state.task === 'exam' ? 'block' : 'none';
+  }
+
+  function loadCourses(){
+    return fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
+      $('apiState').textContent = '已连接';
+      var sel = $('courseSelect'); sel.innerHTML = '';
+      if(!list.length){ sel.innerHTML = '<option>没有课程</option>'; return; }
+      list.forEach(function(c){
+        var o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name + ' · ' + c.days_left + ' 天后考试';
+        sel.appendChild(o);
+      });
+      var want = new URLSearchParams(location.search).get('course');
+      if(want) sel.value = want;
+      return loadCourse(sel.value);
+    }).catch(function(){
+      $('apiState').textContent = '未连接';
+      $('materials').innerHTML = '<div class="tiny" style="color:var(--danger)">无法连接本地服务，请运行 python server/app.py</div>';
+    });
+  }
+
+  function loadCourse(id){
+    return fetch('/api/courses/' + id).then(function(r){ return r.json(); }).then(function(c){
+      state.course = c;
+      $('courseSub').textContent = c.name + ' · 目标 ' + c.target_score + ' 分 · ' + c.days_left + ' 天后考试';
+      state.materials = c.materials || [];
+      renderMaterials();
+    });
+  }
+
+  function renderMaterials(){
+    var box = $('materials');
+    if(!state.materials.length){ box.innerHTML = '<div class="tiny muted">这门课还没有资料，先去「我的课程」上传。</div>'; return; }
+    box.innerHTML = state.materials.map(function(m){
+      return '<label class="mat"><input type="checkbox" value="' + m.id + '" checked>' +
+        '<span class="grow">' + m.filename + '</span>' +
+        '<span class="tiny muted">' + m.size_kb + ' KB</span>' +
+        (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') + '</label>';
+    }).join('');
+  }
+
+  $('selectAll').addEventListener('click', function(){
+    var boxes = document.querySelectorAll('#materials input[type=checkbox]');
+    var allOn = Array.prototype.every.call(boxes, function(b){ return b.checked; });
+    boxes.forEach(function(b){ b.checked = !allOn; });
+    this.textContent = allOn ? '全选' : '取消全选';
+  });
+
+  $('courseSelect').addEventListener('change', function(){ loadCourse(this.value); });
+
+  function selectedIds(){
+    return Array.prototype.map.call(document.querySelectorAll('#materials input:checked'), function(b){ return +b.value; });
+  }
+
+  var STAGES = {
+    guide: [['解析资料',0.02,0.1],['规划大纲',0.1,0.16],['逐章生成',0.16,0.9],['排版导出',0.9,1]],
+    extract: [['解析资料',0.02,0.08],['逐块提取',0.08,0.9],['合并排版',0.9,1]],
+    exam: [['解析资料',0.02,0.08],['生成试卷',0.08,0.85],['验卷排版',0.85,1]],
+    analysis: [['解析资料',0.02,0.08],['分析结构',0.08,0.8],['渲染',0.8,1]]
+  };
+
+  function renderSteps(p){
+    var stages = STAGES[state.task] || STAGES.guide;
+    $('steps').innerHTML = stages.map(function(s){
+      var on = p >= s[1] ? 'on' : '';
+      return '<div class="step ' + on + '"><i></i>' + s[0] + '</div>';
+    }).join('');
+  }
+
+  function showRunning(){
+    $('idleState').style.display = 'none'; $('doneState').style.display = 'none';
+    $('errState').style.display = 'none'; $('runState').style.display = 'block';
+    $('log').innerHTML = ''; $('progressBar').style.width = '0%'; $('pct').textContent = '0%';
+    renderSteps(0);
+  }
+  function showIdle(){
+    $('idleState').style.display = 'block'; $('runState').style.display = 'none';
+    $('doneState').style.display = 'none'; $('errState').style.display = 'none';
+  }
+
+  function start(){
+    var ids = selectedIds();
+    if(!ids.length){ toast('至少选一份资料'); return; }
+    if(!state.course){ toast('先选课程'); return; }
+    showRunning();
+    var options = { material_ids: ids };
+    if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; }
+    if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
+    if(state.task === 'exam'){ options.num_sets = +$('setsSelect').value; options.difficulty = +$('diffSelect').value; options.train_type = $('trainSelect').value; }
+
+    fetch('/api/jobs', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ course_id: state.course.id, task: state.task, options: options }) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        state.jobId = d.job_id; state.started = Date.now();
+        var es = new EventSource('/api/jobs/' + d.job_id + '/events');
+        es.onmessage = function(e){
+          var ev = JSON.parse(e.data);
+          var p = ev.progress || 0;
+          $('progressBar').style.width = Math.round(p * 100) + '%';
+          $('pct').textContent = Math.round(p * 100) + '%';
+          renderSteps(p);
+          var line = document.createElement('div');
+          line.textContent = '· ' + ev.message;
+          $('log').appendChild(line);
+          $('log').scrollTop = $('log').scrollHeight;
+        };
+        es.addEventListener('done', function(e){
+          es.close();
+          var snap = JSON.parse(e.data);
+          if(snap.status === 'done'){
+            $('runState').style.display = 'none'; $('doneState').style.display = 'block';
+            $('doneTitle').textContent = ({guide:'讲义生成好了', extract:'提取完成', exam:'试卷生成好了', analysis:'分析完成'})[state.task] || '完成';
+            $('doneMeta').textContent = snap.result && snap.result.metrics && snap.result.metrics.chars
+              ? ('共 ' + snap.result.metrics.chars + ' 字') : '文件已保存到本地';
+            $('openResult').href = '/api/jobs/' + d.job_id + '/file';
+          } else if(snap.status === 'cancelled'){ showIdle(); toast('已取消'); }
+          else {
+            $('runState').style.display = 'none'; $('errState').style.display = 'block';
+            $('errMsg').textContent = snap.error || '未知错误';
+          }
+        });
+      }).catch(function(e){ $('errState').style.display = 'block'; $('runState').style.display = 'none'; $('errMsg').textContent = '请求失败：' + e.message; });
+  }
+
+  $('startBtn').addEventListener('click', start);
+  $('againBtn').addEventListener('click', showIdle);
+  $('retryBtn').addEventListener('click', function(){ showIdle(); start(); });
+  $('cancelBtn').addEventListener('click', function(){
+    if(state.jobId) fetch('/api/jobs/' + state.jobId + '/cancel', { method:'POST' });
+  });
+
+  setInterval(function(){
+    if(!state.started || $('runState').style.display === 'none') return;
+    var s = Math.floor((Date.now() - state.started) / 1000);
+    $('elapsed').textContent = ('0' + Math.floor(s/60)).slice(-2) + ':' + ('0' + s%60).slice(-2);
+  }, 500);
+
+  syncOptions(); loadCourses();
+})();
+</script>
+</body>
+</html>
