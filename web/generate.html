@@ -306,7 +306,7 @@
             $('doneTitle').textContent = ({guide:'讲义生成好了', extract:'提取完成', exam:'试卷生成好了', analysis:'分析完成'})[state.task] || '完成';
             $('doneMeta').textContent = snap.result && snap.result.metrics && snap.result.metrics.chars
               ? ('共 ' + snap.result.metrics.chars + ' 字') : '文件已保存到本地';
-            $('openResult').href = '/api/jobs/' + d.job_id + '/file';
+            $('openResult').href = '/reader.html?course=' + state.course.id;
           } else if(snap.status === 'cancelled'){ showIdle(); toast('已取消'); }
           else {
             $('runState').style.display = 'none'; $('errState').style.display = 'block';

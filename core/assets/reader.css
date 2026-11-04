@@ -53,3 +53,5 @@ p,li{line-height:1.9;color:#374151}
 .tf-rail ol li{background:none;border:0;box-shadow:none;padding:0;margin:5px 0;font-size:13px}
 .tf-rail .tf-card{background:#fff}
 .tf-toc a{font-size:13.5px}
+
+.tf-toolbar{left:50%!important;bottom:28px;top:auto!important;transform:translateX(-50%)}

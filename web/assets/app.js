@@ -89,10 +89,6 @@
         selectedText = text;
         var r = sel.getRangeAt(0).getBoundingClientRect();
         toolbar.classList.add('show');
-        var w = toolbar.offsetWidth || 260;
-        var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
-        toolbar.style.left = left + 'px';
-        toolbar.style.top = Math.max(8, r.top - 46) + 'px';
       }, 10);
     });
     document.addEventListener('mousedown', function (e) {

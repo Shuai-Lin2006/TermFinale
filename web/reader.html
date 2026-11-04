@@ -40,6 +40,7 @@
 
   <main class="doc" id="doc">
     <div class="doc-cover" id="cover">
+      <div class="designer">TermFinale · 开发者 Lan</div>
       <span class="chip brand" id="coverChip">最近生成</span>
       <h1 id="coverTitle">正在加载…</h1>
       <p id="coverDesc"></p>
@@ -141,7 +142,8 @@
     $('tocMeta').textContent = '目标 ' + c.target_score + ' 分 · 剩 ' + c.days_left + ' 天';
     $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';
     $('coverTitle').textContent = c.name;
-    $('coverDesc').textContent = '为你生成的学习材料 · ' + d.filename;
+    var typeLabel = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '学习材料';
+    $('coverDesc').textContent = typeLabel + ' · TermFinale 精品讲义 · 目标 ' + c.target_score + ' 分';
     $('metaDays').textContent = c.days_left + ' 天后考试';
     $('metaTarget').textContent = '目标 ' + c.target_score + ' 分';
     $('metaFile').textContent = d.filename;

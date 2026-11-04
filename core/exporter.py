@@ -143,7 +143,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
             toc_title = "目录"
 
         toc_html = f"<div class='toc-box'><h2>📑 {toc_title}</h2><ul>"
-        for i, h in enumerate(headers): toc_html += f"<li><a href='#chapter-{i}'>👉 {h}</a></li>"
+        for i, h in enumerate(headers): toc_html += f"<li><a href='#chapter-{i}'>{h}</a></li>"
         toc_html += "</ul></div>"
         if not headers: toc_html = ""
 
@@ -226,9 +226,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         </div>
         """
 
-    cover_title = "TermFinale Guide" if lang == "English" and doc_type == "专属讲义" else (
-        "TermFinale Exam" if lang == "English" and doc_type == "训练试卷" else f"TermFinale {doc_type}")
-    cover_desc = f"Your Personalized Final Prep · {course.name if course else ''}" if lang == "English" else f"为你量身定制的期末突击宝典 · {course.name if course else ''}"
+    course_name = course.name if course else ""
+    target_score = getattr(course, "target_score", None) if course else None
+    cover_title = course_name or doc_type
+    cover_desc = ("TermFinale 精品讲义"
+                  + (f" · 目标 {target_score} 分" if target_score else ""))
 
     # 试卷专用卷头：姓名/学号/时间/满分 + 密封线
     exam_header = ""
@@ -262,7 +264,8 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     nav_reading = "Reading..." if lang == "English" else "正在阅读..."
     modal_title = "Explanation" if lang == "English" else "名词解释"
 
-    cover_html = f'<div class="cover"><h1>{cover_title}</h1><p>{cover_desc}</p>{custom_info}</div>'
+    cover_html = (f'<div class="cover"><div class="designer">TermFinale · 开发者 Lan</div>'
+                  f'<h1>{cover_title}</h1><p>{cover_desc}</p>{custom_info}</div>')
     if exam_header:
         cover_html = ""
 
@@ -413,6 +416,45 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     .toc-box li {{ margin: 10px 0; font-size: 15px; background: none; border: none; padding: 0; }}
     .toc-box a {{ color: #333333; text-decoration: none; }}
     h2.chapter-title {{ font-size: 24px; color: #0056b3; margin-top: 60px; padding-left: 12px; border-left: 5px solid #007AFF; }}
+
+
+    /* ---------- v2 教材体 ---------- */
+    body {{ background: #fafaf8; color: #14161a; padding: 0; }}
+    .container {{ max-width: 900px; margin: 0 auto; padding: 0 36px 80px; background: #fff;
+      box-shadow: 0 12px 40px rgba(20,22,26,.06); }}
+    .cover {{ text-align: left; padding: 56px 0 30px; border-bottom: 1px solid #e6e4de; margin-bottom: 34px; }}
+    .cover h1 {{ font-family: "Songti SC","STSong",serif; font-size: 44px; line-height: 1.2;
+      color: #14161a; margin: 6px 0 10px; border: 0; }}
+    .cover p {{ color: #6f7480; font-size: 15px; letter-spacing: .02em; margin: 0 0 6px; }}
+    .designer {{ font-size: 11px; letter-spacing: .18em; color: #9aa0aa; text-transform: uppercase; }}
+    .custom-info {{ justify-content: flex-start; gap: 10px; margin-top: 18px; }}
+    .info-item {{ background: transparent; border: 1px solid #e6e4de; border-radius: 10px;
+      padding: 8px 14px; font-size: 13px; color: #3a3d44; }}
+    .info-item strong {{ color: #14161a; }}
+    h2.chapter-title {{ font-family: "Songti SC","STSong",serif; font-size: 28px; color: #14161a;
+      border-left: 0; border-bottom: 1px solid #e6e4de; padding: 0 0 10px; margin-top: 58px; }}
+    .top-nav {{ top: 14px; right: 18px; gap: 4px; padding: 6px; border-radius: 12px;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(12px);
+      border: 1px solid #e6e4de; box-shadow: 0 6px 20px rgba(20,22,26,.08); }}
+    .top-nav a, .top-nav button, .search-btn, .edit-btn, .word-btn, .print-btn {{
+      background: transparent !important; color: #3a3d44 !important; border: 0; border-radius: 8px;
+      padding: 7px 10px; font-weight: 500; font-size: 12.5px; box-shadow: none; }}
+    .top-nav a:hover, .top-nav button:hover {{ background: #f2f1ed !important; color: #14161a !important; }}
+    .current-chapter {{ background: transparent !important; color: #6f7480 !important; font-size: 12px;
+      padding: 6px 8px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+    blockquote {{ display: block !important; margin: 16px 0; padding: 12px 16px; background: #eaf2ef;
+      border-left: 3px solid #0f5b4c; border-radius: 0 8px 8px 0; }}
+    h2.chapter-title {{ border-left: 0 !important; background: transparent !important; }}
+    h3 {{ background: transparent !important; border-left: 0 !important; padding-left: 0 !important;
+      font-size: 17px !important; color: #14161a !important; margin: 28px 0 6px !important; }}
+    .img-responsive {{ max-height: 360px; }}
+    .toc-box {{ background: #fafaf8; border-color: #e6e4de; }}
+    @media print {{
+      body {{ background: #fff; }}
+      .container {{ box-shadow: none; max-width: none; padding: 0; }}
+      .cover {{ padding-top: 10px; }}
+      h2.chapter-title {{ page-break-after: avoid; }}
+    }}
 
     .blank-space {{ border-bottom: 1px dashed #c9c9c9; margin: 12px 0 22px; }}
     @media print {{ .blank-space {{ border-bottom: 1px dashed #bbb; }} }}
