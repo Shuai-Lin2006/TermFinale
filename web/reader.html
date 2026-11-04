@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>物理化学 · 第 3 章 电化学 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.5v.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 16h10v5H7z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+</svg>
+
+<div class="reader">
+  <aside class="toc">
+    <div style="display:flex;align-items:center;gap:8px;padding:0 8px 14px">
+      <a class="btn ghost sm" href="dashboard.html" style="padding:6px"><svg class="icon sm"><use href="#i-back"/></svg></a>
+      <div>
+        <div style="font-size:13px;font-weight:650">物理化学</div>
+        <div class="tiny muted">精简讲义 · 目标 80 分</div>
+      </div>
+    </div>
+    <h4>章节目录</h4>
+    <a href="#c1"><small>第 1 章</small>气体的 pVT 性质</a>
+    <a href="#c2"><small>第 2 章</small>热力学第一定律</a>
+    <a class="active" href="#c3"><small>第 3 章</small>电化学</a>
+    <a href="#c3-3"><small>3.3</small>电极电势</a>
+    <a href="#c3-4"><small>3.4</small>原电池热力学</a>
+    <a href="#c4"><small>第 4 章</small>化学动力学</a>
+    <div style="margin-top:18px;padding:0 8px">
+      <div class="tiny muted" style="margin-bottom:8px">阅读进度</div>
+      <div class="bar"><i style="width:64%"></i></div>
+      <div class="tiny muted" style="margin-top:6px">64% · 上次读到 3.2</div>
+    </div>
+  </aside>
+
+  <main class="doc" id="doc">
+    <div class="doc-cover">
+      <span class="chip brand">第 3 章 · 电化学</span>
+      <h1>可逆电池与<span style="color:var(--brand)">能斯特方程</span></h1>
+      <p>本章是电化学的计算核心：从电池符号到电动势，再到平衡常数，一条线串起来。考试里 80% 的分在这里。</p>
+      <div class="doc-meta">
+        <span>预计 22 分钟</span><span>5 个考点</span><span>3 道自测</span>
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn sm" data-toast="已加入打印队列"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
+          <button class="btn sm" id="themeBtn"><svg class="icon sm"><use href="#i-moon"/></svg>主题</button>
+        </span>
+      </div>
+    </div>
+
+    <h2 id="c3-1">3.1 可逆电池与电动势</h2>
+    <p>可逆电池要求：电极反应可逆、能量转换可逆、无电流通过或电流无限小。只有满足这三条，才能用热力学公式处理。</p>
+
+    <div class="callout">
+      <svg class="icon"><use href="#i-bulb"/></svg>
+      <div><b>必背</b><p>电池电动势 <b>E</b> 等于正极电势减负极电势；书写电池符号时，负极在左、正极在右，单竖线表示相界面，双竖线表示盐桥。</p></div>
+    </div>
+
+    <div class="formula">E = E° − (RT / nF) ln Q<small>能斯特方程 · 25 ℃ 时可写成 E = E° − (0.0592 / n) lg Q</small></div>
+
+    <h3>怎么写电池符号</h3>
+    <p>以丹尼尔电池为例：<code>Zn(s) | Zn²⁺(a₁) ‖ Cu²⁺(a₂) | Cu(s)</code>。左边发生氧化，右边发生还原。</p>
+
+    <div class="callout warn">
+      <svg class="icon"><use href="#i-warn"/></svg>
+      <div><b>易错点</b><p>算 <b>ΔG</b> 时符号最容易错：<b>ΔG = −nFE</b>。E 为正时 ΔG 为负，反应自发。考试里至少有一道选择题考这个符号。</p></div>
+    </div>
+
+    <h2 id="c3-2">3.2 能斯特方程的三种考法</h2>
+    <p>第一种：给浓度求电动势；第二种：给电动势反求浓度或 <b>K°</b>；第三种：判断反应方向。三种都绕不开同一个式子。</p>
+
+    <figure class="figure">
+      <div class="ph">配图占位 · 原图会从课件原位提取</div>
+      <figcaption>图 3-2　丹尼尔电池电子流向与离子迁移方向</figcaption>
+    </figure>
+
+    <h3>自测</h3>
+    <div class="quiz" data-answer="B"><span class="num">1</span>下列电池中，属于可逆电池的是（　）</div>
+    <div class="quiz" data-answer="C"><span class="num">2</span>Zn|Zn²⁺‖Cu²⁺|Cu 电池的负极反应是（　）</div>
+    <div class="quiz" data-answer="A"><span class="num">3</span>若 E° 增大，平衡常数 K° 会（　）</div>
+
+    <h2 id="c3-3">3.3 电极电势</h2>
+    <p>标准氢电极规定 <b>E°(H⁺/H₂) = 0 V</b>，其他电极与之组成电池测得的电动势即为该电极的标准电极电势。</p>
+
+    <h2 id="c3-4">3.4 原电池热力学</h2>
+    <p>由 <b>ΔG = −nFE</b> 和 <b>ΔG° = −RT ln K°</b> 可得 <b>ln K° = nFE°/RT</b>。这一组关系是计算题的固定套路。</p>
+  </main>
+
+  <aside class="rail-right">
+    <h4>本章速查</h4>
+    <div class="rail-card">
+      <ol>
+        <li>可逆电池三个条件</li>
+        <li>电池符号书写规则</li>
+        <li>能斯特方程（浓度/分压）</li>
+        <li>ΔG = −nFE 的符号</li>
+        <li>K° 与 E° 的关系</li>
+      </ol>
+    </div>
+    <div class="rail-card">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:8px">
+        <svg class="icon sm" style="color:var(--brand)"><use href="#i-spark"/></svg>问 AI
+      </div>
+      <textarea id="railAsk" rows="3" placeholder="选中正文提问，或在这里直接问…"
+        style="width:100%;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font:inherit;font-size:12.5px;background:var(--paper);color:var(--ink)"></textarea>
+      <button class="btn primary sm" id="railSend" style="margin-top:8px;width:100%;justify-content:center">
+        <svg class="icon sm"><use href="#i-send"/></svg>发送
+      </button>
+    </div>
+    <div class="ask-hint">
+      <svg class="icon sm"><use href="#i-bulb"/></svg>
+      选中正文任意一段 → 解释 / 举例 / 出题；回答会保留在这里。
+    </div>
+  </aside>
+</div>
+
+<nav class="mobile-tab">
+  <a href="dashboard.html">首页</a>
+  <a class="active">阅读</a>
+  <a href="#" id="mAsk">问 AI</a>
+  <a href="#" data-toast="设置页开发中">设置</a>
+</nav>
+
+<div class="toolbar" id="toolbar">
+  <button data-mode="explain"><svg class="icon sm"><use href="#i-bulb"/></svg>解释一下</button>
+  <button data-mode="example"><svg class="icon sm"><use href="#i-spark"/></svg>举个例子</button>
+  <button data-mode="quiz"><svg class="icon sm"><use href="#i-warn"/></svg>出题考我</button>
+</div>
+
+<aside class="drawer" id="drawer">
+  <header>
+    <svg class="icon" style="color:var(--brand)"><use href="#i-spark"/></svg>
+    <b>AI 答疑</b>
+    <button class="close" id="drawerClose"><svg class="icon sm"><use href="#i-x"/></svg></button>
+  </header>
+  <div class="quote" id="quote">选中一段正文，我会结合上下文解释。</div>
+  <div class="answer" id="answer">你可以先选中一句话，或者直接在右侧输入问题。</div>
+  <footer>
+    <button class="btn sm" data-toast="已存为笔记（演示）">存为笔记</button>
+    <button class="btn sm" id="copyBtn">复制</button>
+    <span class="spacer"></span>
+    <span class="tiny muted">回答仅供参考</span>
+  </footer>
+</aside>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>
