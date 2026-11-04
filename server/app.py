@@ -325,6 +325,15 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                       if md_text else None}
         if md_text and not job.result["quality"]["passed"]:
             job.message = "完成（自检有问题）"
+        if task == "guide" and options.get("persona"):
+            db = get_db_session()
+            try:
+                c = db.query(Course).filter(Course.id == course["id"]).first()
+                if c:
+                    c.persona = options["persona"]
+                    db.commit()
+            finally:
+                db.close()
     except Exception as exc:  # noqa: BLE001
         if job.stop.is_set():
             job.status = "cancelled"
