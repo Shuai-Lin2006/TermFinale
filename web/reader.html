@@ -79,6 +79,10 @@
     <h4>本章速查</h4>
     <div class="rail-card"><ol id="quickList"><li class="tiny muted">加载中…</li></ol></div>
     <div class="rail-card">
+      <button class="btn" id="regenChapter" style="width:100%;justify-content:center">重新生成本章</button>
+      <p class="tiny muted" style="margin:8px 0 0;line-height:1.6">只重写当前这一章，其他章节不动。</p>
+    </div>
+    <div class="rail-card">
       <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:8px">
         <svg class="icon sm" style="color:var(--brand)"><use href="#i-spark"/></svg>问 AI
       </div>
@@ -160,6 +164,7 @@
     var c = d.course;
     window.TF_COURSE = c.name;
     window.TF_COURSE_ID = c.id;
+    window.TF_PERSONA = c.persona || '温柔小姐姐';
     $('tocCourse').textContent = c.name;
     $('tocMeta').textContent = '目标 ' + c.target_score + ' 分 · 剩 ' + c.days_left + ' 天';
     $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';
@@ -330,6 +335,39 @@
       .then(function(r){ return r.json(); })
       .then(function(){ toast('已存为笔记'); })
       .catch(function(){ toast('保存失败'); });
+  });
+
+  $('regenChapter').addEventListener('click', function(){
+    if(!cid || !window.TF_COURSE_ID){ toast('请从课程进入阅读器'); return; }
+    var btn = this;
+    var active = document.querySelector('.toc a.active');
+    var title = active ? active.textContent.trim() : '';
+    var level2 = (LAST_TOC || []).filter(function(t){ return t.level === '2'; });
+    var idx = 0;
+    if(title){
+      for(var i = 0; i < level2.length; i++){
+        if(level2[i].text.replace(/^核心考点[:：]\s*/, '') === title){ idx = i; break; }
+      }
+    }
+    btn.disabled = true; btn.textContent = '提交中…';
+    fetch('/api/jobs', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ course_id: window.TF_COURSE_ID, task: 'chapter',
+        options: { chapter_index: idx, mode: 'key', persona: window.TF_PERSONA || '温柔小姐姐' } }) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var timer = setInterval(function(){
+          fetch('/api/jobs/' + d.job_id).then(function(r){ return r.json(); }).then(function(snap){
+            if(snap.status === 'done'){
+              clearInterval(timer); btn.textContent = '完成，刷新中…'; setTimeout(function(){ location.reload(); }, 600);
+            } else if(snap.status === 'error'){
+              clearInterval(timer); btn.disabled = false; btn.textContent = '重试'; toast(snap.error || '重写失败');
+            } else {
+              btn.textContent = '重写中 ' + Math.round((snap.progress || 0) * 100) + '%';
+            }
+          });
+        }, 1500);
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = '重试'; toast('提交失败'); });
   });
 
   if(cid){ load(cid); }

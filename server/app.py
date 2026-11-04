@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import threading
 import time
 import uuid
@@ -341,6 +342,84 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         if not text.strip():
             raise RuntimeError("资料没有解析出文字（可能是扫描件或空文件）")
 
+        if task == "chapter":
+            import datetime
+            import types
+            from core.ai_engine import generate_super_guide
+            from core.exporter import export_to_html
+            from core.quality.dedupe import dedupe_markdown
+            from services.guide_service import build_course_info
+
+            db = get_db_session()
+            try:
+                gens = sorted(db.query(GeneratedFile)
+                              .filter(GeneratedFile.course_id == course["id"]).all(),
+                              key=lambda g: g.id, reverse=True)
+                gen = None
+                for g in gens:
+                    if Path(g.file_path).with_suffix(".md").is_file():
+                        gen = g
+                        break
+            finally:
+                db.close()
+            if not gen:
+                raise RuntimeError("这门课还没有可编辑的讲义，请先生成一份")
+
+            md_path = Path(gen.file_path).with_suffix(".md")
+            md = md_path.read_text(encoding="utf-8")
+            matches = list(re.finditer(r"(?m)^##\s*核心考点[:：].*?(?=^##\s*核心考点[:：]|\Z)", md, re.S))
+            if not matches:
+                raise RuntimeError("没有找到章节结构")
+            idx = int(options.get("chapter_index", 0))
+            if idx < 0 or idx >= len(matches):
+                raise RuntimeError("章节序号超出范围")
+            title = re.sub(r"^##\s*核心考点[:：]\s*", "",
+                           matches[idx].group(0).splitlines()[0]).strip()
+
+            job.emit(ProgressEvent(f"正在重写：{title}", 0.25))
+            info = build_course_info(course)
+            persona = options.get("persona") or course.get("persona", "温柔小姐姐")
+            mode = options.get("mode", "key")
+            new_chapter = generate_super_guide(
+                text, info, persona=persona,
+                user_choice="option_1_保命流" if mode == "key" else "option_2_完整流",
+                lang=options.get("lang", "中文"),
+                chapter={"title": title, "index": idx, "total": len(matches),
+                         "must_know": [], "neighbors": ""},
+                user_note=options.get("user_note", ""))
+            if not new_chapter.strip():
+                raise RuntimeError("模型没有返回内容，请重试")
+
+            job.emit(ProgressEvent("正在重新排版…", 0.85))
+            m = matches[idx]
+            merged = dedupe_markdown(md[:m.start()] + new_chapter.strip() + "\n\n" + md[m.end():])
+
+            paths.outputs_dir().mkdir(parents=True, exist_ok=True)
+            out_path = paths.outputs_dir() / (
+                f"{course['name']}_第{idx + 1}章重生成_{datetime.datetime.now():%m%d_%H%M}.html")
+            ns = types.SimpleNamespace(name=course["name"], target_score=course["target_score"],
+                                       days_left=course["days_left"])
+            export_to_html(merged, str(out_path), course=ns, persona=persona,
+                           doc_type="精简讲义" if mode == "key" else "全套讲义")
+            out_path.with_suffix(".md").write_text(merged, encoding="utf-8")
+
+            db = get_db_session()
+            try:
+                db.add(GeneratedFile(course_id=course["id"], file_path=str(out_path),
+                                     created_at=datetime.datetime.now().strftime("%m%d_%H%M"),
+                                     file_type="guide"))
+                db.commit()
+            finally:
+                db.close()
+
+            job.status = "done"
+            job.progress = 1.0
+            job.message = "重写完成"
+            job.result = {"output_path": str(out_path),
+                          "metrics": {"chars": len(merged), "chapter": title},
+                          "quality": audit_markdown(merged, source_tags=text.count("[[[IMAGE:"))}
+            return
+
         job.emit(ProgressEvent("正在生成…", 0.12))
         if task == "guide":
             result = guide_service.run_guide(
@@ -408,7 +487,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
 def create_job(payload: dict):
     course_id = int(payload.get("course_id") or 0)
     task = payload.get("task") or "guide"
-    if task not in {"guide", "analysis", "extract", "exam", "parse"}:
+    if task not in {"guide", "analysis", "extract", "exam", "parse", "chapter"}:
         raise HTTPException(400, "未知任务类型")
     db = get_db_session()
     try:
