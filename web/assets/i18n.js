@@ -47,10 +47,53 @@
     "准备好了就开始":"Ready when you are","要生成什么":"What to create","讲解深度":"Depth",
     "判分":"Grade","得分":"Score","全对":"All correct","未作答":"blank","正确答案":"Correct answer",
     "你选了":"You chose","我的课程":"Courses","练习与错题":"Practice","笔记":"Notes",
+    "期末冲刺工作台":"Final-exam workspace","本周学习":"This week","小时":"hours",
+    "比上周多 1.2 小时":"1.2h more than last week","新建冲刺":"New sprint",
+    "连续学习 4 天":"4-day streak","进行中的课":"In progress","最近生成":"Recently generated",
+    "这次考试，分都在哪":"Where the marks are","按你上传的 3 份资料统计":"Based on your materials",
+    "今天做什么":"Today","按考试紧迫度排序":"By exam urgency",
+    "今天做什么":"What to do today","本周学习":"This week",
+    "AI 答疑":"AI Q&A","Key 文件":"Key file","Key":"Key",
+    "PDF / 扫描件 / PPTX / Word / 教材照片 / 音频，都可以直接丢进来":"PDF / scans / PPTX / Word / textbook photos / audio",
+    "上传第一份课件，5 分钟后就能开始冲刺。":"Upload your first file and start in 5 minutes.",
+    "先为这门课生成一份讲义，再回来阅读。":"Generate a guide for this course first.",
+    "还没有可读的内容":"Nothing to read yet","只重写当前这一章，其他章节不动。":"Only this chapter is rewritten.",
+    "选中正文任意一段 → 解释 / 举例 / 出题；回答会保留在这里。":"Select any passage → explain / example / quiz. Answers stay here.",
+    "回答仅供参考":"For reference only","加入错题":"Add to mistakes","出题考我":"Quiz me",
+    "举个例子":"Give an example","解释一下":"Explain","继续追问…":"Ask a follow-up…",
+    "选中一段正文，我会结合上下文解释。":"Select a passage and I will explain it in context.",
+    "你可以先选中一句话，或者直接在右侧输入问题。":"Select a sentence, or ask on the right.",
+    "你会选择哪种讲解？":"Which style?",
+    "全量 · 讲透原理":"Full · explain principles","精简 · 只讲拿分":"Compact · score-focused",
+    "讲义":"Guide","考点提取":"Key points","训练试卷":"Mock paper","逻辑分析":"Logic analysis",
+    "讲解深度":"Depth","出题方式":"Question style","套数":"Sets","难度":"Difficulty",
+    "包含答案与解析":"Include answers","原题":"Original","原题改数":"Numbers changed",
+    "原题变式":"Variants","模拟练习":"Mock","预测仿真":"Prediction",
+    "考点":"Key points","名词":"Terms","提取类型":"Extract type",
+    "文本生成":"Text","图片理解":"Vision","扫描 OCR":"Scan OCR","音频转写":"Audio ASR","并发":"Concurrency",
+    "可在 .env 覆盖":"Override in .env","旧文件，需重新生成":"Old file, regenerate",
+    "可在阅读器打开":"Open in reader","可判分":"Gradable","可阅读":"Readable","需重生成":"Regenerate",
+    "已连接":"Connected","已生成":"Generated","已完成":"Done","失败":"Failed",
+    "材料就绪":"Materials ready","资料越多，讲义越全；只有一份也能生成，缺的部分会标【延伸】。":"More materials, fuller guide. Missing parts are marked [Extended].",
+    "会作为偏好发给模型；与资料冲突时仍以资料为准。":"Sent as preference; source material wins on conflicts.",
+    "生成过程会实时显示阶段和进度；中途可以取消，已完成的章节不会浪费。":"Live progress; cancel anytime. Finished chapters are kept.",
+    "预计耗时 2~6 分钟，取决于资料页数和配图数量。":"About 2–6 min depending on pages and figures.",
+    "准备好了就开始":"Ready when you are","开始":"Start","打开结果":"Open result","再生成一份":"Generate again",
+    "取消任务":"Cancel task","正在加载…":"Loading…","加载中…":"Loading…",
+    "去练习":"Practice","去阅读":"Read","复习":"Review","首页":"Home","阅读":"Read",
+    "阅读进度":"Reading progress","本章速查":"Chapter notes","重新生成本章":"Regenerate chapter",
+    "问 AI":"Ask AI","TermFinale · 开发者 Lan":"TermFinale · Lan",
+    "本地优先：资料只在本机解析，Key 只保存在本机 .env。":"Local-first: files never leave this machine; keys stay in local .env.",
+    "清理调试缓存":"Clear debug cache","数据与缓存":"Data & cache","生成文件":"Outputs",
+    "解析图片":"Figures","调试产物":"Debug","日志":"Logs","模型":"Models","外观":"Appearance",
+    "关于":"About","版本":"Version","构建":"Build","开发者":"Developer",
+    "已配置 · 尾号":"Configured · ends","只存本机":"Local only","测试连接":"Test",
+    "阿里云百炼":"DashScope","适配":"Adapt",
+    "课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
     "下午好":"Good afternoon","上午好":"Good morning","晚上好":"Good evening"
   };
   var RULES = [
-    [/^共 (\d+) 门课.*$/, "$1 courses"],
+    [/^共 (\d+) 门课$/, "$1 courses"],
     [/^(\d+) 天后考试$/, "Exam in $1 days"],
     [/^(\d+) 天后$/, "$1 days"],
     [/^(\d+) 份资料 · (\d+) 份已生成 · 目标 (\d+) 分$/, "$1 files · $2 generated · Target $3"],
@@ -66,7 +109,14 @@
     [/ 天后考试$/, " days to exam"],
     [/^第 (\d+) 轮$/, "Round $1"],
     [/^得分：(\d+) \/ (\d+)/, "Score: $1 / $2"],
-    [/^共 (\d+) 题 · 今天该复习 (\d+) 题$/, "$1 questions · $2 due today"]
+    [/^共 (\d+) 题 · 今天该复习 (\d+) 题$/, "$1 questions · $2 due today"],
+    [/^共 (\d+) 门课[·，,]\s*最近考试在 (\d+) 天后$/, "$1 courses · next exam in $2 days"],
+    [/^已配置 · 尾号 (\w+)$/, "Configured · ends $1"]
+  ];
+  var PRE = [
+    [/ 份资料/g, " files"], [/ 份已生成/g, " generated"], [/目标 (\d+) 分/g, "Target $1"],
+    [/ 天后考试/g, " days to exam"], [/ 个考点/g, " key points"], [/ 页讲义/g, " pages"],
+    [/ 个错题/g, " mistakes"], [/ 分钟/g, " min"]
   ];
   var lang = localStorage.getItem('tf-lang') || 'zh';
   var translating = false;
@@ -75,6 +125,9 @@
     var key = (raw || '').trim();
     if (!key) return null;
     if (DICT[key] !== undefined) return raw.replace(key, DICT[key]);
+    var pre = key;
+    PRE.forEach(function (r) { pre = pre.replace(r[0], r[1]); });
+    if (pre !== key) return raw.replace(key, pre);
     for (var i = 0; i < RULES.length; i++) {
       if (RULES[i][0].test(key)) return raw.replace(key, key.replace(RULES[i][0], RULES[i][1]));
     }
@@ -111,14 +164,19 @@
   function toggleButton() {
     var btn = document.createElement('button');
     btn.className = 'btn ghost sm';
-    btn.style.cssText = 'position:fixed;left:14px;bottom:14px;z-index:9999;font-size:11px;padding:4px 8px;opacity:.75';
+    var bar = document.querySelector('.topbar');
+    if (bar) {
+      btn.style.cssText = 'font-size:12px;padding:6px 10px;margin-left:8px';
+    } else {
+      btn.style.cssText = 'position:fixed;right:18px;top:14px;z-index:9999;font-size:11px;padding:6px 10px';
+    }
     btn.textContent = lang === 'en' ? '中文' : 'EN';
     btn.title = 'Switch UI language';
     btn.addEventListener('click', function () {
       localStorage.setItem('tf-lang', lang === 'en' ? 'zh' : 'en');
       location.reload();
     });
-    document.body.appendChild(btn);
+    if (bar) bar.appendChild(btn); else document.body.appendChild(btn);
   }
 
   window.TF_LANG = { get: function () { return lang; }, apply: apply };
@@ -127,9 +185,19 @@
     if (lang === 'en') {
       new MutationObserver(function (muts) {
         muts.forEach(function (m) {
-          m.addedNodes.forEach(function (n) { if (n.nodeType === 1) walk(n); });
+          if (m.type === 'characterData') {
+            var out = translateString(m.target.nodeValue);
+            if (out !== null) m.target.nodeValue = out;
+          }
+          m.addedNodes.forEach(function (n) {
+            if (n.nodeType === 1) walk(n);
+            else if (n.nodeType === 3) {
+              var out = translateString(n.nodeValue);
+              if (out !== null) n.nodeValue = out;
+            }
+          });
         });
-      }).observe(document.body, { childList: true, subtree: true });
+      }).observe(document.body, { childList: true, subtree: true, characterData: true });
     }
   });
 })();

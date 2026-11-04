@@ -155,6 +155,7 @@ OUTLINE_SYSTEM = """你是大学期末复习资料的课程架构师。
 7. 资料很短时 1~3 章即可，不要为了凑数硬拆。"""
 
 
+
 def generate_outline(
     pages: list[str],
     course: dict | None = None,
@@ -176,7 +177,10 @@ def generate_outline(
         digest = f"课程：{course.get('name', '')}｜专业：{course.get('major', '')}｜目标分：{course.get('target_score', '')}\n" + digest
 
     try:
-        raw = ai_call(OUTLINE_SYSTEM, digest)
+        system = OUTLINE_SYSTEM
+        if lang == "English":
+            system += "\n8. All chapter titles and must_know items MUST be written in English."
+        raw = ai_call(system, digest)
     except Exception as exc:  # noqa: BLE001
         logger.warning("大纲 AI 调用失败，退回启发式: {}", exc)
         return fallback_outline(pages)
