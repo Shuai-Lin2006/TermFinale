@@ -90,6 +90,8 @@
     "已配置 · 尾号":"Configured · ends","只存本机":"Local only","测试连接":"Test",
     "阿里云百炼":"DashScope","适配":"Adapt",
     "课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
+    "思考中…":"Thinking…","完成":"Done","讲义生成好了":"Guide ready","提取完成":"Extraction done",
+    "试卷生成好了":"Paper ready","分析完成":"Analysis done","准备中…":"Preparing…",
     "下午好":"Good afternoon","上午好":"Good morning","晚上好":"Good evening"
   };
   var RULES = [
@@ -179,7 +181,30 @@
     if (bar) bar.appendChild(btn); else document.body.appendChild(btn);
   }
 
-  window.TF_LANG = { get: function () { return lang; }, apply: apply };
+  function message(text) {
+    if (lang !== 'en' || !text) return text;
+    var rules = [
+      [/^正在解析文件：(.+)$/, "Parsing $1"],
+      [/^正在解析 (.+?)（(\d+)\/(\d+)）$/, "Parsing $1 ($2/$3)"],
+      [/^正在规划课程大纲/, "Planning outline"],
+      [/^已规划 (\d+) 章，开始逐章生成/, "$1 chapters planned, generating"],
+      [/^已生成 (\d+)\/(\d+) 个章节块/, "Wrote $1/$2 sections"],
+      [/^正在识别配图：(.+?)（(\d+)\/(\d+)）/, "Figures: $1 ($2/$3)"],
+      [/^正在 OCR 扫描页：(.+?)（(\d+)\/(\d+)）/, "OCR: $1 ($2/$3)"],
+      [/^正在排版/, "Typesetting"],
+      [/^正在重写：(.+)$/, "Rewriting: $1"],
+      [/^正在提取区块 (\d+)\/(\d+).*$/, "Extracting chunk $1/$2"],
+      [/^正在生成…$/, "Generating…"],
+      [/^完成（自检有问题）$/, "Done (with warnings)"],
+      [/^完成$/, "Done"]
+    ];
+    for (var i = 0; i < rules.length; i++) {
+      if (rules[i][0].test(text)) return text.replace(rules[i][0], rules[i][1]);
+    }
+    return text;
+  }
+
+  window.TF_LANG = { get: function () { return lang; }, apply: apply, msg: message };
   document.addEventListener('DOMContentLoaded', function () {
     apply(); toggleButton();
     if (lang === 'en') {

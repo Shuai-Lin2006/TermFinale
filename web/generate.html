@@ -308,7 +308,7 @@
           $('pct').textContent = Math.round(p * 100) + '%';
           renderSteps(p);
           var line = document.createElement('div');
-          line.textContent = '· ' + ev.message;
+          line.textContent = '· ' + (window.TF_LANG ? TF_LANG.msg(ev.message) : ev.message);
           $('log').appendChild(line);
           $('log').scrollTop = $('log').scrollHeight;
         };
@@ -317,7 +317,9 @@
           var snap = JSON.parse(e.data);
           if(snap.status === 'done'){
             $('runState').style.display = 'none'; $('doneState').style.display = 'block';
-            $('doneTitle').textContent = ({guide:'讲义生成好了', extract:'提取完成', exam:'试卷生成好了', analysis:'分析完成'})[state.task] || '完成';
+            var doneMap = {guide:'讲义生成好了', extract:'提取完成', exam:'试卷生成好了', analysis:'分析完成'};
+            var doneText = doneMap[state.task] || '完成';
+            $('doneTitle').textContent = (window.TF_LANG && TF_LANG.get()==='en') ? (window.TF_LANG.msg(doneText) || doneText) : doneText;
             $('doneMeta').textContent = snap.result && snap.result.metrics && snap.result.metrics.chars
               ? ('共 ' + snap.result.metrics.chars + ' 字') : '文件已保存到本地';
             $('openResult').href = '/reader.html?course=' + state.course.id;
