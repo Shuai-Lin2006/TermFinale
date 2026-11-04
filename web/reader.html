@@ -144,7 +144,8 @@
     $('coverChip').textContent = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '最近生成';
     $('coverTitle').textContent = c.name;
     var typeLabel = ({guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'})[d.type] || '学习材料';
-    $('coverDesc').textContent = 'TermFinale 精品讲义 · 目标 ' + c.target_score + ' 分';
+    var wishes = ['今天也向目标靠近一点', '期末稳过，会的都对', '把这一章啃下来', '慢慢来，比较快', '你现在看的，就是考点'];
+    $('coverDesc').textContent = 'TermFinale 精品讲义 · ' + wishes[Math.floor(Math.random() * wishes.length)];
     $('metaFile').textContent = d.filename;
     var stats = [['本次目标', c.target_score + ' 分'], ['剩余天数', c.days_left + ' 天'],
                  ['讲解人设', c.persona || '—'], ['资料', (d.materials || 0) + ' 份'],
@@ -158,6 +159,10 @@
     }
     var toc = d.toc || [];
     buildToc(toc);
+    if(location.hash){
+      var target = document.getElementById(location.hash.slice(1));
+      if(target) setTimeout(function(){ target.scrollIntoView(); }, 60);
+    }
     var first = toc.filter(function(t){ return t.level === '2'; })[0];
     buildQuick(toc, first ? first.id : null);
   }

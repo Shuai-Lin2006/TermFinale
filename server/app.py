@@ -113,6 +113,8 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
     html = _re.sub(r"<h([23])>(.*?)</h\1>", tag, html, flags=_re.S)
     html = _re.sub(r'<blockquote>\s*<p>(📌 出处[^<]*)</p>\s*</blockquote>',
                    r'<div class="meta-info">\1</div>', html)
+    html = _re.sub(r'<p><strong>(例\s*[0-9一二三四五六七八九十][^<]*)</strong>(.*?)</p>',
+                   r'<div class="example"><div class="ex-label">\1</div>\2</div>', html, flags=_re.S)
     return html, toc
 
 @app.get("/api/health")

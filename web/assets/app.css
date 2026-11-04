@@ -374,3 +374,8 @@ button{font-family:inherit}
 .doc h2{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:22px;font-size:27px}
 .chap-no{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.18em;color:var(--faint);
   margin-bottom:8px;font-weight:500}
+.doc p{margin:12px 0}
+.doc .katex-display{margin:14px 0;overflow-x:auto;overflow-y:hidden}
+.doc .example{background:var(--paper);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;margin:18px 0}
+.doc .ex-label{font-weight:700;font-size:13.5px;color:var(--brand);margin-bottom:6px}
