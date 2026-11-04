@@ -771,13 +771,13 @@ def _parse_quiz(md: str) -> list[dict]:
     lines = md.splitlines()
     answers: dict[int, str] = {}
     for line in lines:
-        m = re.match(r"\s*(\d{1,2})\s*[.、．]\s*(?:答案\s*[:：]\s*)?([A-Da-d])\b", line)
+        m = re.match(r"\s*(\d{1,2})\s*[.、．]\s*(?:答案\s*[:：]\s*)?(?:\*\*)?([A-Da-d])(?:\*\*)?\b", line)
         if m:
             answers[int(m.group(1))] = m.group(2).upper()
 
     start = None
     for i, line in enumerate(lines):
-        if re.match(r"^#{2,3}\s*[一二三四五六七八九十0-9]+[、.．]?\s*.*选择", line):
+        if re.match(r"^#{2,3}\s*.*选择", line):
             start = i
             break
     if start is None:
