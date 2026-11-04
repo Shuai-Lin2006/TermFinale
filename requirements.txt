@@ -17,3 +17,5 @@ SQLAlchemy==2.1.6
 
 fastapi
 uvicorn
+
+dashscope

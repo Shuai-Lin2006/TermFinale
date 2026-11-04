@@ -258,7 +258,17 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
     all_pages = []
 
     try:
-        if ext == 'pptx':
+        if ext in ('mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'amr'):
+            from core.asr import transcribe_audio
+            text = transcribe_audio(file_path, on_progress=on_progress)
+            if text.strip():
+                all_pages.append(f"【《{file_name}》 音频转写】\n{text}")
+        elif ext in ('txt', 'md'):
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+            if text.strip():
+                all_pages.append(f"【《{file_name}》】\n{text}")
+        elif ext == 'pptx':
             prs = Presentation(file_path)
             for index, slide in enumerate(prs.slides):
                 slide_text = ""

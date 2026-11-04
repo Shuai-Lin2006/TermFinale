@@ -8,7 +8,7 @@
     dist/TermFinale.app          (macOS)
     dist/TermFinale/TermFinale.exe (Windows)
 """
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 datas = []
 datas += collect_data_files("customtkinter")   # 主题/皮肤资源，缺了会启动即崩
@@ -26,6 +26,12 @@ hiddenimports = [
     "httpx",
     "loguru",
 ]
+
+# 音频转写：dashscope 内部有动态导入，显式收集
+try:
+    hiddenimports += collect_submodules("dashscope")
+except Exception:
+    pass
 
 # 这些库只服务于开发期的可选功能，排除后体积小很多
 excludes = [

@@ -83,6 +83,21 @@ class ParserTest(unittest.TestCase):
         self.assertIn("测试幻灯片标题", "\n".join(pages))
 
 
+class AudioTextTest(unittest.TestCase):
+    def test_txt_parse(self):
+        path = Path(tempfile.mkdtemp()) / "notes.txt"
+        path.write_text("热力学第一定律：ΔU = Q + W", encoding="utf-8")
+        pages = extract_text_from_file(str(path))
+        self.assertTrue(pages)
+        self.assertIn("ΔU", "\n".join(pages))
+
+    def test_audio_extensions(self):
+        from core.asr import is_audio
+        self.assertTrue(is_audio("a.MP3"))
+        self.assertTrue(is_audio("b.m4a"))
+        self.assertFalse(is_audio("c.pdf"))
+
+
 class ExamTest(unittest.TestCase):
     def _paper(self) -> str:
         q = lambda i: (f"{i}. 关于刚体转动的说法，下列正确的是（ ）\n"

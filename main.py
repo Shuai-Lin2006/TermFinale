@@ -558,7 +558,7 @@ class TermFinaleApp(ctk.CTk):
         ds_entry = add_field("DeepSeek API Key（文本生成，必填）", "DEEPSEEK_API_KEY",
                              "在 platform.deepseek.com 创建。没有它无法生成讲义 / 提取 / 试卷。")
         qw_entry = add_field("阿里云百炼 API Key（图片说明，选填）", "DASHSCOPE_API_KEY",
-                             "不填也能用，只是图片下方显示「第 N 页配图」。")
+                             "不填也能用，但图片说明与录音转写不可用。")
 
         result = ctk.CTkLabel(inner, text="", font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR,
                               anchor="w", wraplength=720, justify="left")
@@ -924,7 +924,7 @@ class TermFinaleApp(ctk.CTk):
         if len(self.temp_materials) >= 5:
             messagebox.showwarning("上传限制", "为了防止解析超时崩溃，单次最多只能上传 5 份资料！")
             return
-        path = filedialog.askopenfilename(filetypes=[("Docs", "*.pptx *.pdf *.docx")])
+        path = filedialog.askopenfilename(filetypes=[("文档 / 音频", "*.pptx *.pdf *.docx *.txt *.md *.mp3 *.wav *.m4a *.aac *.flac")])
         if path:
             self.temp_materials.append({"path": path, "type": ftype, "name": os.path.basename(path)})
             self.refresh_material_ui()
