@@ -1084,39 +1084,66 @@ class TermFinaleApp(ctk.CTk):
         center = ctk.CTkFrame(self, fg_color="transparent")
         center.place(relx=0.5, rely=0.4, anchor="center")
         ctk.CTkLabel(center, text=self.t("gen_ing"), font=FONT_H1).pack(pady=(0, 20))
+        self.percent_label = ctk.CTkLabel(center, text="0%", font=("PingFang SC", 44, "bold"),
+                                          text_color=ACCENT_COLOR)
+        self.percent_label.pack(pady=(0, 4))
         self.progress_label = ctk.CTkLabel(center, text=initial_text, font=FONT_H2,
-                                           text_color=ACCENT_COLOR)
-        self.progress_label.pack(pady=(0, 10))
+                                           text_color=TEXT_COLOR)
+        self.progress_label.pack(pady=(0, 12))
+        self.progressbar = ctk.CTkProgressBar(center, width=460, height=10, corner_radius=5)
+        self.progressbar.pack(pady=(0, 14))
+        self.progressbar.set(0)
         self.time_label = ctk.CTkLabel(center, text=self.t("time_est").format("计算中..."),
                                        font=FONT_SUBTITLE, text_color=SUB_TEXT_COLOR)
         self.time_label.pack(pady=(0, 10))
         self._progress_started = time.time()
         self._eta_seconds = None
+        self._progress_value = 0.0
+        self._progress_target = 0.0
+        self._last_time_text = 0.0
         self._tick_progress()
-        self.progressbar = ctk.CTkProgressBar(center, width=400)
-        self.progressbar.pack(pady=20)
-        self.progressbar.set(0)
         ctk.CTkLabel(center, text=self.t("do_not_leave"), font=FONT_H2,
                      text_color=DANGER_COLOR).pack(pady=(10, 10))
         ctk.CTkButton(center, text=self.t("stop_btn"), font=FONT_H2, fg_color=DANGER_COLOR,
                       command=self.stop_generation).pack(pady=10)
 
     def _tick_progress(self):
-        """每秒刷新计时，避免长时间只有"计算中..."像卡死。"""
+        """平滑推进进度条，并按已完成比例动态估算剩余时间。"""
         label = getattr(self, "time_label", None)
+        bar = getattr(self, "progressbar", None)
+        pct = getattr(self, "percent_label", None)
         try:
             if label is None or not label.winfo_exists():
                 return
         except Exception:
             return
-        elapsed = int(time.time() - getattr(self, "_progress_started", time.time()))
-        eta = getattr(self, "_eta_seconds", None)
-        remain = "估算中" if eta is None else f"{eta // 60:02d}:{eta % 60:02d}"
-        try:
-            label.configure(text=f"已用 {elapsed // 60:02d}:{elapsed % 60:02d} · 预计剩余 {remain}")
-        except Exception:
-            return
-        self.after(1000, self._tick_progress)
+
+        target = float(getattr(self, "_progress_target", 0.0))
+        current = float(getattr(self, "_progress_value", 0.0))
+        if current < target:
+            current = min(target, current + max(0.004, (target - current) * 0.18))
+            self._progress_value = current
+            try:
+                bar.set(current)
+                pct.configure(text=f"{int(current * 100)}%")
+            except Exception:
+                pass
+
+        now = time.time()
+        elapsed = int(now - getattr(self, "_progress_started", now))
+        if now - getattr(self, "_last_time_text", 0) >= 1:
+            self._last_time_text = now
+            eta = None
+            if current > 0.04 and elapsed >= 4:
+                eta = int(elapsed * (1 - current) / current)
+            elif getattr(self, "_eta_seconds", None):
+                eta = self._eta_seconds
+            remain = "估算中" if eta is None else f"{max(0, eta) // 60:02d}:{max(0, eta) % 60:02d}"
+            try:
+                label.configure(text=f"已用 {elapsed // 60:02d}:{elapsed % 60:02d} · 预计剩余 {remain}")
+            except Exception:
+                return
+        self.after(250, self._tick_progress)
 
     def _on_service_progress(self, event):
         """服务层回调（工作线程）→ 通过 after 回到主线程；控件已销毁时静默跳过。"""
@@ -1125,9 +1152,10 @@ class TermFinaleApp(ctk.CTk):
                 label = getattr(self, "progress_label", None)
                 if label is not None and label.winfo_exists():
                     label.configure(text=event.message)
-                bar = getattr(self, "progressbar", None)
-                if bar is not None and bar.winfo_exists():
-                    bar.set(max(0.0, min(1.0, event.value)))
+                value = max(0.0, min(1.0, event.value))
+                self._progress_target = max(float(getattr(self, "_progress_target", 0.0)), value)
+                if getattr(self, "_progress_value", 0.0) == 0.0 and value > 0:
+                    self._progress_value = max(0.01, value * 0.15)
                 if event.eta_seconds is not None:
                     self._eta_seconds = event.eta_seconds
             except Exception:  # 控件销毁/窗口关闭，属正常竞态

@@ -17,6 +17,8 @@ from pathlib import Path
 
 import fitz
 from loguru import logger
+
+FIG_PAD = 30  # 裁剪留白，避免图内文字标签被切
 from PIL import Image, ImageStat
 
 # 过滤阈值（页面比例）
@@ -225,7 +227,17 @@ def extract_figures(
                     and _dense_text_blocks(rect, text_blocks) == 0 and not caption:
                 continue
 
-            clip = fitz.Rect(rect.x0 - 10, rect.y0 - 10, rect.x1 + 10, rect.y1 + 10) & page.rect
+            clip = fitz.Rect(rect.x0 - FIG_PAD, rect.y0 - FIG_PAD,
+                             rect.x1 + FIG_PAD, rect.y1 + FIG_PAD)
+            # 把贴着图形的短文字（坐标轴标注、图内标题）一起截进来，避免文字被切断
+            for block in text_blocks:
+                label = (block[4] or "").strip()
+                if not label or len(label) > 40 or label == caption:
+                    continue
+                label_rect = fitz.Rect(block[:4])
+                if label_rect.intersects(clip):
+                    clip |= label_rect
+            clip &= page.rect
             try:
                 pix = page.get_pixmap(clip=clip, dpi=dpi)
                 img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
