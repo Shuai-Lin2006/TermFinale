@@ -608,6 +608,9 @@ def cancel_job(job_id: str):
     if not job:
         raise HTTPException(404, "任务不存在")
     job.stop.set()
+    if job.status == "running":
+        job.status = "cancelled"
+        job.message = "已取消"
     return {"ok": True}
 
 
