@@ -368,6 +368,26 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         if not text.strip():
             raise RuntimeError("资料没有解析出文字（可能是扫描件或空文件）")
 
+        def _heartbeat():
+            import time as _time
+            started = _time.time()
+            last = job.progress
+            still = 0
+            while job.status == "running":
+                _time.sleep(2)
+                if job.status != "running":
+                    return
+                if abs(job.progress - last) < 0.001:
+                    still += 2
+                else:
+                    last = job.progress
+                    still = 0
+                if still >= 4 and job.progress < 0.9:
+                    job.progress = min(0.9, job.progress + 0.006)
+                    job.message = f"模型生成中…（已用 {int(_time.time() - started)} 秒）"
+
+        threading.Thread(target=_heartbeat, daemon=True).start()
+
         if task == "chapter":
             import datetime
             import types

@@ -158,7 +158,14 @@
     $('content').style.display = 'none';
     $('emptyState').style.display = 'block';
     $('emptyHint').textContent = d.reason || '先为这门课生成一份讲义，再回来阅读。';
-    if(d.course){ $('emptyBtn').href = 'generate.html?course=' + d.course.id; $('tocCourse').textContent = d.course.name; }
+    $('tocList').innerHTML = '';
+    $('quickList').innerHTML = '<li class="tiny muted">—</li>';
+    $('tocMeta').textContent = '';
+    if(d.course){
+      $('emptyBtn').href = 'generate.html?course=' + d.course.id;
+      $('tocCourse').textContent = d.course.name;
+      $('coverTitle').textContent = d.course.name;
+    }
   }
 
   function render(d){
@@ -175,8 +182,10 @@
     $('coverDesc').textContent = 'TermFinale 精品讲义 · ' + wishes[Math.floor(Math.random() * wishes.length)];
     $('metaFile').textContent = d.filename;
     var stats = [['本次目标', c.target_score + ' 分'], ['剩余天数', c.days_left + ' 天'],
-                 (d.type && String(d.type).indexOf('exam') >= 0 ? [] : [['讲解人设', c.persona || '—']]).concat([['资料', (d.materials || 0) + ' 份'],
-                 ['生成', d.generated_at || '—']]);
+                 ['资料', (d.materials || 0) + ' 份'], ['生成', d.generated_at || '—']];
+    if(!(d.type && String(d.type).indexOf('exam') >= 0)){
+      stats.splice(2, 0, ['讲解人设', c.persona || '—']);
+    }
     $('docStats').innerHTML = stats.map(function(x){
       return '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>';
     }).join('');

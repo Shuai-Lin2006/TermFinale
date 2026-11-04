@@ -201,6 +201,7 @@
       [/^正在提取区块 (\d+)\/(\d+).*$/, "Extracting chunk $1/$2"],
       [/^正在生成…$/, "Generating…"],
       [/^完成（自检有问题）$/, "Done (with warnings)"],
+      [/^模型生成中…（已用 (\d+) 秒）$/, "Model is writing… ($1s)"],
       [/^完成$/, "Done"]
     ];
     for (var i = 0; i < rules.length; i++) {
