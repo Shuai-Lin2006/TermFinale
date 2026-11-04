@@ -77,6 +77,10 @@
                 <button data-mode="key" class="on">精简 · 只讲拿分</button>
                 <button data-mode="full">全量 · 讲透原理</button>
               </div>
+              <div class="tiny muted" style="margin:14px 0 6px">讲义语言</div>
+              <select class="select" id="langSelect" style="margin-bottom:14px">
+                <option value="中文" selected>中文</option><option value="English">English</option>
+              </select>
               <div class="tiny muted" style="margin:14px 0 6px">讲解人设</div>
               <select class="select" id="personaSelect">
                 <option>温柔小姐姐</option><option>老师</option><option>学术AI</option>
@@ -287,7 +291,7 @@
     if(!state.course){ toast('先选课程'); return; }
     showRunning();
     var options = { material_ids: ids, user_note: ($('userNote').value || '').trim() };
-    if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; }
+    if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
     if(state.task === 'exam'){ options.num_sets = +$('setsSelect').value; options.difficulty = +$('diffSelect').value; options.train_type = $('trainSelect').value; }
 

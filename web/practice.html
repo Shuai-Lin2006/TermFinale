@@ -53,6 +53,20 @@
     </div>
   </main>
 </div>
+
+<div class="modal-mask" id="quizModal">
+  <div class="modal" style="width:720px">
+    <h3 id="quizTitle">判分练习</h3>
+    <p class="sub" id="quizSub">选择题自动判分，做错的题自动进错题本</p>
+    <div id="quizBody" style="max-height:60vh;overflow:auto;padding-right:6px"></div>
+    <div id="quizResult" class="tiny" style="margin-top:10px"></div>
+    <div class="modal-actions">
+      <button class="btn" id="quizClose">关闭</button>
+      <button class="btn primary" id="quizSubmit">提交判分</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script src="assets/app.js?v=13"></script>
 <script>
@@ -68,10 +82,62 @@
       return '<article class="card hover course"><div class="course-top"><span class="chip">'+e.course+'</span>'+
         '<span class="tiny muted">'+(e.created_at||'')+'</span></div><h3>'+e.filename.replace(/\.html$/,'')+'</h3>'+
         '<div class="meta">'+(e.has_md?'可在阅读器打开':'旧文件，需重新生成')+'</div>'+
-        '<div class="course-foot"><span class="tiny muted">'+(e.has_md?'可练习':'—')+'</span>'+
-        '<a class="btn sm" href="reader.html?course='+e.course_id+'">打开</a></div></article>';
+        '<div class="course-foot"><span class="tiny muted">'+(e.has_md?'可判分':'—')+'</span>'+
+        '<span style="display:flex;gap:6px">'+
+        (e.has_md?'<button class="btn sm" data-quiz="'+e.id+'" data-course="'+e.course_id+'">判分练习</button>':'')+
+        '<a class="btn ghost sm" href="reader.html?course='+e.course_id+'">打开</a></span></div></article>';
     }).join('');
   }).catch(function(){ $('apiState').textContent='未连接'; });
+
+  var quizQuestions = [];
+  var quizCourse = 7;
+  function openQuiz(id, courseId){
+    quizCourse = courseId || quizCourse;
+    fetch('/api/exams/'+id+'/quiz').then(function(r){return r.json();}).then(function(d){
+      if(!d.exists || !d.questions.length){ if(window.__toast) window.__toast(d.reason || '这套卷子没有可判分的选择题'); return; }
+      quizQuestions = d.questions;
+      $('quizTitle').textContent = d.filename.replace(/\.(html|md)$/,'');
+      $('quizSub').textContent = '共 ' + d.questions.length + ' 道选择题 · 选完提交自动判分';
+      $('quizResult').textContent = '';
+      $('quizBody').innerHTML = d.questions.map(function(q, i){
+        return '<div style="margin-bottom:16px" data-q="'+i+'"><div style="font-size:13.5px;line-height:1.8;margin-bottom:6px">'+
+          q.no + '. ' + q.stem + '</div>' +
+          Object.keys(q.options).map(function(k){
+            return '<label class="tiny" style="display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer">'+
+              '<input type="radio" name="q'+i+'" value="'+k+'" style="accent-color:var(--brand);margin-top:3px">'+
+              '<span><b>'+k+'.</b> '+q.options[k]+'</span></label>';
+          }).join('') + '</div>';
+      }).join('');
+      $('quizModal').classList.add('show');
+    });
+  }
+
+  $('quizSubmit').addEventListener('click', function(){
+    var correct = 0, wrong = [];
+    quizQuestions.forEach(function(q, i){
+      var sel = document.querySelector('input[name="q'+i+'"]:checked');
+      var val = sel ? sel.value : '';
+      if(val === q.answer) correct++;
+      else wrong.push({q: q, picked: val});
+    });
+    var total = quizQuestions.length;
+    $('quizResult').innerHTML = '<b>得分：' + correct + ' / ' + total + '</b>' +
+      (wrong.length ? (' · ' + wrong.length + ' 题已加入错题本') : ' · 全对');
+    $('quizResult').style.color = correct === total ? 'var(--ok)' : 'inherit';
+    wrong.forEach(function(w){
+      fetch('/api/mistakes', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ course_id: quizCourse, question: w.q.no + '. ' + w.q.stem,
+          answer: w.q.options[w.q.answer] || '',
+          note: '正确答案 ' + w.q.answer + '，你选了 ' + (w.picked || '未作答') }) }).catch(function(){});
+    });
+    setTimeout(loadMistakes, 600);
+  });
+  $('quizClose').addEventListener('click', function(){ $('quizModal').classList.remove('show'); });
+  $('quizModal').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('show'); });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-quiz]');
+    if(b) openQuiz(b.dataset.quiz, +b.dataset.course);
+  });
 
   function loadMistakes(){
     fetch('/api/mistakes').then(function(r){return r.json();}).then(function(list){

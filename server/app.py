@@ -678,6 +678,67 @@ def delete_mistake(mistake_id: int):
         db.close()
 
 
+def _parse_quiz(md: str) -> list[dict]:
+    """从试卷 Markdown 里解析选择题与答案。"""
+    lines = md.splitlines()
+    answers: dict[int, str] = {}
+    for line in lines:
+        m = re.match(r"\s*(\d{1,2})\s*[.、．]\s*(?:答案\s*[:：]\s*)?([A-Da-d])\b", line)
+        if m:
+            answers[int(m.group(1))] = m.group(2).upper()
+
+    start = None
+    for i, line in enumerate(lines):
+        if re.match(r"^#{2,3}\s*[一二三四五六七八九十0-9]+[、.．]?\s*.*选择", line):
+            start = i
+            break
+    if start is None:
+        return []
+    questions: list[dict] = []
+    cur = None
+    for line in lines[start + 1:]:
+        if re.match(r"^#{2,3}\s", line):
+            break
+        qm = re.match(r"^\s*(?:\*\*)?(\d{1,2})\s*[.、．](?:\*\*)?\s*(.*)", line)
+        if qm:
+            if cur:
+                questions.append(cur)
+            cur = {"no": int(qm.group(1)), "stem": qm.group(2).strip(), "options": {}}
+            continue
+        if cur is None:
+            continue
+        om = re.match(r"^\s*([A-D])\s*[.、．)]\s*(.*)", line)
+        if om:
+            cur["options"][om.group(1)] = om.group(2).strip()
+        elif line.strip() and not line.strip().startswith("【考点"):
+            cur["stem"] += " " + line.strip()
+    if cur:
+        questions.append(cur)
+
+    out = []
+    for q in questions:
+        ans = answers.get(q["no"], "")
+        if len(q["options"]) >= 2 and ans in q["options"]:
+            out.append({**q, "answer": ans})
+    return out
+
+
+@app.get("/api/exams/{file_id}/quiz")
+def exam_quiz(file_id: int):
+    db = get_db_session()
+    try:
+        gen = db.query(GeneratedFile).filter(GeneratedFile.id == file_id).first()
+        if not gen:
+            raise HTTPException(404, "试卷不存在")
+        md_path = Path(gen.file_path).with_suffix(".md")
+        if not md_path.is_file():
+            return {"exists": False, "reason": "旧试卷没有 Markdown 源，请重新生成"}
+        questions = _parse_quiz(md_path.read_text(encoding="utf-8"))
+        return {"exists": True, "filename": Path(gen.file_path).name, "questions": questions}
+    finally:
+        db.close()
+
+
 @app.get("/api/practice")
 def practice_data():
     db = get_db_session()
