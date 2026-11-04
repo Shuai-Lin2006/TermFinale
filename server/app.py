@@ -8,6 +8,8 @@ import asyncio
 import json
 import os
 import re
+import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -764,6 +766,60 @@ def practice_data():
                 "mistakes": len(mistakes), "due": due}
     finally:
         db.close()
+
+
+def _find_browser() -> str | None:
+    candidates = []
+    if sys.platform == "darwin":
+        candidates = ["/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                      "/Applications/Chromium.app/Contents/MacOS/Chromium"]
+    elif os.name == "nt":
+        for base in (os.getenv("PROGRAMFILES(X86)", ""), os.getenv("PROGRAMFILES", ""),
+                     os.getenv("LOCALAPPDATA", "")):
+            if base:
+                candidates += [os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe"),
+                               os.path.join(base, "Google", "Chrome", "Application", "chrome.exe")]
+    else:
+        for name in ("google-chrome", "chromium", "chromium-browser", "microsoft-edge"):
+            found = shutil.which(name)
+            if found:
+                candidates.append(found)
+    for path in candidates:
+        if path and Path(path).is_file():
+            return path
+    return None
+
+
+@app.get("/api/courses/{course_id}/pdf")
+def export_course_pdf(course_id: int):
+    db = get_db_session()
+    try:
+        course = db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise HTTPException(404, "课程不存在")
+        name = course.name
+    finally:
+        db.close()
+
+    browser = _find_browser()
+    if not browser:
+        raise HTTPException(501, "没有找到 Edge/Chrome，暂时只能用打印对话框导出 PDF")
+
+    import datetime
+    paths.outputs_dir().mkdir(parents=True, exist_ok=True)
+    out = paths.outputs_dir() / f"{name}_讲义_{datetime.datetime.now():%m%d_%H%M%S}.pdf"
+    port = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
+    url = f"http://127.0.0.1:{port}/reader.html?course={course_id}"
+    try:
+        subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+                        "--virtual-time-budget=8000", f"--print-to-pdf={out}", url],
+                       timeout=120, capture_output=True)
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, "PDF 生成超时，请重试")
+    if not out.is_file() or out.stat().st_size < 1024:
+        raise HTTPException(500, "PDF 生成失败，请改用打印对话框")
+    return FileResponse(out, media_type="application/pdf", filename=out.name)
 
 
 @app.get("/api/settings")
