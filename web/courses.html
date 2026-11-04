@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的课程 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=4">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">TF</div>
+      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item active"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot">
+      <div class="user">
+        <div class="avatar">林</div>
+        <div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="search"><svg class="icon sm"><use href="#i-search"/></svg>搜索课程…<span class="kbd">⌘K</span></div>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+      <button class="btn primary" data-toast="新建课程表单下一步接入"><svg class="icon sm"><use href="#i-plus"/></svg>新建课程</button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">我的课程</h1>
+          <div class="page-sub" id="subtitle">正在读取本地课程库…</div>
+        </div>
+        <div class="spacer"></div>
+        <span class="chip" id="apiState">连接本地服务…</span>
+      </div>
+
+      <div id="courseList" class="course-grid"></div>
+
+      <div id="empty" style="display:none" class="card" >
+        <div style="padding:48px 24px;text-align:center">
+          <div class="serif" style="font-size:22px;margin-bottom:8px">还没有课程</div>
+          <p class="muted" style="margin:0 0 18px">上传第一份课件，5 分钟后就能开始冲刺。</p>
+          <button class="btn primary" data-toast="新建课程表单下一步接入">新建第一门课</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=4"></script>
+<script>
+(function(){
+  var list = document.getElementById('courseList');
+  var empty = document.getElementById('empty');
+  var state = document.getElementById('apiState');
+  var sub = document.getElementById('subtitle');
+
+  function skeleton(){
+    list.innerHTML = [1,2,3].map(function(){
+      return '<article class="card course" style="opacity:.6"><div class="bar" style="width:40%;height:14px"></div>'+
+             '<div class="bar" style="width:70%;height:22px;margin-top:16px"></div>'+
+             '<div class="bar" style="width:55%;height:12px;margin-top:12px"></div>'+
+             '<div class="bar" style="width:100%;height:8px;margin-top:18px"></div></article>';
+    }).join('');
+  }
+  skeleton();
+
+  function card(c){
+    var soon = c.days_left <= 3;
+    var ready = c.materials > 0 && c.materials_ok === c.materials;
+    return '<article class="card hover course">'+
+      '<div class="course-top"><span class="chip">'+(soon?'临近考试':'进行中')+'</span>'+
+      '<span class="tiny muted">'+c.days_left+' 天后考试</span></div>'+
+      '<h3>'+c.name+'</h3>'+
+      '<div class="meta">'+c.materials+' 份资料 · '+c.generated+' 份已生成 · 目标 '+c.target_score+' 分</div>'+
+      '<div class="bar"><i style="width:'+(c.generated?Math.min(92, 30+c.generated*12):8)+'%"></i></div>'+
+      '<div class="course-foot"><span>'+(ready?'资料就绪':'资料缺失')+'</span>'+
+      '<span style="display:flex;gap:6px"><button class="btn ghost sm" data-toast="生成工作台下一步接入">生成</button>'+
+      '<button class="btn sm" data-toast="阅读器下一步接入真实内容">打开</button></span></div>'+
+      '</article>';
+  }
+
+  fetch('/api/courses').then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(data){
+      state.textContent = '已连接';
+      sub.textContent = data.length ? ('共 '+data.length+' 门课，最近考试在 '+Math.min.apply(null,data.map(function(c){return c.days_left}))+' 天后') : '还没有课程';
+      if(!data.length){ list.innerHTML=''; empty.style.display='block'; return; }
+      list.innerHTML = data.map(card).join('');
+      list.querySelectorAll('[data-toast]').forEach(function(el){
+        el.addEventListener('click', function(e){ e.preventDefault(); if(window.__toast) window.__toast(el.dataset.toast); });
+      });
+    })
+    .catch(function(e){
+      state.textContent = '未连接';
+      state.style.color = 'var(--danger)';
+      sub.textContent = '本地服务未启动，先运行 python server/app.py';
+      list.innerHTML = '<article class="card course" style="grid-column:1/-1"><b>无法连接本地服务</b>'+
+        '<p class="muted" style="margin:6px 0 0">在项目目录执行 <code>python server/app.py</code>，然后刷新本页。</p></article>';
+    });
+})();
+</script>
+</body>
+</html>

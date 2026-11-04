@@ -14,3 +14,6 @@ SQLAlchemy==2.1.6
 
 # 可选：解析增强（标题/表格），不装也能跑
 # pymupdf4llm==2.0
+
+fastapi
+uvicorn

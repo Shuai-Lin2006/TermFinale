@@ -71,6 +71,7 @@
     toastEl.textContent = msg; toastEl.classList.add('show');
     clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2400);
   }
+  window.__toast = toast;
   document.querySelectorAll('[data-toast]').forEach(function (el) {
     el.addEventListener('click', function (e) { e.preventDefault(); toast(el.dataset.toast); });
   });
