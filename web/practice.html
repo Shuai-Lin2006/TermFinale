@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>练习与错题 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=9"></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+</svg>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><div class="brand-mark">TF</div><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item active"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
+      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>资料库</a>
+      <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
+      <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
+    </nav>
+    <div class="rail-foot"><div class="user"><div class="avatar">林</div><div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="search"><svg class="icon sm"><use href="#i-spark"/></svg>练习与错题</div>
+      <div class="spacer"></div>
+      <span class="chip" id="apiState">连接中…</span>
+      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+    </header>
+    <div class="page">
+      <div class="page-head"><div><h1 class="page-title">练习与错题</h1>
+        <div class="page-sub">先做套卷，再把错的题收进来，按遗忘曲线复习</div></div>
+        <div class="spacer"></div><a class="btn primary" href="generate.html">生成一套试卷</a></div>
+
+      <section class="hero" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="card" style="padding:20px"><div class="tiny muted">训练试卷</div>
+          <div class="serif" style="font-size:34px;margin-top:6px" id="statExams">—</div></div>
+        <div class="card" style="padding:20px"><div class="tiny muted">笔记</div>
+          <div class="serif" style="font-size:34px;margin-top:6px" id="statNotes">—</div></div>
+        <div class="card" style="padding:20px"><div class="tiny muted">错题</div>
+          <div class="serif" style="font-size:34px;margin-top:6px">0</div></div>
+      </section>
+
+      <div class="section-head"><h2>训练试卷</h2><div class="line"></div></div>
+      <div id="exams" class="course-grid"></div>
+
+      <div class="section-head"><h2>错题本</h2><div class="line"></div></div>
+      <div class="card"><div style="padding:36px;text-align:center">
+        <div class="serif" style="font-size:20px;margin-bottom:6px">还没有错题</div>
+        <p class="muted" style="margin:0 0 16px">做完试卷后，把做错的题收进来，系统会按 1/2/4/7 天提醒你复习。</p>
+        <a class="btn" href="generate.html">先生成一套试卷</a>
+      </div></div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="assets/app.js?v=9"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  fetch('/api/practice').then(function(r){return r.json();}).then(function(d){
+    $('apiState').textContent='已连接';
+    $('statExams').textContent=d.exams.length;
+    $('statNotes').textContent=d.notes;
+    if(!d.exams.length){ $('exams').innerHTML='<article class="card course"><div class="meta">还没有试卷，去生成一套。</div><div class="course-foot"><a class="btn sm" href="generate.html">去生成</a></div></article>'; return; }
+    $('exams').innerHTML=d.exams.map(function(e){
+      return '<article class="card hover course"><div class="course-top"><span class="chip">'+e.course+'</span>'+
+        '<span class="tiny muted">'+(e.created_at||'')+'</span></div><h3>'+e.filename.replace(/\.html$/,'')+'</h3>'+
+        '<div class="meta">'+(e.has_md?'可在阅读器打开':'旧文件，需重新生成')+'</div>'+
+        '<div class="course-foot"><span class="tiny muted">'+(e.has_md?'可练习':'—')+'</span>'+
+        '<a class="btn sm" href="reader.html?course='+e.course_id+'">打开</a></div></article>';
+    }).join('');
+  }).catch(function(){ $('apiState').textContent='未连接'; });
+})();
+</script>
+</body></html>

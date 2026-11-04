@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from core import config, paths  # noqa: E402
-from core.database import Course, GeneratedFile, Material, get_db_session  # noqa: E402
+from core.database import Course, GeneratedFile, Material, Note, get_db_session  # noqa: E402
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from services.task import ProgressEvent  # noqa: E402
@@ -397,6 +397,72 @@ async def ask(payload: dict):
     return {"answer": await asyncio.to_thread(_answer, payload)}
 
 
+@app.get("/api/notes")
+def list_notes(course_id: int | None = None):
+    db = get_db_session()
+    try:
+        q = db.query(Note, Course).join(Course, Note.course_id == Course.id)
+        if course_id:
+            q = q.filter(Note.course_id == course_id)
+        rows = q.order_by(Note.id.desc()).limit(200).all()
+        return [{"id": n.id, "course": c.name, "course_id": c.id, "chapter": n.chapter or "",
+                 "question": n.question or "", "answer": n.answer or "",
+                 "created_at": n.created_at or ""} for n, c in rows]
+    finally:
+        db.close()
+
+
+@app.post("/api/notes")
+def add_note(payload: dict):
+    db = get_db_session()
+    try:
+        cid = int(payload.get("course_id") or 0)
+        if not db.query(Course).filter(Course.id == cid).first():
+            raise HTTPException(404, "课程不存在")
+        import datetime
+        note = Note(course_id=cid, chapter=(payload.get("chapter") or "")[:200],
+                    question=(payload.get("question") or "")[:2000],
+                    answer=(payload.get("answer") or "")[:8000],
+                    created_at=datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
+        db.add(note)
+        db.commit()
+        return {"id": note.id}
+    finally:
+        db.close()
+
+
+@app.delete("/api/notes/{note_id}")
+def delete_note(note_id: int):
+    db = get_db_session()
+    try:
+        n = db.query(Note).filter(Note.id == note_id).first()
+        if not n:
+            raise HTTPException(404, "笔记不存在")
+        db.delete(n)
+        db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.get("/api/practice")
+def practice_data():
+    db = get_db_session()
+    try:
+        rows = (db.query(GeneratedFile, Course)
+                .join(Course, GeneratedFile.course_id == Course.id)
+                .filter(GeneratedFile.file_type.in_(["exam", "训练试卷"]))
+                .order_by(GeneratedFile.id.desc()).limit(20).all())
+        exams = [{"id": g.id, "course": c.name, "course_id": c.id,
+                  "filename": Path(g.file_path).name,
+                  "has_md": Path(g.file_path).with_suffix(".md").is_file(),
+                  "created_at": g.created_at or ""} for g, c in rows]
+        note_count = db.query(Note).count()
+        return {"exams": exams, "notes": note_count}
+    finally:
+        db.close()
+
+
 @app.get("/api/settings")
 def settings_info():
     from core import maintenance
@@ -535,6 +601,16 @@ def _page(name: str) -> FileResponse:
 @app.get("/dashboard.html")
 def dashboard():
     return _page("dashboard.html")
+
+
+@app.get("/practice.html")
+def practice_page():
+    return _page("practice.html")
+
+
+@app.get("/notes.html")
+def notes_page():
+    return _page("notes.html")
 
 
 @app.get("/settings.html")

@@ -43,6 +43,7 @@ class Course(Base):
 
     materials = relationship("Material", back_populates="course", cascade="all, delete-orphan")
     generated_files = relationship("GeneratedFile", back_populates="course", cascade="all, delete-orphan")
+    notes = relationship("Note", back_populates="course", cascade="all, delete-orphan")
 
 
 class Material(Base):
@@ -54,6 +55,18 @@ class Material(Base):
     filename = Column(String(200), nullable=False)
 
     course = relationship("Course", back_populates="materials")
+
+
+class Note(Base):
+    __tablename__ = 'notes'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'), nullable=False)
+    chapter = Column(String(200), default="")
+    question = Column(String(2000), default="")
+    answer = Column(String(8000), default="")
+    created_at = Column(String(50))
+
+    course = relationship("Course", back_populates="notes")
 
 
 class GeneratedFile(Base):

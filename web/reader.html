@@ -106,7 +106,7 @@
   <div class="quote" id="quote">选中一段正文，我会结合上下文解释。</div>
   <div class="answer" id="answer">你可以先选中一句话，或者直接在右侧输入问题。</div>
   <footer>
-    <button class="btn sm" data-toast="笔记功能下一步接入">存为笔记</button>
+    <button class="btn sm" id="saveNote">存为笔记</button>
     <button class="btn sm" id="copyBtn">复制</button>
     <span class="spacer"></span>
     <span class="tiny muted">回答仅供参考</span>
@@ -233,6 +233,20 @@
     $('railAsk').value = '';
   });
   if($('mAsk')) $('mAsk').addEventListener('click', function(e){ e.preventDefault(); if(window.TF_ASK) window.TF_ASK('', '解释这一节'); });
+
+  $('saveNote').addEventListener('click', function(){
+    if(!cid){ toast('请从课程进入阅读器再存笔记'); return; }
+    var quote = $('quote').textContent.trim();
+    var answer = $('answer').textContent.trim();
+    if(!answer || answer.length < 5){ toast('先提问再存笔记'); return; }
+    var active = document.querySelector('.toc a.active');
+    fetch('/api/notes', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ course_id: +cid, chapter: active ? active.textContent.trim() : '',
+                             question: quote, answer: answer }) })
+      .then(function(r){ return r.json(); })
+      .then(function(){ toast('已存为笔记'); })
+      .catch(function(){ toast('保存失败'); });
+  });
 
   if(cid){ load(cid); }
   else {
