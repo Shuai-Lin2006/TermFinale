@@ -233,6 +233,8 @@ def process_image(img_bytes, img_filename, with_caption=True, caption_text=None)
     except Exception:
         return ""
 
+    import hashlib as _hashlib
+    img_filename = f"{_hashlib.md5(img_bytes).hexdigest()[:16]}.{img_filename.rsplit('.', 1)[-1]}"
     img_path = os.path.join(IMG_DIR, img_filename)
     with open(img_path, 'wb') as f:
         f.write(img_bytes)

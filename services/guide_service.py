@@ -91,27 +91,57 @@ def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
 
 
 def limit_image_stacking(markdown: str, min_gap: int = 400) -> str:
-    """任意 3 张图不得挤在 400 字符内；超出的图直接丢弃，避免张冠李戴。"""
-    import re
-    positions = [m.start() for m in re.finditer(r"\[\[\[IMAGE:", markdown)]
+    """任意 3 张图不得挤在 400 字符内；超出者删除。"""
+    matches = list(re.finditer(r"\[\[\[IMAGE:[^\n]*\]\]\]", markdown))
     drop = []
     kept = []
-    for pos in positions:
-        if len(kept) >= 2 and pos - kept[-2] < min_gap:
-            drop.append(pos)
+    for m in matches:
+        if len(kept) >= 2 and m.start() - kept[-2] < min_gap:
+            drop.append(m)
             continue
-        kept.append(pos)
-    if not drop:
-        return markdown
-    out, last = [], 0
-    for pos in drop:
-        line_end = markdown.find("\n", pos)
-        if line_end == -1:
-            line_end = len(markdown)
-        out.append(markdown[last:pos])
-        last = line_end + 1
-    out.append(markdown[last:])
-    return "".join(out)
+        kept.append(m.start())
+    for m in reversed(drop):
+        start, end = m.start(), m.end()
+        line_start = markdown.rfind("\n", 0, start)
+        line_end = markdown.find("\n", end)
+        if line_start == -1: line_start = 0
+        if line_end == -1: line_end = len(markdown)
+        markdown = markdown[:line_start] + markdown[line_end:]
+    return markdown
+
+
+_IMG_RE = re.compile(r"\[\[\[IMAGE:\s*([^|\]\n]+)")
+
+
+def sanitize_images(markdown: str, source_text: str) -> tuple[str, dict]:
+    """确定性图片清洗：只允许资料里登记过的图，且同一张只出现一次。"""
+    valid = {m.group(1).strip() for m in _IMG_RE.finditer(source_text)}
+    used, unknown, dup = set(), 0, 0
+    out = []
+    for line in markdown.splitlines():
+        if line.strip().startswith("[[[IMAGE:"):
+            m = _IMG_RE.search(line)
+            if not m:
+                continue
+            name = m.group(1).strip()
+            if name not in valid:
+                unknown += 1
+                continue
+            if name in used:
+                dup += 1
+                continue
+            used.add(name)
+        out.append(line)
+    return "\n".join(out), {"images_source": len(valid), "images_used": len(used),
+                            "images_unknown": unknown, "images_duplicate": dup}
+
+
+def page_coverage(final_md: str, source_text: str) -> dict:
+    src = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", source_text)}
+    cited = {int(n) for n in re.findall(r"(?:第\s*|P\.?\s*)(\d+)\s*(?:页|/)?", final_md)}
+    hit = len(src & cited)
+    return {"pages": len(src), "pages_cited": hit,
+            "coverage": round(hit / len(src), 3) if src else 1.0}
 
 
 def strip_ai_outros(markdown: str) -> str:
@@ -223,6 +253,8 @@ def run_guide(
     weight_prompt = build_weight_prompt(core_pages, ref_pages, core_ratio)
     core_pages, ref_pages = truncate_pages(core_pages, ref_pages, core_ratio)
     pages = core_pages + ref_pages
+    source_text = "\n\n".join(pages)
+    img_totals = {"source": 0, "used": 0, "unknown": 0, "duplicate": 0}
     if not pages:
         raise RuntimeError("未从资料中解析到任何内容")
 
@@ -344,6 +376,11 @@ def run_guide(
             parts.append(strip_ai_outros(markdown))
         chapter_md = "\n\n".join(p for p in parts if p)
         if chapter_md:
+            chapter_md, _img_stats = sanitize_images(chapter_md, source_text)
+            img_totals["source"] = max(img_totals["source"], _img_stats["images_source"])
+            img_totals["used"] += _img_stats["images_used"]
+            img_totals["unknown"] += _img_stats["images_unknown"]
+            img_totals["duplicate"] += _img_stats["images_duplicate"]
             chapter_mds.append((chapter.title, dedupe_markdown(chapter_md)))
 
     if not chapter_mds:
@@ -357,6 +394,10 @@ def run_guide(
 
     final_markdown = "\n\n---\n\n".join(limit_image_stacking(md) for _, md in chapter_mds)
     outro_lang = "en" if lang == "English" else "zh"
+    final_markdown, _final_img = sanitize_images(final_markdown, source_text)
+    img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
+                       "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
+    final_markdown = limit_image_stacking(final_markdown)
     final_markdown += "\n\n---\n\n" + OUTROS[outro_lang].get(persona, OUTROS[outro_lang]["温柔小姐姐"])
 
     time_str = time.strftime("%m%d_%H%M", time.localtime())
@@ -388,6 +429,11 @@ def run_guide(
         "retries": retries,
         "images_expected": images_expected,
         "images_reinjected": images_reinjected,
+        "images_source": img_totals["source"],
+        "images_used": img_totals["used"],
+        "images_unknown": img_totals["unknown"],
+        "images_duplicate": img_totals["duplicate"],
+        "coverage": page_coverage(final_markdown, source_text),
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
         "qa_ok": qa.ok,

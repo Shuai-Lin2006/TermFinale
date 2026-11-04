@@ -7,7 +7,7 @@ BAD_TEMPLATES = ("为什么学这个", "核心原理与公式", "深度拆解", 
 
 
 def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0,
-                   require_headings: bool = True) -> dict:
+                   require_headings: bool = True, source_text: str = "") -> dict:
     text = md or ""
     issues: list[str] = []
     checks: list[tuple[str, bool]] = []
@@ -56,6 +56,14 @@ def audit_markdown(md: str, expect_images: bool = False, source_tags: int = 0,
     if source_tags:
         add("配图未丢失", actual_tags >= max(1, int(source_tags * 0.6)),
             f"资料里有 {source_tags} 张图，正文只引用了 {actual_tags} 张")
+
+    if source_text:
+        valid = {m.group(1).strip() for m in re.finditer(r"\[\[\[IMAGE:\s*([^|\]\n]+)", source_text)}
+        used_names = [m.group(1).strip() for m in re.finditer(r"\[\[\[IMAGE:\s*([^|\]\n]+)", text)]
+        add("图片均来自资料", set(used_names) <= valid,
+            f"有 {len(set(used_names) - valid)} 张图不在资料里")
+        add("图片未重复", len(used_names) == len(set(used_names)),
+            "同一张图被重复使用")
 
     # 图片堆叠：连续 3 个标签之间几乎没有文字
     positions = [m.start() for m in re.finditer(r"\[\[\[IMAGE:", text)]
