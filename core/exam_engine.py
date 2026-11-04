@@ -28,12 +28,12 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
                 if content.strip():
                     if getattr(choice, "finish_reason", None) == "length":
                         logger.warning("输出被截断（budget={}），改用精简提示重试", budget)
-                        user_content = user_content[:7000]
+                        user_content = user_content[:3000]
                         continue
                     return content
                 if getattr(choice, "finish_reason", None) == "length":
                     logger.warning("输出为空（budget={}），压缩输入重试", budget)
-                    user_content = user_content[:7000]
+                    user_content = user_content[:3000]
                     continue
                 return ""
             except Exception as exc:  # noqa: BLE001
@@ -207,8 +207,73 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
+
+
+def _qwen_fallback(system: str, user: str, max_tokens: int = 3000) -> str:
+    """DeepSeek 返回空时的备用文本模型（DashScope 兼容接口）。"""
+    try:
+        import os
+        from openai import OpenAI
+        from core.config import get_key
+        client = OpenAI(api_key=get_key("DASHSCOPE_API_KEY", "sk-not-configured"),
+                        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+        resp = client.chat.completions.create(
+            model=os.getenv("TERMFINALE_EXAM_FALLBACK_MODEL", "qwen-plus"),
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            temperature=0.5, max_tokens=max_tokens, timeout=120)
+        return resp.choices[0].message.content or ""
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("备用模型失败: {}", exc)
+        return ""
+
+
+def _generate_sections(raw_text: str, lang: str) -> str:
+    """按大题分四次调用，避免整卷超出单次输出上限。"""
+    sections = [
+        ("一、选择题", "8 题，每题 3 分，共 24 分", "每题 4 个选项 A/B/C/D，各占一行"),
+        ("二、填空题", "4 题，每题 4 分，共 16 分", "每题 1~2 个空"),
+        ("三、计算题", "3 题，每题 12 分，共 36 分", "必须给出完整已知、求、解过程"),
+        ("四、综合题", "2 题，每题 12 分，共 24 分", "综合 2~3 个知识点"),
+    ]
+    lang_req = "STRICT ENGLISH ONLY." if lang == "English" else "中文作答。"
+    parts = []
+    for title, count, extra in sections:
+        sys_p = f"""你是大学期末命题老师。{lang_req}
+只出「{title}」这一道大题：{count}。{extra}
+要求：
+- 严格基于给定资料，不超纲、不编造；
+- 每题末尾标注【考点：xxx】；
+- 只输出这一个大题，用二级标题 `## {title}（{count}）`，题号从 1 开始；
+- 不要输出答案或解析。"""
+        md = call_ai_with_retry(sys_p, raw_text[:1200], temp=0.7, min_budget=2048)
+        if not md.strip():
+            md = call_ai_with_retry(sys_p, raw_text[:600], temp=0.6, min_budget=2048)
+        if not md.strip():
+            logger.warning("主模型空返回，切换备用模型：{}", title)
+            md = _qwen_fallback(sys_p, raw_text[:1500], max_tokens=3000)
+        if md.strip():
+            parts.append(md.strip())
+    if not parts:
+        return ""
+    head = f"# 期末试卷\n**满分：100 分**\n\n"
+    questions = head + "\n\n".join(parts)
+    answer_sys = f"""你是答案撰写人。{lang_req}
+按题号输出 `# 答案与解析`：
+- 选择题只给字母；填空题给答案；
+- 计算/综合题给关键步骤与最终结果；
+- 每题解析不超过 2 句，只写考点 + 一个易错点，禁止展开。
+不要重复题目。"""
+    answers = call_ai_with_retry(answer_sys, questions[:8000], temp=0.2, min_budget=4096)
+    if not answers.strip():
+        answers = _qwen_fallback(answer_sys, questions[:8000], max_tokens=3000)
+    return questions.rstrip() + "\n\n" + answers.strip() if answers.strip() else questions
+
+
 def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficulty: int = 3, diy_config: str = "", user_note: str = "",
                         user_context: dict = None, lang: str = "中文", blueprint=None) -> str:
+    if blueprint is not None and not diy_config:
+        return _generate_sections(raw_text, lang)
+
     if diy_config:
         paper_structure = f"【试卷结构（必须严格遵守）】：{diy_config}"
     elif blueprint is not None:
@@ -246,7 +311,7 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     3. **严禁乱标页码**：这些题目是你新编的，原资料里根本不存在！所以**绝对不准**写“参考原资料第X页”！
     4. **图形文字化建模（极重要）**：如果新出的题需要配图（如受力分析、滑轮），你**必须用极其详尽的文字把图形描述出来**（例如：“一根长为L的杆，左端通过铰链固定，右端受水平向右的拉力F，此时杆与竖直方向夹角为θ...”）。确保学生不看图，光看文字就能列出方程。
     5. 选项独立换行。公式必须用 `$` 包裹。
-    6. 先输出纯题目，结束后写 `# 答案与解析`，再输出答案。在解析中，必须写明“本题考查了XXX的核心概念”和“常见易错点”。
+    6. 只输出题目，不要输出答案、不要输出解析、不要写 `# 答案与解析`。
     7. 🚨 每题末尾必须标注考点：`【考点：具体知识点】`，不得省略。
     8. 🚨 资料里的 `[[[IMAGE: 文件名 | 图注: xxx]]]` 标记若与该题相关，必须原样保留在题干中。
     9. 🚨 各大题分值合计必须等于卷面满分（默认 100 分），题数与分值必须严格按上方结构执行。
@@ -254,7 +319,19 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     10. 🚨 输出格式：第一行必须是 `# <课程名> 期末试卷`，第二行必须是 `**满分：100 分**`；
         每个大题必须用二级标题，例如 `## 一、选择题（共 8 题，每题 3 分，共 24 分）`；
         小题用 `1.` 编号，选项 A/B/C/D 各占一行。
-    11. 🚨 必须写全四个大题（选择/填空/计算/综合），任何一类都不能省略；写完题目后再写 `# 答案与解析`。
+    11. 🚨 必须写全四个大题（选择/填空/计算/综合），任何一类都不能省略；只写题目，答案由后续步骤单独生成。
     """
-    # 🚨 温度提升到 0.7，激发 AI 的创造力，不再只会套死模板
-    return call_ai_with_retry(sys_prompt, raw_text, temp=0.7, min_budget=16384)
+    # 第一步：只出题（避免“题目+解析”超出单次输出上限）
+    questions = call_ai_with_retry(sys_prompt, raw_text, temp=0.7, min_budget=8192)
+    if not questions.strip():
+        return ""
+    answer_sys = f"""你是大学期末考试命题组的答案撰写人。
+下面是一份已经出好的试卷题目。请严格按题号输出 `# 答案与解析`：
+1. 选择题只给答案字母；
+2. 填空题给答案；
+3. 计算题/综合题给关键步骤与最终结果；
+4. 每题解析不超过 2 句话，只写“本题考查了什么 + 一个易错点”，严禁长篇展开。
+{lang_req}
+不要重复题目原文。"""
+    answers = call_ai_with_retry(answer_sys, questions[:12000], temp=0.2, min_budget=8192)
+    return questions.rstrip() + "\n\n" + answers.strip() if answers.strip() else questions
