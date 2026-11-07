@@ -440,3 +440,27 @@ A. 1 B. 2
         paper = self.PAPER + "## 填空题\n1. 第一空\n2. 第二空\n"
         report = validate_output(paper, self._c(), source_text="", stage="final")
         self.assertTrue(report.ok, report.issues)
+
+
+class ChoiceAnswerLetterTest(unittest.TestCase):
+    def _paper(self, answer):
+        return ("# 试卷\n## 单项选择题\n"
+                "1. 题干\nA. 一\nB. 二\nC. 三\nD. 四\n"
+                "# 答案与解析\n## 单项选择题\n1. " + answer + "\n")
+
+    def test_valid_letter_passes(self):
+        c = TaskConstraints(task="exam", answer_mode="required")
+        r = validate_output(self._paper("B"), c, source_text="", stage="final")
+        self.assertTrue(r.ok, r.issues)
+
+    def test_letter_not_in_options_fails(self):
+        c = TaskConstraints(task="exam", answer_mode="required")
+        r = validate_output(self._paper("E"), c, source_text="", stage="final")
+        self.assertFalse(r.ok)
+        self.assertTrue(any("不在选项" in i for i in r.issues), r.issues)
+
+    def test_non_letter_answer_fails(self):
+        c = TaskConstraints(task="exam", answer_mode="required")
+        r = validate_output(self._paper("因为显然"), c, source_text="", stage="final")
+        self.assertFalse(r.ok)
+        self.assertTrue(any("不是选项字母" in i for i in r.issues), r.issues)

@@ -29,7 +29,7 @@ def check_tests() -> None:
     tail = (proc.stderr or "") + (proc.stdout or "")
     m = re.search(r"Ran (\d+) tests", tail)
     n = int(m.group(1)) if m else 0
-    ok = proc.returncode == 0 and n >= 110
+    ok = proc.returncode == 0 and n >= 115
     add("测试套件", ok, f"{n} 项，退出码 {proc.returncode}")
 
 
@@ -44,7 +44,7 @@ def check_exam() -> None:
     c = TaskConstraints(task="exam", answer_mode="required", sections=sections)
     r = validate_output(path.read_text(encoding="utf-8"), c, source_text="", stage="final")
     add("真实试卷 100% 答案", r.ok,
-        f"ok={r.ok} · 题 {r.metrics.get('questions')} / 答 {r.metrics.get('answered')} · {r.issues[:2]}")
+        f"ok={r.ok} · 题 {r.metrics.get('questions')} / 答 {r.metrics.get('answered')} · 选择题 {r.metrics.get('choice_checked')} · {r.issues[:2]}")
 
 
 def check_171() -> None:

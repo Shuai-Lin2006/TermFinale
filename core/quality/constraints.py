@@ -785,6 +785,7 @@ def _check_answer_mode(report: ValidationReport, text: str, c: TaskConstraints,
                 report.add("答案缺少大题：" + "、".join(missing_sections[:4]))
         if questions and answered < questions:
             report.add(f"答案不完整：{answered}/{questions} 题；每道题都必须有答案")
+        _check_choice_letters(report, body, answers)
         # 题号后必须真的有答案内容，不能只写 "1."
         empty_lines = [ln for ln in answers.splitlines()
                        if re.match(r"^\s*\d{1,3}\s*[.、．)）]\s*$", ln)]
@@ -809,6 +810,59 @@ def _section_titles(text: str) -> list[str]:
     body, _ = _split_answer(text)
     return [re.sub(r"\s+", "", m.group(1)).strip()
             for m in re.finditer(r"(?m)^##+\s*(.+)$", body)]
+
+
+def _numbered_blocks(content: str) -> list[tuple[int, str]]:
+    matches = list(re.finditer(r"(?m)^\s*(\d{1,2})\s*[.、．)）]\s*", content or ""))
+    out: list[tuple[int, str]] = []
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        out.append((int(m.group(1)), content[m.end():end]))
+    return out
+
+
+def _option_letters(block: str) -> set[str]:
+    found = set(re.findall(r"(?m)^\s*([A-DＡ-Ｄ])\s*[.、．)）]", block or ""))
+    if len(found) < 2:
+        found |= set(re.findall(r"(?:^|\s)([A-DＡ-Ｄ])\s*[.、．)）]", block or ""))
+    return {chr(ord(x) - 0xFEE0) if ord(x) >= 0xFF21 else x for x in found}
+
+
+def _check_choice_letters(report, body: str, answers: str) -> None:
+    """选择题答案必须是题干里真实存在的选项字母；不做“答案可能对”的模糊判断。"""
+    paper_secs = _exam_sections(body)
+    ans_secs = _exam_sections(_strip_answer_heading(answers))
+    if not paper_secs:
+        paper_secs = [("", body)]
+    checked = 0
+    for title, content in paper_secs:
+        key = _section_key(title)
+        ans_content = ""
+        if len(ans_secs) > 1:
+            matched = next(((t, c) for t, c in ans_secs
+                            if key and (key in _section_key(t) or _section_key(t) in key)), None)
+            if not matched:
+                continue
+            ans_content = matched[1]
+        else:
+            ans_content = ans_secs[0][1] if ans_secs else _strip_answer_heading(answers)
+        ans_map = {n: b for n, b in _numbered_blocks(ans_content)}
+        for num, block in _numbered_blocks(content):
+            opts = _option_letters(block)
+            if len(opts) < 2:
+                continue
+            checked += 1
+            ab = ans_map.get(num, "")
+            m = re.search(r"[A-Za-zＡ-Ｚａ-ｚ]", ab[:80])
+            if not m:
+                report.add(f"选择题第 {num} 题的答案不是选项字母")
+                continue
+            letter = m.group(0).upper()
+            if ord(letter) >= 0xFF21:
+                letter = chr(ord(letter) - 0xFEE0)
+            if letter not in opts:
+                report.add(f"选择题第 {num} 题答案 {letter} 不在选项 {''.join(sorted(opts))} 中")
+    report.metrics["choice_checked"] = checked
 
 
 def _strip_answer_heading(answers: str) -> str:
