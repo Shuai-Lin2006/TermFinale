@@ -1,87 +1,108 @@
 <!doctype html>
 <html lang="zh-CN" data-theme="dark" data-accent="graphite">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
-<title>笔记 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=18">
-<link rel="stylesheet" href="assets/premium.css?v=1"></head>
+<title>笔记 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=23">
+<link rel="stylesheet" href="assets/premium.css?v=1">
+</head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
-  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
-  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
-  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
-</svg>
 <div class="app">
   <aside class="rail">
-    <div class="brand"><div class="brand-mark">TF</div><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
-    <nav class="nav">
-      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
-      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
-      <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
-      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
-      <a class="nav-item active"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
-      <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
-    </nav>
-    <div class="rail-foot"><div class="user"><div class="avatar">林</div><div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+    <div class="brand"><span class="brand-mark">TF</span><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末复习工作台</div></div></div>
+    <nav class="nav"></nav>
+    <div class="rail-foot"></div>
   </aside>
+
   <main class="main">
     <header class="topbar">
-      <div class="search"><svg class="icon sm"><use href="#i-book"/></svg>笔记</div>
+      <a class="btn ghost sm" href="dashboard.html">← 返回</a>
       <div class="spacer"></div>
-      <select class="select" id="courseFilter"><option value="">全部课程</option></select>
-      <span class="chip" id="apiState">连接中…</span>
-      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+      <select class="select" id="courseFilter" style="min-width:140px"><option value="">全部课程</option></select>
     </header>
+
     <div class="page">
-      <div class="page-head"><div><h1 class="page-title">笔记</h1><div class="page-sub" id="sub">阅读时选中提问，点「存为笔记」就会出现在这里</div></div></div>
-      <div id="list" class="course-grid"></div>
-      <div id="empty" style="display:none" class="card"><div style="padding:48px;text-align:center">
-        <div class="serif" style="font-size:22px;margin-bottom:8px">还没有笔记</div>
-        <p class="muted" style="margin:0 0 18px">在阅读器里选中一段话，问 AI，然后把回答存下来。</p>
-        <a class="btn primary" href="courses.html">去阅读 →</a></div></div>
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Notes</div>
+          <h1 class="page-title">笔记</h1>
+          <div class="page-sub" id="sub">阅读时选中提问，点「存为笔记」就会出现在这里</div>
+        </div>
+      </div>
+      <div class="tf-metrics">
+        <div class="tf-metric"><b id="mNotes">0</b><span>条笔记</span></div>
+        <div class="tf-metric"><b id="mCourses">0</b><span>门课程</span></div>
+        <div class="tf-metric"><b id="mChars">0</b><span>总字数</span></div>
+      </div>
+      <div id="list" class="tf-grid-2"></div>
+      <div id="empty" class="tf-empty" style="display:none">
+        <div class="eyebrow" style="margin-bottom:10px">Empty</div>
+        <h2>还没有笔记</h2>
+        <p>在阅读器里选中一段话，问 AI，然后把回答存下来。</p>
+        <a class="btn primary" href="courses.html">去阅读 →</a>
+      </div>
     </div>
   </main>
 </div>
-<div class="toast" id="toast"></div>
-<script src="assets/app.js?v=18"></script>
+
+<script src="assets/app.js?v=23"></script>
+<script src="assets/i18n.js?v=2"></script>
 <script>
 (function(){
-  var $=function(id){return document.getElementById(id);};
-  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function rich(v){return esc(v).replace(/\n/g,'<br>');}
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+  function rich(v){ return esc(v).replace(/\n/g,'<br>'); }
   function load(){
     var cid = $('courseFilter').value;
-    fetch('/api/notes' + (cid ? '?course_id=' + cid : '')).then(function(r){return r.json();}).then(function(list){
-      $('apiState').textContent='已连接';
+    fetch('/api/notes' + (cid ? '?course_id=' + cid : '')).then(function(r){ return r.json(); }).then(function(list){
+      list = list || [];
       $('sub').textContent = list.length ? ('共 ' + list.length + ' 条笔记') : '阅读时选中提问，点「存为笔记」就会出现在这里';
-      if(!list.length){ $('list').innerHTML=''; $('empty').style.display='block'; return; }
-      $('empty').style.display='none';
+      $('mNotes').textContent = list.length;
+      $('mCourses').textContent = Object.keys(list.reduce(function(a,n){ a[n.course]=1; return a; }, {})).length;
+      $('mChars').textContent = list.reduce(function(a,n){ return a + String(n.answer || '').length; }, 0);
+      if(!list.length){ $('list').innerHTML = ''; $('empty').style.display = 'block'; return; }
+      $('empty').style.display = 'none';
       $('list').innerHTML = list.map(function(n){
-        return '<article class="card course" style="grid-column:span 1"><div class="course-top">'+
-          '<span class="chip">'+esc(n.course)+'</span><span class="tiny muted">'+n.created_at+'</span></div>'+
-          '<h3 style="margin-top:8px">'+esc(n.chapter||'笔记')+'</h3>'+
-          '<div class="meta" style="margin:8px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+rich(n.question)+'</div>'+
-          '<p style="font-size:12.5px;line-height:1.8;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">'+rich(n.answer)+'</p>'+
-          '<div class="course-foot"><span class="tiny muted">'+n.answer.length+' 字</span>'+
-          '<button class="btn ghost sm" data-del="'+n.id+'">删除</button></div></article>';
+        var answer = String(n.answer || '');
+        return '<article class="tf-course note-card" style="min-height:0">'
+          + '<div class="tf-course-top"><span class="chip">' + esc(n.course) + '</span>'
+          + '<span class="tiny muted">' + esc(n.created_at || '') + '</span></div>'
+          + '<h3 style="font-size:16px">' + esc(n.chapter || '笔记') + '</h3>'
+          + '<div class="meta" style="display:block;color:var(--ink-2)">' + rich(n.question) + '</div>'
+          + '<div class="answer" style="font-size:13px;line-height:1.85;color:var(--muted);margin-top:6px">' + rich(answer) + '</div>'
+          + '<div class="spacer"></div>'
+          + '<div class="tf-course-foot"><span class="tf-mini">' + answer.length + ' 字</span>'
+          + '<span style="display:flex;gap:6px">'
+          + '<button class="btn ghost sm" data-expand="1">展开</button>'
+          + '<button class="btn ghost sm" data-del="' + n.id + '">删除</button></span></div>'
+          + '</article>';
       }).join('');
-      document.querySelectorAll('[data-del]').forEach(function(b){
+      document.querySelectorAll('.note-card [data-expand]').forEach(function(b){
         b.addEventListener('click', function(){
-          fetch('/api/notes/'+b.dataset.del,{method:'DELETE'}).then(function(){ load(); });
+          var card = b.closest('.note-card');
+          var open = card.classList.toggle('open');
+          b.textContent = open ? '收起' : '展开';
         });
       });
-    }).catch(function(){ $('apiState').textContent='未连接'; });
+      document.querySelectorAll('[data-del]').forEach(function(b){
+        b.addEventListener('click', function(){
+          if(!confirm('删除这条笔记？')) return;
+          fetch('/api/notes/' + b.dataset.del, {method:'DELETE'}).then(load);
+        });
+      });
+    }).catch(function(){ $('sub').textContent = '本地服务未启动，请重新打开 TermFinale。'; });
   }
-  fetch('/api/courses').then(function(r){return r.json();}).then(function(list){
-    list.forEach(function(c){ var o=document.createElement('option'); o.value=c.id; o.textContent=c.name; $('courseFilter').appendChild(o); });
+  fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
+    (list || []).forEach(function(c){
+      var o = document.createElement('option'); o.value = c.id; o.textContent = c.name;
+      $('courseFilter').appendChild(o);
+    });
   }).catch(function(){});
   $('courseFilter').addEventListener('change', load);
   load();
 })();
 </script>
-  <script src="assets/i18n.js?v=1"></script>
-</body></html>
+</body>
+</html>

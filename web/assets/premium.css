@@ -305,3 +305,8 @@ a{color:inherit}
   .tf-hero-side .tf-stat-row{flex:1;flex-direction:row;gap:22px;justify-content:flex-end}
   .tf-hero-side .tf-stat-row > div{flex-direction:column;align-items:flex-end;gap:2px}
 }
+
+/* 笔记卡片：默认收起到 3 行，展开后完整显示 */
+.note-card .meta{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-card .answer{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.note-card.open .meta,.note-card.open .answer{display:block;-webkit-line-clamp:unset;overflow:visible}

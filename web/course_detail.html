@@ -1,66 +1,134 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
-<title>课程详情 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=22">
-<link rel="stylesheet" href="assets/premium.css?v=1"></head>
-<body class="detail-page">
+<title>课程详情 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=23">
+<link rel="stylesheet" href="assets/premium.css?v=1">
+</head>
+<body>
 <div class="app">
-  <aside class="rail"><div class="brand"><div class="brand-mark">TF</div><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div><nav class="nav" id="nav"></nav></aside>
+  <aside class="rail">
+    <div class="brand"><span class="brand-mark">TF</span><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末复习工作台</div></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="rail-foot"></div>
+  </aside>
+
   <main class="main">
-    <div class="topbar"><div class="crumb" id="crumb">课程</div><div class="spacer"></div></div>
-    <section class="card detail-hero" id="head"><div class="tiny muted">加载中…</div></section>
-    <div class="section-head"><h2>资料</h2><div class="line"></div><a class="btn ghost sm" id="upBtn" href="#">上传资料</a></div>
-    <section class="course-grid detail-grid" id="mats"></section>
-    <div class="section-head"><h2>生成物</h2><div class="line"></div><a class="btn ghost sm" id="genBtn" href="#">再生成</a></div>
-    <section class="course-grid detail-grid" id="files"></section>
+    <header class="topbar">
+      <span class="eyebrow" id="crumb">课程详情</span>
+      <div class="spacer"></div>
+      <a class="btn ghost sm" id="upBtn" href="upload.html">上传资料</a>
+      <a class="btn primary sm" id="genBtn" href="generate.html">生成</a>
+    </header>
+
+    <div class="page">
+      <section class="tf-hero" style="min-height:210px" id="head">
+        <div class="tf-hero-main"><div class="eyebrow">Course</div><h1>加载中…</h1></div>
+      </section>
+
+      <div class="tf-section-head">
+        <h2>资料</h2>
+        <a class="link" id="upBtn2" href="upload.html">上传资料 →</a>
+      </div>
+      <div class="tf-grid-3" id="mats"></div>
+
+      <div class="tf-section-head">
+        <h2>生成物</h2>
+        <a class="link" id="genBtn2" href="generate.html">再生成 →</a>
+      </div>
+      <div class="tf-grid-3" id="files"></div>
+    </div>
   </main>
 </div>
-<script src="assets/i18n.js?v=1"></script>
-<script src="assets/app.js?v=22"></script>
+
+<script src="assets/app.js?v=23"></script>
+<script src="assets/i18n.js?v=2"></script>
 <script>
 (function(){
-  var cid=new URLSearchParams(location.search).get('course');
-  var EN=(localStorage.getItem('tf-lang')||'zh').indexOf('en')===0;
-  var P_EN={'温柔小姐姐':'Gentle tutor','老师':'Teacher','学术AI':'Academic AI','阳光小哥哥':'Sunny tutor','暴力极客':'Hardcore geek'};
-  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  if(!cid){document.getElementById('head').innerHTML='缺少课程编号';return;}
-  fetch('/api/courses/'+cid).then(function(r){return r.json();}).then(function(c){
-    document.getElementById('crumb').textContent=c.name;
-    document.getElementById('upBtn').href='upload.html?course='+cid;
-    document.getElementById('genBtn').href='generate.html?course='+cid;
-    document.getElementById('head').innerHTML=
-      '<div class="course-top"><span class="chip">'+(c.days_left<=3?'临近考试':'进行中')+'</span>'+
-      '<span class="tiny muted">'+esc(c.school)+' · '+esc(c.major)+'</span></div>'+
-      '<h1 class="page-title" style="margin:10px 0 4px">'+esc(c.name)+'</h1>'+
-      '<div class="tiny muted" style="margin-bottom:16px">剩余 '+c.days_left+' 天 · 目标 '+c.target_score+' 分 · '+c.credits+' 学分</div>'+
-      '<div class="stat-row" style="gap:26px"><div class="stat"><b>'+c.target_score+'</b><span>目标分</span></div>'+
-      '<div class="stat"><b>'+c.days_left+'</b><span>剩余天数</span></div>'+
-      '<div class="stat"><b>'+c.credits+'</b><span>学分</span></div>'+
-      '<div class="stat"><b>'+c.difficulty+'</b><span>自设难度</span></div>'+
-      '<div class="stat"><b>'+c.foundation+'</b><span>自身基础</span></div>'+
-      '<div class="stat"><b>'+esc(c.persona||'—')+'</b><span>讲解人设</span></div></div>';
-    document.getElementById('mats').innerHTML=(c.materials||[]).map(function(m){
-      return '<article class="card course"><div class="course-top"><span class="chip">'+esc(m.role||m.type||'资料')+'</span>'+
-        '<span class="tiny muted">'+(m.exists?'可用':'缺失')+'</span></div>'+
-        '<h3 style="font-size:14px;margin:10px 0 6px;word-break:break-all">'+esc(m.filename)+'</h3>'+
-        '<div class="tiny muted">'+Math.round((m.size_kb||0))+' KB · 权重 '+ (m.weight||3) +'</div>'+
-        '<div class="course-foot"><span></span><a class="btn ghost sm" href="generate.html?course='+cid+'">去生成</a></div></article>';
-    }).join('') || '<div class="card course">还没有资料</div>';
+  var cid = new URLSearchParams(location.search).get('course');
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+  function dateText(epoch){
+    if(!epoch) return '—';
+    var d = new Date(Number(epoch) * 1000);
+    if(isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('zh-CN', {month:'2-digit', day:'2-digit'}) + ' '
+      + d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  }
+  var LABELS = {guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'};
+  if(!cid){ document.getElementById('head').innerHTML = '<div class="tf-hero-main"><h1>缺少课程编号</h1></div>'; return; }
+
+  fetch('/api/courses/' + cid).then(function(r){ return r.json(); }).then(function(c){
+    document.getElementById('crumb').textContent = c.name;
+    document.getElementById('upBtn').href = 'upload.html?course=' + cid;
+    document.getElementById('genBtn').href = 'generate.html?course=' + cid;
+    document.getElementById('upBtn2').href = 'upload.html?course=' + cid;
+    document.getElementById('genBtn2').href = 'generate.html?course=' + cid;
+    var stats = [
+      ['目标分', (c.target_score || 80) + ' 分'],
+      ['剩余天数', (c.days_left || 0) + ' 天'],
+      ['学分', (c.credits || 3) + ''],
+      ['自设难度', (c.difficulty || 3) + ' / 5'],
+      ['自身基础', (c.foundation || 3) + ' / 5'],
+      ['讲解人设', c.persona || '—']
+    ];
+    document.getElementById('head').innerHTML =
+      '<div class="tf-hero-main">' +
+        '<div><div class="eyebrow">Course · ' + esc(c.school || '') + ' · ' + esc(c.major || '') + '</div>' +
+        '<h1>' + esc(c.name) + '</h1>' +
+        '<p>' + (c.materials || []).length + ' 份资料 · 目标 ' + (c.target_score || 80) + ' 分 · '
+          + (c.days_left <= 3 ? '临近考试，先保重点' : '按计划推进') + '</p></div>' +
+        '<div class="tf-hero-actions">' +
+          '<a class="btn primary" href="' + ((c.materials || []).length ? 'generate.html?course=' + cid : 'upload.html?course=' + cid) + '">'
+            + ((c.materials || []).length ? '生成学习材料' : '先上传资料')
+            + '<svg class="icon sm"><use href="#i-arrow"/></svg></a>' +
+          '<a class="btn ghost" href="reader.html?course=' + cid + '">继续阅读</a>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tf-hero-side"><div class="tf-stat-row" style="gap:12px">' +
+        stats.map(function(s){ return '<div><span>' + s[0] + '</span><b style="font-size:18px">' + esc(s[1]) + '</b></div>'; }).join('') +
+      '</div></div>';
+
+    var mats = c.materials || [];
+    document.getElementById('mats').innerHTML = mats.length ? mats.map(function(m){
+      return '<article class="tf-course">'
+        + '<div class="tf-course-top"><span class="chip">' + (m.role === 'core' ? '重点' : '辅助') + '</span>'
+        + '<span class="tiny muted">' + (m.exists ? '可用' : '缺失') + '</span></div>'
+        + '<h3 style="font-size:15px;word-break:break-all">' + esc(m.filename) + '</h3>'
+        + '<div class="meta"><span>' + (m.size_kb || 0) + ' KB</span><span>权重 ' + (m.weight || 3) + '</span></div>'
+        + '<div class="spacer"></div>'
+        + '<div class="tf-course-foot"><span class="tf-mini">' + (m.exists ? '已解析' : '文件缺失') + '</span>'
+        + '<a class="btn ghost sm" href="generate.html?course=' + cid + '">用它生成 →</a></div></article>';
+    }).join('') : '<div class="tf-empty" style="grid-column:1/-1"><h2>还没有资料</h2><p>上传 PPT / PDF / 扫描件，系统会逐页解析并标出缺失页。</p><a class="btn primary" href="upload.html?course=' + cid + '">上传资料</a></div>';
+  }).catch(function(){
+    document.getElementById('head').innerHTML = '<div class="tf-hero-main"><h1>课程加载失败</h1><p>请确认本地服务已启动，然后刷新。</p></div>';
   });
-  fetch('/api/courses/'+cid+'/files').then(function(r){return r.json();}).then(function(d){
-    var labels={guide:'讲义',extract:'资料提取',exam:'训练试卷',analysis:'逻辑分析'};
-    document.getElementById('files').innerHTML=(d.files||[]).map(function(f){
-      var m=f.meta||{}; if(!Object.keys(m).length) bits=[]; var _legacy=(EN?'Legacy output, no metadata · ':'旧生成物，未记录语言/人设参数 · '); var bits=[];
-      if(m.lang&&m.lang!=='中文')bits.push(m.lang); if(m.persona)bits.push(EN?(P_EN[m.persona]||m.persona):m.persona);
-      if(m.mode)bits.push(m.mode==='key'?(EN?'Key':'精简'):(EN?'Full':'全量'));
-      if(m.extract_type)bits.push({points:'考点',nouns:'名词',questions:'原题'}[m.extract_type]||m.extract_type);
-      if(m.train_type)bits.push({original:'原题改数',variant:'原题变式',predict:'预测仿真',mock:'模拟练习'}[m.train_type]||m.train_type);
-      return '<article class="card course"><div class="course-top"><span class="chip">'+(labels[f.type]||f.type)+'</span>'+
-        '<span class="tiny muted">'+new Date(f.created_at*1000).toLocaleDateString()+'</span></div>'+
-        '<h3 style="font-size:14px;margin:10px 0 6px">'+esc(f.filename.replace(/\.html$/i,''))+'</h3>'+
-        '<div class="tiny muted">'+(bits.length?bits.join(' · ')+' · ':_legacy)+'Files '+ (f.materials_used||1)+'</div>'+
-        '<div class="course-foot"><span></span>'+(f.exists?'<a class="btn sm" href="reader.html?course='+cid+'&file='+f.id+'">打开</a>':'')+'</div></article>';
-    }).join('') || '<div class="card course">还没有生成物</div>';
-  });
+
+  fetch('/api/courses/' + cid + '/files').then(function(r){ return r.json(); }).then(function(d){
+    var files = d.files || [];
+    document.getElementById('files').innerHTML = files.length ? files.map(function(f){
+      var m = f.meta || {};
+      var bits = [];
+      if(m.lang && m.lang !== '中文') bits.push(m.lang);
+      if(m.persona) bits.push(m.persona);
+      if(m.mode) bits.push(m.mode === 'key' ? '精简' : '全量');
+      if(m.extract_type) bits.push({points:'考点', nouns:'名词', questions:'原题'}[m.extract_type] || m.extract_type);
+      if(m.train_type) bits.push({original:'原题改数', variant:'原题变式', predict:'预测仿真', mock:'模拟练习'}[m.train_type] || m.train_type);
+      var meta = bits.length ? bits.join(' · ') : '旧生成物（未记录参数）';
+      return '<article class="tf-course">'
+        + '<div class="tf-course-top"><span class="chip' + (f.type === 'exam' ? ' accent' : ' brand') + '">' + (LABELS[f.type] || f.type) + '</span>'
+        + '<span class="tiny muted">' + dateText(f.created_at) + '</span></div>'
+        + '<h3 style="font-size:15px;word-break:break-all">' + esc(String(f.filename || '').replace(/\.html$/i, '')) + '</h3>'
+        + '<div class="meta"><span>' + esc(meta) + '</span></div>'
+        + '<div class="spacer"></div>'
+        + '<div class="tf-course-foot"><span class="tf-mini">' + (f.exists ? '可打开' : '文件缺失') + '</span>'
+        + (f.exists ? '<a class="btn sm" href="reader.html?course=' + cid + '&file=' + f.id + '">打开 →</a>' : '<span class="tf-mini">需重生成</span>')
+        + '</div></article>';
+    }).join('') : '<div class="tf-empty" style="grid-column:1/-1"><h2>还没有生成物</h2><p>先上传资料，再生成讲义、提取或试卷。</p><a class="btn primary" href="generate.html?course=' + cid + '">去生成</a></div>';
+  }).catch(function(){});
 })();
 </script>
-</body></html>
+</body>
+</html>

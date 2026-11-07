@@ -127,3 +127,11 @@ topics 全部落在白名单内
 - 原 8903 旧进程已停止，用新代码重启；`/api/courses` 返回 1 门真实课（全量 47），测试课程默认隐藏。
 - 测试用 8904 已停止；最终截图走 8903：`final_dashboard.png`、`final_generate.png`、`final_reader.png`。
 - Electron 已开窗口需 **Cmd+R 刷新一次**才能加载新 UI；后端已是新代码。
+
+## 课程详情 / 资料 / 笔记（00:24–00:33）
+
+- `course_detail.html` 重写：course hero + 6 项统计 + 资料卡 + 生成物卡；修复 `Files 1` 文案、日期、重复返回。
+- `materials_stats.html` 重写：3 指标 + 按课程分组 + 缺失标记。
+- `notes.html` 重写：指标 + 笔记卡（展开/删除/字数）+ 空态。
+- `upload.html` 已随 premium 主题统一（未重写）。
+- 截图：`course_detail_v2.png`、`materials_stats_v2.png`、`notes_v2.png`、`upload_v2.png`。
