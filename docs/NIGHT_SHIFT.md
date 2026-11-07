@@ -236,3 +236,7 @@ topics 全部落在白名单内
 ## 阅读器浅色回归（02:10）
 
 - reader 支持 `?theme=light`（之前只读 localStorage）；浅色正文/侧栏/工具均正常，截图 `reader_light.png` 固化 `docs/screenshots/reader-light.png`。
+
+## 欢迎页窄窗（02:15）
+
+- 欢迎页补 900px 上下分栏；空 profile 临时库截图 `welcome_900.png`，固化 `docs/screenshots/welcome-900.png`。分屏左栏在窄窗不再横向挤压。
