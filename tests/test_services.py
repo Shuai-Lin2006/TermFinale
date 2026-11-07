@@ -255,3 +255,19 @@ class SplitPagesTest(unittest.TestCase):
         self.assertEqual(len(pages), 2)
         self.assertIn("《x.pptx》第 1 页", pages[0])
         self.assertIn("重点资料", pages[0])
+
+
+class CitationRepairTest(unittest.TestCase):
+    def test_repairs_missing_citation_by_source_match(self):
+        md = "### 考点：隐函数求导\n- 方程两边对 x 求导。\n"
+        pages = ["【《有机化学【蜂考系统课】.pdf》第 3 页】\n隐函数求导：方程两边对 x 求导。"]
+        out, fixed = review_service.repair_topic_citations(md, pages)
+        self.assertEqual(fixed, 1)
+        self.assertIn("（第3页）", out)
+
+    def test_keeps_unmatched_for_hard_gate(self):
+        md = "### 考点：完全无关的主题\n- 内容。\n"
+        pages = ["【《有机化学【蜂考系统课】.pdf》第 3 页】\n隐函数求导：方程两边对 x 求导。"]
+        out, fixed = review_service.repair_topic_citations(md, pages)
+        self.assertEqual(fixed, 0)
+        self.assertNotIn("第3页", out)

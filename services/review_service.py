@@ -145,6 +145,50 @@ def dedupe_markdown(markdown: str) -> tuple[str, int]:
 # --------------------------------------------------------------------------- #
 # 提取
 # --------------------------------------------------------------------------- #
+def repair_topic_citations(markdown: str, pages: list[str]) -> tuple[str, int]:
+    """给缺少出处的考点补页码：用考点标题与原文页做 2-gram 匹配，只补真实存在的页。
+
+    不改变考点内容，只把“模型忘了写出处”的条目接回来源；匹配不到就保持缺失，
+    让硬校验继续报出来，而不是编一个页码。
+    """
+    if "### 考点" not in (markdown or ""):
+        return markdown or "", 0
+    page_texts: list[tuple[int, str]] = []
+    for page in pages or []:
+        m = re.search(r"第\s*(\d+)\s*页】", page or "")
+        if m:
+            page_texts.append((int(m.group(1)), page))
+    if not page_texts:
+        return markdown or "", 0
+
+    def grams(text: str) -> set[str]:
+        clean = re.sub(r"[^\u4e00-\u9fffA-Za-z0-9]", "", text or "")
+        return {clean[i:i + 2] for i in range(max(0, len(clean) - 1))}
+
+    def has_cite(text: str) -> bool:
+        return bool(re.search(r"第\s*\d+\s*页", text) or re.search(r"[（(]\s*P\.?\s*\d+", text))
+
+    parts = re.split(r"(?m)(?=^###\s*考点[:：])", markdown)
+    fixed = 0
+    out: list[str] = []
+    for block in parts:
+        if not block.lstrip().startswith("### 考点") or has_cite(block):
+            out.append(block)
+            continue
+        title = block.split("\n", 1)[0]
+        bg = grams(title)
+        best_page, best_score = None, 0
+        for number, text in page_texts:
+            score = len(bg & grams(text))
+            if score > best_score:
+                best_page, best_score = number, score
+        if best_page and best_score >= 2:
+            block = block.rstrip() + f"（第{best_page}页）"
+            fixed += 1
+        out.append(block)
+    return "".join(out), fixed
+
+
 def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                  on_progress: ProgressCb, stop_event: threading.Event,
                  started: float, user_note: str = "",
@@ -259,6 +303,9 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
             logger.warning("缺页块补跑失败 chunk={} err={}", _i, str(_e)[:80])
     ok_chunks = sum(1 for r in results if r and r.strip())
     merged, removed = dedupe_markdown("\n\n".join(results))
+    merged, _cite_fixed = repair_topic_citations(merged, pages)
+    if _cite_fixed:
+        logger.info("引用修复：{} 条考点补回页码", _cite_fixed)
     # 真实页覆盖率：分母是资料页数（含占位页），分子是输出里真正引用到的页。
     # 旧实现用 ok_chunks/chunks，171 页只引用 106 页也会报 100%。
     _src_pages: set[int] = set()

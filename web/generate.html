@@ -224,6 +224,7 @@
             <div class="serif" style="font-size:20px;margin-bottom:4px" id="doneTitle">讲义生成好了</div>
             <p class="muted" style="font-size:13px" id="doneMeta"></p>
             <div class="tiny" id="qualityLine" style="margin:6px 0 2px"></div>
+            <div class="tiny" id="coverageLine" style="margin:2px 0 2px;display:none"></div>
             <a class="btn primary" id="openResult" style="width:100%;justify-content:center;margin-top:8px">
               打开结果
             </a>
@@ -542,6 +543,20 @@
             $('openResult').href = '/reader.html?course=' + state.course.id;
             var q = snap.result && snap.result.quality;
             var v = snap.result && snap.result.validation;
+            var cov = snap.result && snap.result.metrics && snap.result.metrics.coverage;
+            var cl = $('coverageLine');
+            if(cov && cov.coverage !== undefined){
+              cl.style.display = 'block';
+              var pct = Math.round(cov.coverage * 100);
+              if(cov.pages_missing_count){
+                cl.style.color = 'var(--warn)';
+                cl.textContent = '逐页覆盖 ' + pct + '% · 未引用 ' + cov.pages_missing_count + ' 页'
+                  + (cov.pages_missing && cov.pages_missing.length ? '：' + cov.pages_missing.slice(0,8).join('、') + (cov.pages_missing.length > 8 ? '…' : '') : '');
+              } else {
+                cl.style.color = 'var(--ok)';
+                cl.textContent = '逐页覆盖 100%';
+              }
+            } else { cl.style.display = 'none'; }
             var line = $('qualityLine');
             if(v && !v.ok){
               line.style.color = 'var(--danger)';

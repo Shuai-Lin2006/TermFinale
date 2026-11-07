@@ -385,7 +385,6 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
                                         (constraint_block or "").strip(),
                                         (retry_note or "").strip()) if x)
     parts = []
-    import re as _re
     for i, (title, count, points) in enumerate(parsed):
         extra = style.get(title, "按该题型的常规考法命题")
         sys_p = f"""你是大学期末命题老师。{lang_req}
