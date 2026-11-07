@@ -199,3 +199,9 @@ topics 全部落在白名单内
 - 真实 1001 页《数学分析讲义》概览：7 章 / 抽样 33 页 / **35.9s** / 15,725 字 / `qa_ok=true`；不是逐页提取。
 - 修复误报：概览模式的 coverage 原会显示 33/1001=3.3%，UI 会像“缺 968 页”；现在 `coverage_mode=overview_sample` + `sampled_pages`，生成页显示“长文档概览：7 章 · 抽样 33/1001 页（不是逐页覆盖）”。
 - 证据：`docs/evidence/guide1001.md`、`guide1001.log`；测试 97 项。
+
+## 收尾 UI 小修（01:25–01:30）
+
+- 设置页头像改为“更换头像”按钮（隐藏原生 file input）；版本显示 0.3.0 / 2026-11-08 01:00。
+- 练习页无错题时不再显示 “0 / 0”，改为 “0”。
+- 截图：`docs/screenshots/settings.png`（旧版）；`/tmp/tf_verify/ui2/settings3.png` 最新。

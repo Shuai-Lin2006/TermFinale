@@ -76,7 +76,7 @@
     $('apiState').textContent='已连接';
     $('statExams').textContent=d.exams.length;
     $('statNotes').textContent=d.notes;
-    if(d.mistakes !== undefined){ $('statDue').textContent = d.due + ' / ' + d.mistakes; }
+    if(d.mistakes !== undefined){ $('statDue').textContent = d.due ? (d.due + ' / ' + d.mistakes) : '0'; }
     if(!d.exams.length){
       $('exams').innerHTML='<div class="tf-empty" style="grid-column:1/-1"><h2>还没有训练卷</h2><p>按目标分与题型生成一套，做完自动收错题。</p><a class="btn primary" href="generate.html">生成试卷</a></div>';
       return;

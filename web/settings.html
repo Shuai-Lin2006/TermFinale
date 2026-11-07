@@ -56,7 +56,8 @@
               <span class="tiny muted">首页与侧栏显示</span></div>
             <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px">
               <div id="avatarPreview" style="width:54px;height:54px;border-radius:50%;background:var(--line);display:grid;place-items:center;overflow:hidden;font-family:var(--serif);font-size:22px">L</div>
-              <div><input type="file" id="avatarFile" accept="image/*" style="font-size:12px">
+              <div><input type="file" id="avatarFile" accept="image/*" style="display:none">
+                <label for="avatarFile" class="btn ghost sm" style="cursor:pointer">更换头像</label>
                 <div class="tiny muted" style="margin-top:4px">建议 200KB 以内的正方形图片</div></div>
             </div>
             <div class="set-row"><div class="k">名字 / ID</div><div class="v"><input class="select" id="profileName" style="width:100%"></div></div>
