@@ -28,6 +28,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 - `courses.is_test` 迁移：46 门测试课 / 1 门正式课；列表、概览、资料、错题、练习默认过滤，`?include_test=true` 才返回全量。
 - `/api/reset` 必须 `{"confirm":"DELETE-ALL"}`；先自动备份；只删上传副本与生成物，**不删桌面/Documents 原资料**。
 - `/api/backup`、`/api/backups`；设置页“立即备份”可直接调用。
+- 新增 `tools/restore_backup.py`：先 `PRAGMA integrity_check` + 表校验，默认 dry-run；`--yes` 前自动用 SQLite backup API 把当前库另存，清掉旧 WAL/SHM 再原子替换；不删上传副本/原资料。真实备份 47 课/47 资料/368 生成物已在临时目录恢复验证。
 - 日志与异常钩子：`setup_logging()`、`install_exception_hooks()` 在 import 时执行。
 - 本地 API 鉴权：
   - 页面首次加载下发 HttpOnly `SameSite=Strict` 的 `tf_token`；
@@ -69,7 +70,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ### 2.4 测试与 CI
 
-- `python -m unittest discover -s tests` → **100 项全绿**。
+- `python -m unittest discover -s tests` → **105 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`；server import smoke。
 - 本机验证过 `import server.app`；GitHub Actions 尚未在远端跑（没有 push）。
@@ -91,6 +92,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 171 页补提取日志 | `docs/evidence/fill171.log` |
 | 1001 页真实概览 | `docs/evidence/guide1001.md` / `guide1001.log` |
 | API 端到端日志 | `docs/evidence/api_e2e.log` |
+| 恢复验证日志 | `docs/evidence/restore_test.log` |
 | 171 页日志 | `docs/evidence/extract171.log` |
 | UI 截图 | `docs/screenshots/`（见下） |
 | README 预览图 | `docs/screenshots/dashboard.png` / `review.png` / `training.png` |
@@ -123,7 +125,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 6. **UI 不是终版**：`upload.html`、`welcome.html` 基本沿用旧结构（已套主题）；阅读页正文排版还可继续打磨；AI 抽屉/关键词弹窗只做了公式修复。
 7. **测试数据还在库里**：46 门测试课只是隐藏，没有删；用户若要彻底清掉，需单独确认。
 8. **GitHub 未推送**：本地 14+ 个提交；推不推、仓库名、release 文案由你决定。
-9. **CI 未在 GitHub 跑过**；本机 100 项通过不等于三平台通过。
+9. **CI 未在 GitHub 跑过**；本机 105 项通过不等于三平台通过。
 10. **API token 鉴权**后，外部 curl / 旧脚本要带 cookie 或 `X-TF-Token`；没有对外 API 文档。
 
 ---
@@ -132,13 +134,16 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ```bash
 cd /Users/lan/PycharmProjects/TermFinale
-.venv/bin/python -m unittest discover -s tests          # 100 项
+.venv/bin/python -m unittest discover -s tests          # 105 项
 .venv/bin/python -m pyflakes server/app.py core services models tools/build.py
 
 # 鉴权 + 数据
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8903/api/courses      # 403
 curl -s -c /tmp/tf_c.txt -o /dev/null http://127.0.0.1:8903/dashboard.html
 curl -s -b /tmp/tf_c.txt http://127.0.0.1:8903/api/courses | head -c 300        # 1 门课
+
+# 备份恢复 dry-run（不会写入）
+python tools/restore_backup.py --backup "$HOME/Library/Application Support/TermFinale/backups/night_20261107_234346.db"
 ```
 
 GitHub 提交建议（你自己操作）：

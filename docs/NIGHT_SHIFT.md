@@ -215,3 +215,9 @@ topics 全部落在白名单内
 - 生成页显示“按老师只考过滤 N 条”；覆盖率指标新增 `scope_filtered`。
 - 测试 **100 项**全绿；证据 `docs/evidence/api_e2e.log`。
 - 测试产出写到桌面的 `FINAL高数_资料提取_1108_0042.html` 已清理（只删测试产物）。
+
+## 备份恢复工具（01:45–01:55）
+
+- 新增 `tools/restore_backup.py`：完整性/表校验 → 默认 dry-run → `--yes` 前用 SQLite backup API 另存当前库 → 清旧 WAL/SHM → 原子替换；不删上传副本/原资料。
+- 真实备份（47 课/47 资料/368 生成物）在 `/tmp` 恢复验证通过；新增 5 项测试，测试总数 **105**。
+- 恢复日志：`docs/evidence/restore_test.log`。

@@ -34,7 +34,7 @@ jobs:
           python -c "import pathlib, py_compile; [py_compile.compile(str(p), doraise=True) for p in pathlib.Path('.').rglob('*.py') if '.venv' not in str(p) and 'legacy' not in str(p) and 'build' not in str(p) and 'dist' not in str(p)]"
 
       - name: Static check
-        run: python -m pyflakes main.py launcher.py desktop.py server/app.py services core models tools/evaluate.py tools/build.py
+        run: python -m pyflakes main.py launcher.py desktop.py server/app.py services core models tools/evaluate.py tools/build.py tools/restore_backup.py
 
       - name: Unit tests (all modules)
         env:
