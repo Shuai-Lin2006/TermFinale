@@ -302,6 +302,29 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         except Exception as _e:
             logger.warning("缺页块补跑失败 chunk={} err={}", _i, str(_e)[:80])
     ok_chunks = sum(1 for r in results if r and r.strip())
+
+    # 逐页补提取：块级补跑后仍缺的、有文字的页，单页再试一次（最多 16 页）。
+    # 封面/群号/纯图页长度很短，跳过；补不出来就继续报缺页，不编内容。
+    _src_pages = {int(n) for p in pages for n in re.findall(r"第\s*(\d+)\s*页】", p)}
+    _cited_fill = {int(n) for r in results for n in re.findall(r"第\s*(\d+)\s*页", r or "")}
+    _page_fills = 0
+    for _n in sorted(_src_pages - _cited_fill)[:16]:
+        _page = next((p for p in pages if re.search(rf"第\s*{_n}\s*页】", p)), "")
+        if not _page or len(_page) < 80:
+            continue
+        try:
+            _md = generate_extraction(
+                _page, extract_type, with_answer, constraint_block=constraint_block,
+                user_note=(user_note or "")
+                + f"\n只针对第 {_n} 页输出 2-4 条考点/要点；每条末尾必须写（第{_n}页）；"
+                  "如果本页只有练习题或答案，提取题干涉及的考点；不要输出其他页。")
+            if _md and _md.strip():
+                results.append(_md)
+                _page_fills += 1
+                logger.info("逐页补提取 page={} chars={}", _n, len(_md))
+        except Exception as _e:  # noqa: BLE001
+            logger.warning("逐页补提取失败 page={} err={}", _n, str(_e)[:80])
+
     merged, removed = dedupe_markdown("\n\n".join(results))
     merged, _cite_fixed = repair_topic_citations(merged, pages)
     if _cite_fixed:
@@ -323,6 +346,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         "chunks_ok": ok_chunks,
         "attempts": sum(int(getattr(r, "metrics", {}).get("attempts", 1)) for r in reports.values()),
         "duplicates_removed": removed,
+        "page_fills": _page_fills,
         "coverage": (round(len(_covered) / len(_src_pages), 3) if _src_pages
                      else (round(ok_chunks / len(chunks), 3) if chunks else 0.0)),
         "has_page_headers": bool(_src_pages),
