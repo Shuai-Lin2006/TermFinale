@@ -135,3 +135,11 @@ topics 全部落在白名单内
 - `notes.html` 重写：指标 + 笔记卡（展开/删除/字数）+ 空态。
 - `upload.html` 已随 premium 主题统一（未重写）。
 - 截图：`course_detail_v2.png`、`materials_stats_v2.png`、`notes_v2.png`、`upload_v2.png`。
+
+## API 鉴权 + CORS 白名单（00:33–00:38）
+
+- 页面首次加载下发 HttpOnly SameSite=Strict `tf_token`；`/api/*`（health 除外）校验。
+- CORS 只允许 `http://127.0.0.1:<port>` / `http://localhost:<port>`；跨站 Origin 直接 403。
+- 实测：无 cookie `/api/courses` → 403；加载 dashboard 后带 cookie → 200（1 门课）；`Origin: evil` → 403。
+- 新测试 `tests/test_security.py` 4 项；全套 **85 项**通过。
+- 注意：Electron 已开窗口需 **Cmd+R** 刷新一次以拿到 cookie。

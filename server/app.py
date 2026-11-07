@@ -10,6 +10,7 @@ import datetime
 import os
 import re
 import hashlib
+import secrets
 import shutil
 import subprocess
 import threading
@@ -19,7 +20,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
@@ -44,9 +45,23 @@ from services.task import ProgressEvent  # noqa: E402
 WEB = ROOT / "web"
 setup_logging()
 install_exception_hooks()
+
+# 本地 API 鉴权：页面首次加载时下发 HttpOnly SameSite=Strict cookie；
+# 跨站请求不会带 cookie，恶意网页无法读课程/清库/烧 Key。
+_AUTH_TOKEN = secrets.token_urlsafe(24)
+_DISABLE_AUTH = os.getenv("TERMFINALE_DISABLE_AUTH", "").strip().lower() in ("1", "true", "yes")
+_PORT = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
+_ALLOWED_ORIGINS = [f"http://127.0.0.1:{_PORT}", f"http://localhost:{_PORT}"]
+
 app = FastAPI(title="TermFinale API", version="0.3.0")
 init_db()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 JOBS: dict[str, "Job"] = {}
 JOBS_LOCK = threading.Lock()
@@ -176,7 +191,27 @@ async def no_store_html(request, call_next):
     response = await call_next(request)
     if request.url.path.endswith(".html") or request.url.path == "/":
         response.headers["Cache-Control"] = "no-store, max-age=0"
+        # 首次打开页面时下发会话 cookie；JS 不读它，浏览器自动随同源 fetch 发送
+        if not _DISABLE_AUTH:
+            response.set_cookie("tf_token", _AUTH_TOKEN, httponly=True,
+                                samesite="strict", max_age=7 * 24 * 3600, path="/")
     return response
+
+
+@app.middleware("http")
+async def require_local_token(request, call_next):
+    path = request.url.path
+    origin = request.headers.get("origin")
+    # 跨站 Origin 一律拒绝（同源页面不会带 evil Origin；Electron 走 127.0.0.1）
+    if origin and origin not in _ALLOWED_ORIGINS and request.method != "OPTIONS":
+        return JSONResponse({"detail": "origin not allowed"}, status_code=403)
+
+    if path.startswith("/api/") and path != "/api/health" and not _DISABLE_AUTH:
+        token = request.headers.get("X-TF-Token") or request.cookies.get("tf_token")
+        if token != _AUTH_TOKEN:
+            return JSONResponse({"detail": "forbidden: missing or invalid token"}, status_code=403)
+
+    return await call_next(request)
 
 
 @app.get("/api/health")
