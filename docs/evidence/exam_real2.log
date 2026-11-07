@@ -1,0 +1,13 @@
+/Users/lan/PycharmProjects/TermFinale/.venv/lib/python3.14/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+  warnings.warn(
+2026-11-08 00:19:05.131 | INFO     | core.parser:_fill_missing_ppt_pages:134 - PPT 图片页回填：1 页成功 / 0 页失败（共缺 1 页）
+2026-11-08 00:19:20.373 | DEBUG    | services.task:dump_debug:72 - 调试产物已落盘: 20261108_001920_exam.md
+elapsed 15.7s
+validation ok: True
+issues: []
+warnings: ['答案题号重复：1、2']
+paper: {"topics": ["隐函数求导", "高阶导数间接法", "参数方程二阶导", "变化率实际问题", "参数方程二阶导、变化率实际问题", "隐函数求导、高阶导数间接法"], "pages_cited": 0, "questions": 9, "score_total": 100.0, "sections": {"单项选择题": {"expected": 4, "found": 4}, "填空题": {"expected": 2, "found": 2}, "计算题": {"expected": 2, "found": 2}}, "point_tags": 8, "duplicate_pairs": 0, "images": 0, "chars": 4321, "answer_numbers": 8, "answered": 8, "attempts": 1}
+teacher_rules: {"page_refs": [], "must_topics": [], "ban_topics": [], "only_topics": ["隐函数求导", "高阶导数间接法", "参数方程二阶导", "变化率实际问题"], "literal_bans": [], "unresolved": [], "notes": ["按“只考”白名单执行：白名单外的考点判失败"]}
+md saved /tmp/tf_verify/exam_real2.md chars 4721
+answer sections: 1
+section headings: ['## 单项选择题（4 题，每题 5 分，共 20 分）', '## 填空题（2 题，每题 10 分，共 20 分）', '## 计算题（2 题，每题 30 分，共 60 分）', '## 单项选择题', '## 填空题', '## 计算题']

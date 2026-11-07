@@ -182,3 +182,8 @@ topics 全部落在白名单内
 - 最终校验原有 3 个考点缺出处 → 硬失败；新增 `repair_topic_citations` 用考点标题与原文页 2-gram 匹配补回真实页码，**3 条全部修复，validation.ok=True**；匹配不到不编页码。
 - 生成页完成态新增“逐页覆盖 91% · 未引用 N 页：页号…”（黄色警示），不再只报字数。
 - 证据：`/tmp/tf_verify/extract171.md`、`extract171_repaired.md`、`extract171b.log`；测试 95 项全绿。
+
+## 最终交付包（01:10）
+
+- 新增 `docs/MORNING_REPORT.md`：可验证成果、证据、未完成项、早上验收命令、GitHub 建议。
+- 证据固化到 `docs/evidence/`（真实试卷 md/log、171 修复稿/log）；截图固化到 `docs/screenshots/`。
