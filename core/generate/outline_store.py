@@ -18,6 +18,8 @@ from loguru import logger
 from core import paths
 from core.generate.outline import Chapter, Outline
 
+OUTLINE_VERSION = "2026-11-08.3"  # 大纲提示词/章名清洗变更时递增，旧缓存自动失效
+
 
 def fingerprint(materials: list[dict], lang: str, extra: str = "") -> str:
     """资料指纹：路径 + 大小 + 修改时间 + 范围/模式，避免内容或约束变了还复用旧大纲。"""
@@ -26,6 +28,7 @@ def fingerprint(materials: list[dict], lang: str, extra: str = "") -> str:
         digest.update(str(item.get("path", "")).encode("utf-8", "ignore"))
         digest.update(str(item.get("size", "")).encode())
         digest.update(str(item.get("mtime", "")).encode())
+    digest.update(OUTLINE_VERSION.encode())
     digest.update(str(lang).encode())
     if extra:
         digest.update(str(extra).encode("utf-8", "ignore"))

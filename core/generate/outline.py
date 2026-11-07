@@ -104,6 +104,38 @@ def _extract_json(text: str) -> dict | None:
         return None
 
 
+_BAD_TITLE_PREFIX = ("注记", "备注", "由于", "这是因为", "所以", "因此", "我们", "如果", "和", "与",
+                      "对任意", "若", "设", "由", "根据", "当", "•", "·", "-", "–", "—", "C1)", "C2)", "C3)", "C4)")
+
+
+def _clean_chapter_title(title: str, must_know: list | None = None, index: int = 1) -> str:
+    """长文档里 AI 常把正文句子/编号当章名（“由于g 是连续函数…”“48.1”）。
+
+    标题不合格时优先用本章 must_know 的第一条（它通常是真正的知识点），
+    再不行才退成“第N部分”，保证目录可读。
+    """
+    import re as _re
+    t = (title or "").strip()
+    t = _re.sub(r"^(?:注记|备注)\s*[.．:：]\s*", "", t).strip()
+    bad = (not t
+           or len(t) > 30
+           or bool(_re.match(r"^[\d.．]+$", t))
+           or t.startswith(_BAD_TITLE_PREFIX)
+           or "如图" in t
+           or "我们" in t
+           or "知道" in t
+           or t.count("，") >= 3
+           or "。" in t)
+    if not bad:
+        return t[:26]
+    for m in (must_know or []):
+        m = _re.sub(r"^\s*\d+(?:\.\d+)*\s*[.、．:：]?\s*", "", str(m)).strip()
+        m = m.strip("。；; ")
+        if 3 <= len(m) <= 24 and not m.startswith(_BAD_TITLE_PREFIX):
+            return m
+    return f"第{index}部分"
+
+
 def _normalize(data: dict, n_pages: int, all_pages: list[str] | None = None) -> list[Chapter]:
     chapters: list[Chapter] = []
     for i, item in enumerate(data.get("chapters", [])):
@@ -130,6 +162,7 @@ def _normalize(data: dict, n_pages: int, all_pages: list[str] | None = None) -> 
             est_words = max(400, min(4000, int(item.get("est_words", 1800))))
         except (TypeError, ValueError):
             est_words = 1800
+        title = _clean_chapter_title(title, item.get("must_know") or [], len(chapters) + 1)
         chapters.append(Chapter(len(chapters), title[:60], page_list[:MAX_PAGES_PER_CHAPTER],
                                 must, importance, est_words))
         if len(chapters) >= MAX_CHAPTERS:
@@ -188,6 +221,17 @@ OUTLINE_SYSTEM = """你是大学期末复习资料的课程架构师。
 6. 章节名必须是知识点名称（例如「气体的压缩因子」），不能用课程名、页码、「1.1」这类编号；
 7. 资料很短时 1~3 章即可，不要为了凑数硬拆。"""
 
+
+
+def clean_outline_titles(outline: "Outline") -> "Outline":
+    """使用点兜底：无论大纲来自缓存还是新生成，都把不可读章名清一遍。"""
+    for c in getattr(outline, "chapters", []) or []:
+        c.title = _clean_chapter_title(c.title, c.must_know, (c.index or 0) + 1)
+        # 兜底成“第N部分”时补上页区间，至少让目录知道这一章在哪
+        if re.match(r"^第\d+部分$", c.title) and c.pages:
+            lo, hi = min(c.pages) + 1, max(c.pages) + 1
+            c.title = f"{c.title} · 第{lo}–{hi}页"
+    return outline
 
 
 def generate_outline(

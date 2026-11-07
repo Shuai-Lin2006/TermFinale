@@ -240,3 +240,9 @@ topics 全部落在白名单内
 ## 欢迎页窄窗（02:15）
 
 - 欢迎页补 900px 上下分栏；空 profile 临时库截图 `welcome_900.png`，固化 `docs/screenshots/welcome-900.png`。分屏左栏在窄窗不再横向挤压。
+
+## 1001 章名可用性（02:15–02:25）
+
+- 真实 1001 页概览重跑：8 章 / 抽样 50 页 / 43.5s / 18,676 字 / qa ok。
+- 发现大纲章名被正文句子污染；加 `clean_outline_titles` 使用点兜底 + `_retitle_first_heading` 覆盖每章首个 `##`；不可读标题退成“第N部分 · 第X–Y页”。
+- 证据更新：`docs/evidence/guide1001.md` / `guide1001.log`；测试 109 项。

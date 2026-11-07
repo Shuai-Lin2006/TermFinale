@@ -24,7 +24,7 @@ from core.exporter import export_to_html
 from core.quality.dedupe import dedupe_markdown
 from core.lang_convert import to_hant
 from core.generate import outline_store
-from core.generate.outline import Chapter, Outline, fallback_outline, generate_outline
+from core.generate.outline import Chapter, Outline, clean_outline_titles, fallback_outline, generate_outline
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
 from core.quality.qa import check_chapters
@@ -191,6 +191,13 @@ def page_coverage(final_md: str, source_text: str) -> dict:
     hit = len(src & cited)
     return {"pages": len(src), "pages_cited": hit,
             "coverage": round(hit / len(src), 3) if src else 1.0}
+
+
+def _retitle_first_heading(md: str, title: str) -> str:
+    """把每章第一个 ## 标题换成大纲里干净的章名，避免模型自写“由于U…”当目录。"""
+    if not title:
+        return md
+    return re.sub(r"(?m)^##\s+[^\n]+", f"## 核心考点：{title}", md or "", count=1)
 
 
 def strip_ai_outros(markdown: str) -> str:
@@ -372,6 +379,7 @@ def run_guide(
                 outline = fallback_outline(
                     pages, chapters=min(12, max(6, len(pages) // 80)))
             outline_store.save(cache_key, outline)
+    outline = clean_outline_titles(outline)
     if not outline.chapters:
         raise RuntimeError("无法规划章节结构")
 
@@ -520,7 +528,7 @@ def run_guide(
             img_totals["used"] += _img_stats["images_used"]
             img_totals["unknown"] += _img_stats["images_unknown"]
             img_totals["duplicate"] += _img_stats["images_duplicate"]
-            chapter_mds.append((chapter.title, dedupe_markdown(chapter_md)))
+            chapter_mds.append((chapter.title, _retitle_first_heading(dedupe_markdown(chapter_md), chapter.title)))
 
     if not chapter_mds:
         raise RuntimeError("未提取到有效考点（所有章节均生成失败）。"
