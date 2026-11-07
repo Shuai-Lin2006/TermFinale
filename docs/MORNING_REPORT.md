@@ -47,6 +47,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 171 页真实提取 | 171 页 / **169 引用 / 98.8%** / 仅缺封面 2 页；140,259 字 / 210 考点 / 6.6 分钟 + 逐页补提取 |
 | 长文档 | 删掉 10k 无条件截断；1001 页均衡 10 章；160 页概览 2 次调用 |
 | 老师重点 | 只考/必考/不考/页码/基团；8 页高数 8/8 引用、0 超范围；化学 10 基团通过 |
+| 1001 页真实概览 | 1001 页 / 7 章 / 抽样 33 页 / **35.9s** / 15,725 字 / `qa_ok=true`（不是逐页提取） |
 | 真实试卷 | FINAL高数 4/2/2=100 分，8 题 8 答案，1 次通过，15.7s，`validation.ok=True` |
 | 试卷清洗 | 修掉“单题型输出答案+第二套题”导致误判通过；多答案分区/答案后混题 → 硬失败 |
 | 引用修复 | 3 条漏出处考点用原文 2-gram 匹配补回真实页码；匹配不到不编 |
@@ -67,7 +68,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ### 2.4 测试与 CI
 
-- `python -m unittest discover -s tests` → **95 项全绿**。
+- `python -m unittest discover -s tests` → **97 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`；server import smoke。
 - 本机验证过 `import server.app`；GitHub Actions 尚未在远端跑（没有 push）。
@@ -87,6 +88,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 171 页修复后（91.2%） | `docs/evidence/extract171_repaired.md` |
 | 171 页逐页补提取（98.8%） | `docs/evidence/extract171_filled.md` |
 | 171 页补提取日志 | `docs/evidence/fill171.log` |
+| 1001 页真实概览 | `docs/evidence/guide1001.md` / `guide1001.log` |
 | 171 页日志 | `docs/evidence/extract171.log` |
 | UI 截图 | `docs/screenshots/`（见下） |
 | README 预览图 | `docs/screenshots/dashboard.png` / `review.png` / `training.png` |
@@ -112,14 +114,14 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 ## 4. 未完成 / 阻塞（不粉饰）
 
 1. **171 页覆盖 98.8%**，只剩封面/群号 2 页；逐页补提取已进流程。若要 100%，需把封面也建索引（不建议为此调模型）。
-2. **1001 页只做了大纲模拟 + 160 页概览真跑**，没跑 1001 页真实提取（时间/成本）。
+2. **1001 页已真实跑概览**（7 章 / 抽样 33 页 / 35.9s / qa_ok），但没有跑 1001 页**逐页提取**（约 250 块，成本高）；概览模式的覆盖率已单独标记，不再伪装成逐页覆盖。
 3. **Windows 构建/签名**未做：需要 Windows 机器 + 账号；`docs/BUILD_WINDOWS.md` 仍是待执行。
 4. **macOS 签名/公证**未做：需要 Developer ID 证书与 App Store Connect 配置。
 5. **PDF 导出**依赖本机 Edge/Chrome headless；没有内置渲染器。Word 导出是实验性。
 6. **UI 不是终版**：`upload.html`、`welcome.html` 基本沿用旧结构（已套主题）；阅读页正文排版还可继续打磨；AI 抽屉/关键词弹窗只做了公式修复。
 7. **测试数据还在库里**：46 门测试课只是隐藏，没有删；用户若要彻底清掉，需单独确认。
 8. **GitHub 未推送**：本地 14+ 个提交；推不推、仓库名、release 文案由你决定。
-9. **CI 未在 GitHub 跑过**；本机 95 项通过不等于三平台通过。
+9. **CI 未在 GitHub 跑过**；本机 97 项通过不等于三平台通过。
 10. **API token 鉴权**后，外部 curl / 旧脚本要带 cookie 或 `X-TF-Token`；没有对外 API 文档。
 
 ---

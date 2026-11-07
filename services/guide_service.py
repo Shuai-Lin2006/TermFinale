@@ -171,6 +171,20 @@ def sanitize_images(markdown: str, source_text: str) -> tuple[str, dict]:
                             "images_unknown": unknown, "images_duplicate": dup}
 
 
+def _coverage_metrics(final_md: str, source_text: str, overview_mode: bool) -> dict:
+    """覆盖率要区分“逐页讲义”和“长文档概览”。
+
+    1001 页走概览时只抽样 4 页/章，若仍把 33/1001 当逐页覆盖率，UI 会误报
+    “缺 968 页”。保留原始比例，但打上 coverage_mode，让 UI 说人话。
+    """
+    cov = page_coverage(final_md, source_text)
+    if overview_mode:
+        cov["coverage_mode"] = "overview_sample"
+        cov["sampled_pages"] = cov.get("pages_cited", 0)
+        cov["coverage_note"] = "长文档概览：按章抽样，不是逐页覆盖"
+    return cov
+
+
 def page_coverage(final_md: str, source_text: str) -> dict:
     src = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", source_text)}
     cited = {int(n) for n in re.findall(r"(?:第\s*|P\.?\s*)(\d+)\s*(?:页|/)?", final_md)}
@@ -590,7 +604,7 @@ def run_guide(
         "images_duplicate": img_totals["duplicate"],
         "images_low_relevance": _sem_drop,
         "page_limit": max_pages,
-        "coverage": page_coverage(final_markdown, source_text),
+        "coverage": _coverage_metrics(final_markdown, source_text, overview_mode),
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
         "qa_ok": qa.ok,

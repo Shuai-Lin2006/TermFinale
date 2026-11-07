@@ -1,0 +1,19 @@
+/Users/lan/PycharmProjects/TermFinale/.venv/lib/python3.14/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+  warnings.warn(
+0.08 📖 正在解析文件: Analysis123清华大学于品数学分析讲义.pdf...
+2026-11-08 00:36:58.635 | INFO     | core.parsing.figures:extract_figures:319 - 图形提取完成：62 页 / 67 张
+2026-11-08 00:36:59.269 | INFO     | services.guide_service:run_guide:334 - 长文档概览模式：1001 页，按章节抽样生成
+2026-11-08 00:37:02.597 | INFO     | core.generate.outline:generate_outline:233 - 大纲生成完成：7 章（AI）
+2026-11-08 00:37:02.598 | INFO     | services.guide_service:run_guide:366 - 讲义大纲来源=ai 章节=7
+2026-11-08 00:37:02.599 | INFO     | services.guide_service:run_guide:458 - 并发生成：7 个任务 / 并发 2
+0.26 🧠 已生成 1/7 个章节块
+0.36 🧠 已生成 2/7 个章节块
+0.47 🧠 已生成 3/7 个章节块
+0.58 🧠 已生成 4/7 个章节块
+0.69 🧠 已生成 5/7 个章节块
+0.79 🧠 已生成 6/7 个章节块
+0.90 🧠 已生成 7/7 个章节块
+2026-11-08 00:37:31.916 | DEBUG    | services.task:dump_debug:72 - 调试产物已落盘: 20261108_003731_guide.md
+elapsed 36.4s chars=15725
+{"kind": "guide", "mode": "key", "persona": "老师", "lang": "中文", "core_ratio": 0.8, "outline_source": "ai", "outline_cached": false, "overview_mode": true, "pages_total": 1001, "chapters": 7, "chapters_done": 7, "empty_calls": 0, "retries": 0, "images_expected": 0, "images_reinjected": 0, "images_source": 67, "images_used": 0, "images_unknown": 0, "images_duplicate": 0, "images_low_relevance": 0, "page_limit": null, "coverage": {"pages": 1001, "pages_cited": 33, "coverage": 0.033}, "chars": 15725, "elapsed_s": 35.9, "qa_ok": true, "qa_issues": [], "qa_chapters": [{"title": "实数完备性与Cauchy列", "chars": 1577, "formulas": 34, "keywords": 1, "images": 0, "chapters": 1, "paragraphs": 18, "ok": true}, {"title": "注记. 如果要用⼀个线性映射L : R →R 所定义的L(x −x0) 在x0 附近来逼近f(x) −f(x0)，那", "chars": 2350, "formulas": 58, "keywords": 1, "images": 0, "chapters": 1, "paragraphs": 26, "ok": true}, {"title": "由于g 是连续函数，从⽽G(x) 是连续可微的。根据Stieltjes 积分版本的分部积分公式，我们有", "chars": 1765, "formulas": 49, "keywords": 2, "images": 0, "chapters": 1, "paragraphs": 34, "ok": true}, {"title": "C4) 我们⽤v⊥", "chars": 1977, "formulas": 69, "keywords": 2, "images": 0, "chapters": 1, "paragraphs": 28, "ok": true}, {"title": "48.1", "chars": 1575, "formulas": 43, "keywords": 0, "images": 0, "chapters": 1, "paragraphs": 19, "ok": true}, {"title": "这是因为我们不能在0 附近对x−1 积分（积出来⽆穷⼤）。所以，我们不能通过直接与试验函数配", "chars": 2455, "formulas": 51, "keywords": 1, "images": 0, "chapters": 1, "paragraphs": 28, "ok": true}, {"title": "Dirichlet 问题的初步研究：存在性与解算子，用全空间上的连续函", "chars": 2406, "formulas": 64, "keywords": 1, "images": 0, "chapters": 1, "paragraphs": 24, "ok": true}], "constraints": {"task": "guide", "page_start": null, "page_end": null, "exclude_terms": [], "answer_mode": "optional", "extract_type": "", "sections": [], "material_kind": "exam", "
+home /var/folders/8v/_bc5y72n7tndfph9rj11b2hm0000gn/T/tf_1001_7itas8kx

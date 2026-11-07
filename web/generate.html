@@ -548,7 +548,11 @@
             if(cov && cov.coverage !== undefined){
               cl.style.display = 'block';
               var pct = Math.round(cov.coverage * 100);
-              if(cov.pages_missing_count){
+              if(cov.coverage_mode === 'overview_sample'){
+                cl.style.color = 'var(--muted)';
+                cl.textContent = '长文档概览：' + (snap.result.metrics.chapters || '') + ' 章 · 抽样 '
+                  + (cov.sampled_pages || cov.pages_cited) + '/' + cov.pages + ' 页（不是逐页覆盖）';
+              } else if(cov.pages_missing_count){
                 cl.style.color = 'var(--warn)';
                 cl.textContent = '逐页覆盖 ' + pct + '% · 未引用 ' + cov.pages_missing_count + ' 页'
                   + (cov.pages_missing && cov.pages_missing.length ? '：' + cov.pages_missing.slice(0,8).join('、') + (cov.pages_missing.length > 8 ? '…' : '') : '');

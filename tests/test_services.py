@@ -271,3 +271,20 @@ class CitationRepairTest(unittest.TestCase):
         out, fixed = review_service.repair_topic_citations(md, pages)
         self.assertEqual(fixed, 0)
         self.assertNotIn("第3页", out)
+
+
+class OverviewCoverageTest(unittest.TestCase):
+    def test_overview_is_labelled_not_page_coverage(self):
+        cov = guide_service._coverage_metrics(
+            "## 第一章\n本讲抽样：第3页\n",
+            "【《数学分析》第 1 页】\n【《数学分析》第 2 页】\n【《数学分析》第 3 页】\n",
+            True)
+        self.assertEqual(cov["coverage_mode"], "overview_sample")
+        self.assertEqual(cov["sampled_pages"], 1)
+        self.assertIn("不是逐页", cov["coverage_note"])
+
+    def test_full_mode_has_no_overview_label(self):
+        cov = guide_service._coverage_metrics(
+            "第1页 第2页 第3页", "【《x》第 1 页】\n【《x》第 2 页】\n【《x》第 3 页】", False)
+        self.assertNotIn("coverage_mode", cov)
+        self.assertAlmostEqual(cov["coverage"], 1.0)
