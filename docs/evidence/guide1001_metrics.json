@@ -1,0 +1,188 @@
+{
+  "kind": "guide",
+  "mode": "key",
+  "persona": "老师",
+  "lang": "中文",
+  "core_ratio": 0.8,
+  "outline_source": "ai",
+  "outline_cached": false,
+  "overview_mode": true,
+  "pages_total": 1001,
+  "chapters": 8,
+  "chapters_done": 8,
+  "empty_calls": 0,
+  "retries": 0,
+  "images_expected": 0,
+  "images_reinjected": 0,
+  "images_source": 67,
+  "images_used": 0,
+  "images_unknown": 0,
+  "images_duplicate": 0,
+  "images_low_relevance": 0,
+  "page_limit": null,
+  "coverage": {
+    "pages": 1001,
+    "pages_cited": 50,
+    "coverage": 0.05,
+    "coverage_mode": "overview_sample",
+    "sampled_pages": 50,
+    "coverage_note": "长文档概览：按章抽样，不是逐页覆盖"
+  },
+  "chars": 18676,
+  "elapsed_s": 43.5,
+  "qa_ok": true,
+  "qa_issues": [],
+  "qa_chapters": [
+    {
+      "title": "实数完备性与数列极限",
+      "chars": 1646,
+      "formulas": 49,
+      "keywords": 0,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 21,
+      "ok": true
+    },
+    {
+      "title": "第2部分 · 第127–252页",
+      "chars": 1864,
+      "formulas": 59,
+      "keywords": 5,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 27,
+      "ok": true
+    },
+    {
+      "title": "第3部分 · 第253–378页",
+      "chars": 1737,
+      "formulas": 44,
+      "keywords": 0,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 19,
+      "ok": true
+    },
+    {
+      "title": "第4部分 · 第379–504页",
+      "chars": 2008,
+      "formulas": 40,
+      "keywords": 0,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 18,
+      "ok": true
+    },
+    {
+      "title": "第5部分 · 第505–630页",
+      "chars": 2346,
+      "formulas": 53,
+      "keywords": 6,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 32,
+      "ok": true
+    },
+    {
+      "title": "第6部分 · 第631–756页",
+      "chars": 1530,
+      "formulas": 38,
+      "keywords": 2,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 17,
+      "ok": true
+    },
+    {
+      "title": "第7部分 · 第757–882页",
+      "chars": 3052,
+      "formulas": 72,
+      "keywords": 0,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 21,
+      "ok": true
+    },
+    {
+      "title": "第8部分 · 第883–1001页",
+      "chars": 2741,
+      "formulas": 71,
+      "keywords": 0,
+      "images": 0,
+      "chapters": 1,
+      "paragraphs": 19,
+      "ok": true
+    }
+  ],
+  "constraints": {
+    "task": "guide",
+    "page_start": null,
+    "page_end": null,
+    "exclude_terms": [],
+    "answer_mode": "optional",
+    "extract_type": "",
+    "sections": [],
+    "material_kind": "exam",
+    "strict": false,
+    "max_retries": 0,
+    "teacher_note": "",
+    "must_topics": [],
+    "ban_topics": [],
+    "only_topics": [],
+    "literal_bans": [],
+    "required_pages": []
+  },
+  "teacher_rules": {
+    "page_refs": [],
+    "must_topics": [],
+    "ban_topics": [],
+    "only_topics": [],
+    "literal_bans": [],
+    "unresolved": [],
+    "notes": []
+  },
+  "constraint_attempts": 8,
+  "validation": {
+    "task": "guide",
+    "ok": true,
+    "issues": [],
+    "warnings": [
+      "疑似资料中没有的考点：正交系、必背要点3~5 条、公式卡、三步解题套路、考场用法与边界提醒"
+    ],
+    "metrics": {
+      "topics": [
+        "Riemann 和",
+        "线性映射",
+        "连续映射",
+        "原函数",
+        "不动点定理",
+        "卷积",
+        "Fourier 变换",
+        "散度",
+        "旋度",
+        "Laplace 算子",
+        "Hilbert 基",
+        "正交系",
+        "极限定义与基本性质",
+        "子列与收敛的判定",
+        "实数不等式与发散举例",
+        "定积分的定义与基本性质",
+        "原函数与积分基本定理",
+        "积分存在的等价刻画",
+        "微分方程与不动点",
+        "行星运动的数学建模"
+      ],
+      "pages_cited": 43,
+      "ungrounded_terms": [
+        "正交系",
+        "必背要点3~5 条",
+        "公式卡",
+        "三步解题套路",
+        "考场用法与边界提醒"
+      ],
+      "chapters": 8,
+      "attempts": 8
+    },
+    "summary": "提示 1 条"
+  }
+}

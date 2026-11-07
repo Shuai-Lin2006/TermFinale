@@ -386,7 +386,7 @@ class AnswerConsistencyTest(unittest.TestCase):
         ])
         report = validate_output(broken, c, source_text=SOURCE, stage="final")
         self.assertFalse(report.ok)
-        self.assertTrue(any("答案覆盖不足" in i for i in report.issues), report.issues)
+        self.assertTrue(any("答案不完整" in i or "答案不足" in i for i in report.issues), report.issues)
 
     def test_empty_answer_line_fails(self):
         paper = _exam_paper().replace("# 答案与解析\n1. A", "# 答案与解析\n1.\n")
@@ -411,3 +411,32 @@ class MultiAnswerPaperTest(unittest.TestCase):
         report = validate_output(paper, c, source_text=SOURCE, stage="final")
         self.assertFalse(report.ok)
         self.assertTrue(any("答案分区" in i for i in report.issues), report.issues)
+
+
+class EveryAnswerRequiredTest(unittest.TestCase):
+    PAPER = """# 期末试卷
+## 单项选择题
+1. 第一题
+A. 1 B. 2
+2. 第二题
+A. 1 B. 2
+## 填空题
+1. 第三题
+2. 第四题
+# 答案与解析
+## 单项选择题
+1. A
+2. B
+"""
+    def _c(self):
+        return TaskConstraints(task="exam", answer_mode="required")
+
+    def test_missing_whole_section_fails(self):
+        report = validate_output(self.PAPER, self._c(), source_text="", stage="final")
+        self.assertFalse(report.ok)
+        self.assertTrue(any("缺少大题" in i or "答案不完整" in i for i in report.issues), report.issues)
+
+    def test_all_sections_answered_passes(self):
+        paper = self.PAPER + "## 填空题\n1. 第一空\n2. 第二空\n"
+        report = validate_output(paper, self._c(), source_text="", stage="final")
+        self.assertTrue(report.ok, report.issues)

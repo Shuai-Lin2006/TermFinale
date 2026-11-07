@@ -761,9 +761,30 @@ def _check_answer_mode(report: ValidationReport, text: str, c: TaskConstraints,
         report.metrics["answered"] = answered
         if questions and answered == 0:
             report.add("「答案与解析」分区没有按题号作答")
-        elif questions and answered / questions < 0.8:
-            # 答案自洽的底线：至少覆盖 80% 题号；低于此值不交付
-            report.add(f"答案覆盖不足：{answered}/{questions} 题")
+
+        # 可发布标准：每一题都必须有答案，不再允许 80% 覆盖。
+        # 先按大题分节核对；答案没有分节时才退回总数核对。
+        paper_secs = _exam_sections(body)
+        ans_secs = _exam_sections(_strip_answer_heading(answers))
+        if len(paper_secs) > 1 and len(ans_secs) > 1:
+            missing_sections = []
+            for title, content in paper_secs:
+                qn = len(_QUESTION_RE.findall(content))
+                if qn == 0:
+                    continue
+                key = _section_key(title)
+                matched = next(((t, c) for t, c in ans_secs
+                                if key and (key in _section_key(t) or _section_key(t) in key)), None)
+                if matched is None:
+                    missing_sections.append(title)
+                    continue
+                an = len(_QUESTION_RE.findall(matched[1]))
+                if an < qn:
+                    report.add(f"「{title}」答案不足：{an}/{qn} 题")
+            if missing_sections:
+                report.add("答案缺少大题：" + "、".join(missing_sections[:4]))
+        if questions and answered < questions:
+            report.add(f"答案不完整：{answered}/{questions} 题；每道题都必须有答案")
         # 题号后必须真的有答案内容，不能只写 "1."
         empty_lines = [ln for ln in answers.splitlines()
                        if re.match(r"^\s*\d{1,3}\s*[.、．)）]\s*$", ln)]
@@ -788,6 +809,25 @@ def _section_titles(text: str) -> list[str]:
     body, _ = _split_answer(text)
     return [re.sub(r"\s+", "", m.group(1)).strip()
             for m in re.finditer(r"(?m)^##+\s*(.+)$", body)]
+
+
+def _strip_answer_heading(answers: str) -> str:
+    return re.sub(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)[^\n]*\n?", "", answers or "", count=1)
+
+
+def _exam_sections(text: str) -> list[tuple[str, str]]:
+    parts = re.split(r"^#{1,3}\s*(.+)$", text or "", flags=re.MULTILINE)
+    out: list[tuple[str, str]] = []
+    for i in range(1, len(parts), 2):
+        title = parts[i].strip()
+        if not title or re.match(r"^(?:答案|参考答案|答案与解析|答案及解析)", title):
+            continue
+        out.append((title, parts[i + 1] if i + 1 < len(parts) else ""))
+    return out
+
+
+def _section_key(title: str) -> str:
+    return re.sub(r"[\s一二三四五六七八九十、，,。.：:（）()0-9]", "", title or "")
 
 
 def _split_answer(text: str) -> tuple[str, str]:
