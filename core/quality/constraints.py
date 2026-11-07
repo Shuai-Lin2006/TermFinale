@@ -563,7 +563,6 @@ def _strip_topic_disclaimer(topic: str) -> str:
 
 
 def _topic_terms_for_task(text: str, task: str) -> list[str]:
-    from core.quality.teacher_note import topic_matches  # noqa: F401  (保持依赖显式)
     if task == "guide":
         return guide_topic_terms(text)
     if task == "extract":
@@ -753,8 +752,14 @@ def _check_answer_mode(report: ValidationReport, text: str, c: TaskConstraints,
         report.metrics["answered"] = answered
         if questions and answered == 0:
             report.add("「答案与解析」分区没有按题号作答")
-        elif questions and answered / questions < 0.5:
-            report.warn(f"答案只覆盖 {answered}/{questions} 题")
+        elif questions and answered / questions < 0.8:
+            # 答案自洽的底线：至少覆盖 80% 题号；低于此值不交付
+            report.add(f"答案覆盖不足：{answered}/{questions} 题")
+        # 题号后必须真的有答案内容，不能只写 "1."
+        empty_lines = [ln for ln in answers.splitlines()
+                       if re.match(r"^\s*\d{1,3}\s*[.、．)）]\s*$", ln)]
+        if empty_lines:
+            report.add(f"答案题号后为空：{len(empty_lines)} 处")
         if len(re.sub(r"\s+", "", answers)) < 10:
             report.add("「答案与解析」分区内容为空")
     elif c.task == "extract" and stage == "final" and c.extract_type == "questions":

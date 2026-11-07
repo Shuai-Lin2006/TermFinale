@@ -143,3 +143,9 @@ topics 全部落在白名单内
 - 实测：无 cookie `/api/courses` → 403；加载 dashboard 后带 cookie → 200（1 门课）；`Origin: evil` → 403。
 - 新测试 `tests/test_security.py` 4 项；全套 **85 项**通过。
 - 注意：Electron 已开窗口需 **Cmd+R** 刷新一次以拿到 cookie。
+
+## 试卷答案自洽 + CI（00:38–00:42）
+
+- 答案覆盖 <80% 判硬失败；题号后为空判失败；答案重复题号仍为提示。
+- 新增 2 项答案自洽测试；全套 **87 项**通过。
+- CI 改为 `unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`；新增 server import smoke。

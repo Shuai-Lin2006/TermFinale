@@ -372,3 +372,29 @@ class ExamToleranceTest(unittest.TestCase):
         report = validate_output(paper, self._c("required"), source_text=SOURCE, stage="final")
         self.assertTrue(report.ok, report.issues)
         self.assertTrue(any("额外标题" in w for w in report.warnings), report.warnings)
+
+
+class AnswerConsistencyTest(unittest.TestCase):
+    def test_low_answer_coverage_fails(self):
+        paper = _exam_paper()
+        body = paper.split("# 答案与解析")[0]
+        broken = body + "# 答案与解析\n1. A\n"
+        c = TaskConstraints(task="exam", answer_mode="required", sections=[
+            {"name": "单项选择题", "count": 6, "points": 5},
+            {"name": "填空题", "count": 3, "points": 10},
+            {"name": "计算题", "count": 2, "points": 20},
+        ])
+        report = validate_output(broken, c, source_text=SOURCE, stage="final")
+        self.assertFalse(report.ok)
+        self.assertTrue(any("答案覆盖不足" in i for i in report.issues), report.issues)
+
+    def test_empty_answer_line_fails(self):
+        paper = _exam_paper().replace("# 答案与解析\n1. A", "# 答案与解析\n1.\n")
+        c = TaskConstraints(task="exam", answer_mode="required", sections=[
+            {"name": "单项选择题", "count": 6, "points": 5},
+            {"name": "填空题", "count": 3, "points": 10},
+            {"name": "计算题", "count": 2, "points": 20},
+        ])
+        report = validate_output(paper, c, source_text=SOURCE, stage="final")
+        self.assertFalse(report.ok)
+        self.assertTrue(any("为空" in i for i in report.issues), report.issues)
