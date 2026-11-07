@@ -130,7 +130,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ```bash
 cd /Users/lan/PycharmProjects/TermFinale
-.venv/bin/python -m unittest discover -s tests          # 95 项
+.venv/bin/python -m unittest discover -s tests          # 97 项
 .venv/bin/python -m pyflakes server/app.py core services models tools/build.py
 
 # 鉴权 + 数据
