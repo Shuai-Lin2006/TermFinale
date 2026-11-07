@@ -63,7 +63,7 @@
         </div>
       </div>
 
-      <section class="card" id="kindBanner" style="padding:14px 18px;margin-bottom:14px;display:none">
+      <section class="card" id="kindBanner" style="padding:14px 18px;margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <span class="tiny muted" id="kindText">资料类型判断</span>
           <div class="spacer" style="flex:1"></div>
@@ -153,11 +153,32 @@
           </section>
 
           <section class="card" style="padding:18px 20px;margin-bottom:14px">
-            <div class="section-head" style="margin:0 0 10px"><h2>补充要求（选填）</h2><div class="line"></div></div>
-            <textarea id="userNote" rows="3" placeholder="例如：老师强调第 3 章 / 多给计算题 / 我基础差，讲慢一点 / 不要英文缩写"
+            <div class="section-head" style="margin:0 0 10px"><h2>老师重点 / 补充要求</h2><div class="line"></div></div>
+            <textarea id="userNote" rows="3" placeholder="例如：只考隐函数求导、高阶导数间接法；参数方程不考；第 5 页例 3 必考；不考 10 个基团命名：-R、-OH…"
               style="width:100%;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
               font:inherit;font-size:13px;background:var(--paper);color:var(--ink)"></textarea>
-            <p class="note" style="margin:8px 0 0">会作为偏好发给模型；与资料冲突时仍以资料为准。</p>
+            <p class="note" style="margin:8px 0 0">系统会把它解析成页码、必考/不考、只考白名单；解析不了的会标“存疑”，不会反问你。</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+              <label class="tiny muted">页码范围
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                  <input id="pageFrom" type="number" min="1" placeholder="起始页" class="select" style="width:100%">
+                  <span class="tiny muted">—</span>
+                  <input id="pageTo" type="number" min="1" placeholder="结束页" class="select" style="width:100%">
+                </div>
+              </label>
+              <label class="tiny muted">禁止出现（逗号分隔）
+                <input id="excludeTerms" class="select" placeholder="例如：积分, 极限" style="width:100%;margin-top:6px">
+              </label>
+            </div>
+            <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px">
+              <label class="tiny" style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="strictViolation" checked style="accent-color:var(--brand)">
+                违规即失败（自动重试 2 次）
+              </label>
+              <label class="tiny" id="examAnswerRow" style="display:none;align-items:center;gap:8px">
+                <input type="checkbox" id="examAnswer" checked style="accent-color:var(--brand)"> 试卷附答案与解析
+              </label>
+            </div>
           </section>
 
           <section class="card" style="padding:18px 20px">
@@ -245,6 +266,8 @@
     $('optGuide').style.display = state.task === 'guide' ? 'block' : 'none';
     $('optExtract').style.display = state.task === 'extract' ? 'block' : 'none';
     $('optExam').style.display = state.task === 'exam' ? 'block' : 'none';
+    var ea = document.getElementById('examAnswerRow');
+    if(ea) ea.style.display = state.task === 'exam' ? 'inline-flex' : 'none';
   }
 
   function loadCourses(){
@@ -455,25 +478,39 @@
     var ids = selectedIds();
     if(!ids.length){ toast('至少选一份资料'); return; }
     if(!state.course){ toast('先选课程'); return; }
-    showRunning();
-    var options = { material_ids: ids, user_note: ($('userNote').value || '').trim() };
+    var total = paperRows.reduce(function(a,r){ return a + r.count * r.points; }, 0);
+    if(state.task === 'exam' && total !== 100){ toast('自定义题型合计必须等于 100 分，当前 ' + total); return; }
+
+    var note = ($('userNote').value || '').trim();
+    var options = { material_ids: ids, user_note: note };
     options.material_mode = (document.getElementById('materialMode')||{}).value || 'exam';
     if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value;
       options.strict = $('strictMode').checked; options.page_limit = $('pageLimit').value ? +$('pageLimit').value : null; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
     if(state.task === 'exam'){
-      var total = paperRows.reduce(function(a,r){ return a + r.count * r.points; }, 0);
-      if(total !== 100){ if(window.__toast) window.__toast('自定义题型合计必须等于 100 分，当前 ' + total); return; }
-      options.num_sets = 1; options.difficulty = +$('diffSelect').value;
+      options.num_sets = +($('setsSelect') || {}).value || 1;
+      options.difficulty = +$('diffSelect').value;
       options.train_type = $('trainSelect').value;
       options.sections = paperRows.map(function(r){ return {name:r.name, count:r.count, points:r.points}; });
       options.reference_exam = $('referenceExam').checked;
     }
+    options.constraints = {
+      page_start: $('pageFrom') && $('pageFrom').value ? +$('pageFrom').value : null,
+      page_end: $('pageTo') && $('pageTo').value ? +$('pageTo').value : null,
+      exclude_terms: (($('excludeTerms')||{}).value || '').split(/[,，;；\s]+/).filter(Boolean),
+      strict: $('strictViolation') ? $('strictViolation').checked : true,
+      teacher_note: note
+    };
+    if(state.task === 'exam' && $('examAnswer')){
+      options.constraints.answer_mode = $('examAnswer').checked ? 'required' : 'forbidden';
+    }
+    showRunning();
 
     fetch('/api/jobs', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ course_id: state.course.id, task: state.task, options: options }) })
-      .then(function(r){ return r.json(); })
+      .then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(d.detail || '请求失败'); return d; }); })
       .then(function(d){
+        if(!d || !d.job_id) throw new Error('任务创建失败');
         state.jobId = d.job_id; state.started = Date.now();
         var es = new EventSource('/api/jobs/' + d.job_id + '/events');
         es.onmessage = function(e){
@@ -487,6 +524,11 @@
           $('log').appendChild(line);
           $('log').scrollTop = $('log').scrollHeight;
         };
+        es.onerror = function(){
+          try { es.close(); } catch(e) {}
+          $('runState').style.display = 'none'; $('errState').style.display = 'block';
+          $('errMsg').textContent = '任务连接中断：请确认本地服务还在运行，然后重试。';
+        };
         es.addEventListener('done', function(e){
           es.close();
           var snap = JSON.parse(e.data);
@@ -499,8 +541,15 @@
               ? ('共 ' + snap.result.metrics.chars + ' 字') : '文件已保存到本地';
             $('openResult').href = '/reader.html?course=' + state.course.id;
             var q = snap.result && snap.result.quality;
+            var v = snap.result && snap.result.validation;
             var line = $('qualityLine');
-            if(q){
+            if(v && !v.ok){
+              line.style.color = 'var(--danger)';
+              line.textContent = '硬校验未通过：' + (v.issues || []).slice(0, 3).join('；');
+            } else if(v && v.warnings && v.warnings.length){
+              line.style.color = 'var(--warn)';
+              line.textContent = '提示：' + v.warnings.slice(0, 3).join('；');
+            } else if(q){
               if(q.passed){ line.style.color = 'var(--ok)'; line.textContent = '自检通过 · ' + q.chapters + ' 章 / ' + q.chars + ' 字'; }
               else { line.style.color = 'var(--danger)'; line.textContent = '⚠️ 自检：' + q.issues.join('；'); }
             }

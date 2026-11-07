@@ -93,3 +93,11 @@ topics 全部落在白名单内
 - 阅读页：封面收窄、正文优先、TOC 无 h2 时用 h3 兜底、工具按钮缩小。
 - 截图：`/tmp/tf_verify/ui2/dash4.png`、`plan2.png`、`reader2.png`。
 - 待办：courses/practice/generate/settings 页面重写；阅读页工具折叠；移动端/浅色回归。
+
+## 生成工作台 + 任务约束（00:10–00:14）
+
+- `generate.html` 新增“老师重点 / 补充要求”+ 任务约束：页码范围、禁止词、违规即失败、试卷答案开关。
+- 请求体带 `options.constraints`；后端 `TaskConstraints` 已支持。
+- 修复审计问题：套数写死、题型合计校验在 showRunning 之后、SSE 无错误态、materialMode 隐藏。
+- 完成态显示 `validation` 的硬违规/提示。
+- 截图：`/tmp/tf_verify/ui2/generate2.png`。
