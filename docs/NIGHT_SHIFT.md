@@ -221,3 +221,8 @@ topics 全部落在白名单内
 - 新增 `tools/restore_backup.py`：完整性/表校验 → 默认 dry-run → `--yes` 前用 SQLite backup API 另存当前库 → 清旧 WAL/SHM → 原子替换；不删上传副本/原资料。
 - 真实备份（47 课/47 资料/368 生成物）在 `/tmp` 恢复验证通过；新增 5 项测试，测试总数 **105**。
 - 恢复日志：`docs/evidence/restore_test.log`。
+
+## 本地 CI 门禁（01:55–02:00）
+
+- `compileall` 全通过；`pyflakes` 覆盖 main/launcher/desktop/server/services/core/models/tools 全净（清掉 parser 一个未使用变量）。
+- 测试 105 项全绿。

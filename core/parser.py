@@ -433,7 +433,6 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
         elif ext == 'pptx':
             prs = Presentation(file_path)
             total_slides = len(prs.slides)
-            caption_budget = 0
             for index, slide in enumerate(prs.slides):
                 if on_progress:
                     on_progress(index, total_slides, "slide")
