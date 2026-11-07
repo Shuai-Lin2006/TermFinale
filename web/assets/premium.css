@@ -296,3 +296,12 @@ a{color:inherit}
 .toolbar{border-radius:999px;padding:6px;background:var(--ink);color:var(--paper)}
 [data-theme="dark"] .toolbar{background:#e9edf0;color:#0b0d10}
 .toolbar button{font-size:12px;padding:7px 11px;border-radius:999px}
+
+/* 1024 左右：主卡右侧改为横向信息条，避免环与文字互相挤压 */
+@media(max-width:1180px){
+  .tf-hero{flex-direction:column;gap:18px}
+  .tf-hero-side{width:100%;flex-basis:auto;border-left:0;border-top:1px solid var(--line);
+    padding-left:0;padding-top:16px;flex-direction:row;align-items:center;justify-content:space-between}
+  .tf-hero-side .tf-stat-row{flex:1;flex-direction:row;gap:22px;justify-content:flex-end}
+  .tf-hero-side .tf-stat-row > div{flex-direction:column;align-items:flex-end;gap:2px}
+}

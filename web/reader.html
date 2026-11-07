@@ -52,13 +52,16 @@
       <div class="doc-stats" id="docStats"></div>
       <div class="doc-meta" style="margin-top:14px">
         <span id="metaFile">—</span>
-        <span style="margin-left:auto;display:flex;gap:6px">
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
           <button class="btn sm" id="searchBtn"><svg class="icon sm"><use href="#i-search"/></svg>搜索</button>
-          <button class="btn sm" id="editBtn"><svg class="icon sm"><use href="#i-edit"/></svg>编辑</button>
-          <button class="btn sm" id="wordBtn"><svg class="icon sm"><use href="#i-word"/></svg>Word</button>
-          <button class="btn sm" id="pdfBtn"><svg class="icon sm"><use href="#i-word"/></svg>导出 PDF</button>
-          <button class="btn sm" onclick="window.print()"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
-          <button class="btn sm" id="themeBtn"><svg class="icon sm"><use href="#i-moon"/></svg>主题</button>
+          <button class="btn ghost sm" id="moreTools" title="更多工具">⋯</button>
+          <span id="toolExtras" style="display:none;gap:6px;align-items:center">
+            <button class="btn sm" id="editBtn"><svg class="icon sm"><use href="#i-edit"/></svg>编辑</button>
+            <button class="btn sm" id="wordBtn"><svg class="icon sm"><use href="#i-word"/></svg>Word</button>
+            <button class="btn sm" id="pdfBtn"><svg class="icon sm"><use href="#i-word"/></svg>PDF</button>
+            <button class="btn sm" onclick="window.print()"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
+            <button class="btn sm" id="themeBtn"><svg class="icon sm"><use href="#i-moon"/></svg>主题</button>
+          </span>
         </span>
       </div>
     </div>
@@ -286,6 +289,11 @@
     toast(editing ? '编辑模式：直接改正文，改完点「保存并退出」' : '已退出编辑（页面修改不回写服务器）');
   });
 
+  var _more = document.getElementById('moreTools');
+  if(_more) _more.addEventListener('click', function(){
+    var ex = document.getElementById('toolExtras');
+    if(ex) ex.style.display = (ex.style.display === 'none' || !ex.style.display) ? 'inline-flex' : 'none';
+  });
   $('searchBtn').addEventListener('click', function(){
     var bar = $('searchBar');
     bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';

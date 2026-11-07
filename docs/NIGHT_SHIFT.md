@@ -114,3 +114,10 @@ topics 全部落在白名单内
 - `settings.html`：修复死的“清除全部数据”脚本；新增“备份与恢复”（立即备份/最近备份）；reset 先备份、只删上传副本、要求 confirm；数据目录显示。
 - `practice.html`：指标条 + 错题本优先 + 训练卷网格；判分错误态/防连点；删除 `quizCourse=7` 兜底。
 - 截图：`/tmp/tf_verify/ui2/settings2.png`、`practice2.png`。
+
+## 阅读页工具折叠 + 浅色/窄窗（00:20–00:24）
+
+- 阅读页工具收进“⋯”：默认只留“搜索”；编辑/Word/PDF/打印/主题展开后出现。
+- 浅色主题验证（`?theme=light`）：象牙底 + 深绿主色，可用。
+- 1024 宽度：hero 右侧改为横向信息条，环与文字不再挤压。
+- 截图：`reader3.png`、`dash_light2.png`、`dash_1024b.png`。

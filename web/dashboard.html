@@ -7,7 +7,10 @@
 <link rel="stylesheet" href="assets/app.css?v=19">
 <link rel="stylesheet" href="assets/premium.css?v=1">
 <script>
-  try { document.documentElement.dataset.theme = localStorage.getItem('tf-theme') || 'dark'; } catch (e) {}
+  try {
+    var _q = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = _q || localStorage.getItem('tf-theme') || 'dark';
+  } catch (e) {}
 </script>
 <script defer src="assets/i18n.js?v=2"></script>
 </head>
