@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
+<script>try{var _q=new URLSearchParams(location.search).get("theme");document.documentElement.dataset.theme=_q||localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
 <title>阅读 · TermFinale</title>
 <link rel="stylesheet" href="assets/app.css?v=18">
 <link rel="stylesheet" href="assets/premium.css?v=1">

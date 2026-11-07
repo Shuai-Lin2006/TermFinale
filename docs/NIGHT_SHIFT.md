@@ -232,3 +232,7 @@ topics 全部落在白名单内
 - `upload.html` 重写：大拖拽区/格式 chips/上传队列/进度条/失败态/500MB 校验/已有资料列表/空课程态；文件名转义。
 - 截图：`/tmp/tf_verify/ui2/upload3.png`，固化 `docs/screenshots/upload.png`。
 - 测试仍 105 项全绿。
+
+## 阅读器浅色回归（02:10）
+
+- reader 支持 `?theme=light`（之前只读 localStorage）；浅色正文/侧栏/工具均正常，截图 `reader_light.png` 固化 `docs/screenshots/reader-light.png`。
