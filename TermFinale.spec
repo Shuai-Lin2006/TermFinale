@@ -99,7 +99,7 @@ app = BUNDLE(
     bundle_identifier="com.termfinale.desktop",
     info_plist={
         "NSHighResolutionCapable": True,
-        "CFBundleShortVersionString": "2.0.0",
+        "CFBundleShortVersionString": "0.3.0",
         "LSMinimumSystemVersion": "11.0",
     },
 )
