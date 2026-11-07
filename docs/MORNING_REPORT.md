@@ -71,7 +71,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ### 2.4 测试与 CI
 
-- `python -m unittest discover -s tests` → **105 项全绿**。
+- `python -m unittest discover -s tests` → **109 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`、`tools/restore_backup.py`；server import smoke。
 - 本地 CI 门禁：`compileall` + `pyflakes` 全净 + **105 项测试全绿**。
@@ -127,7 +127,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 6. **UI 不是终版**：`welcome.html` 仍是旧分屏（已套主题）；阅读页正文排版还可继续打磨；AI 抽屉/关键词弹窗只做了公式修复。
 7. **测试数据还在库里**：46 门测试课只是隐藏，没有删；用户若要彻底清掉，需单独确认。
 8. **GitHub 未推送**：本地 14+ 个提交；推不推、仓库名、release 文案由你决定。
-9. **CI 未在 GitHub 跑过**；本机 105 项通过不等于三平台通过。
+9. **CI 未在 GitHub 跑过**；本机 109 项通过不等于三平台通过。
 10. **API token 鉴权**后，外部 curl / 旧脚本要带 cookie 或 `X-TF-Token`；没有对外 API 文档。
 
 ---
@@ -136,7 +136,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ```bash
 cd /Users/lan/PycharmProjects/TermFinale
-.venv/bin/python -m unittest discover -s tests          # 105 项
+.venv/bin/python -m unittest discover -s tests          # 109 项
 .venv/bin/python -m pyflakes server/app.py core services models tools/build.py
 
 # 鉴权 + 数据
