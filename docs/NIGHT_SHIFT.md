@@ -121,3 +121,9 @@ topics 全部落在白名单内
 - 浅色主题验证（`?theme=light`）：象牙底 + 深绿主色，可用。
 - 1024 宽度：hero 右侧改为横向信息条，环与文字不再挤压。
 - 截图：`reader3.png`、`dash_light2.png`、`dash_1024b.png`。
+
+## 应用后端切换（00:10）
+
+- 原 8903 旧进程已停止，用新代码重启；`/api/courses` 返回 1 门真实课（全量 47），测试课程默认隐藏。
+- 测试用 8904 已停止；最终截图走 8903：`final_dashboard.png`、`final_generate.png`、`final_reader.png`。
+- Electron 已开窗口需 **Cmd+R 刷新一次**才能加载新 UI；后端已是新代码。
