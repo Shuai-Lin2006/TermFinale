@@ -101,3 +101,10 @@ topics 全部落在白名单内
 - 修复审计问题：套数写死、题型合计校验在 showRunning 之后、SSE 无错误态、materialMode 隐藏。
 - 完成态显示 `validation` 的硬违规/提示。
 - 截图：`/tmp/tf_verify/ui2/generate2.png`。
+
+## 课程页（00:14–00:16）
+
+- `courses.html` 卡片改为 premium：状态、课程名、天数/资料/生成、进度、资料/生成/打开。
+- 空态/骨架沿用 premium；保留新建/编辑/删除/生成物弹窗。
+- 截图：`/tmp/tf_verify/ui2/courses2.png`。
+- 待办：practice / settings / reader 工具栏 / 浅色回归 / 移动端。

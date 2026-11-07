@@ -66,14 +66,13 @@
         <span class="chip" id="apiState">连接本地服务…</span>
       </div>
 
-      <div id="courseList" class="course-grid"></div>
+      <div id="courseList" class="tf-grid-3"></div>
 
-      <div id="empty" style="display:none" class="card" >
-        <div style="padding:48px 24px;text-align:center">
-          <div class="serif" style="font-size:22px;margin-bottom:8px">还没有课程</div>
-          <p class="muted" style="margin:0 0 18px">上传第一份课件，5 分钟后就能开始冲刺。</p>
-          <button class="btn primary" data-new>新建第一门课</button>
-        </div>
+      <div id="empty" class="tf-empty" style="display:none">
+        <div class="eyebrow" style="margin-bottom:10px">Start here</div>
+        <h2>还没有课程</h2>
+        <p>上传第一份课件，5 分钟后就能开始冲刺。</p>
+        <button class="btn primary" data-new>新建第一门课</button>
       </div>
     </div>
   </main>
@@ -134,22 +133,25 @@
 
   var editingId = null;
 
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function card(c){
     var soon = c.days_left <= 3;
     var ready = c.materials > 0 && c.materials_ok === c.materials;
-    return '<article class="card hover course">'+
-      '<div class="course-top"><span class="chip">'+(soon?'临近考试':'进行中')+'</span>'+
+    var p = c.generated ? Math.min(92, 24 + c.generated * 12) : 6;
+    return '<article class="tf-course">'+
+      '<div class="tf-course-top"><span class="chip'+(soon?' accent':'')+'">'+(soon?'临近考试':'进行中')+'</span>'+
       '<span style="display:flex;gap:2px">'+
       '<button class="btn ghost sm" data-edit="'+c.id+'" title="编辑"><svg class="icon sm"><use href="#i-edit"/></svg></button>'+
       '<button class="btn ghost sm" data-del="'+c.id+'" title="删除"><svg class="icon sm"><use href="#i-trash"/></svg></button>'+
       '</span></div>'+
-      '<h3>'+c.name+'</h3>'+
-      '<div class="meta">'+c.days_left+' 天后考试 · '+c.materials+' 份资料 · '+c.generated+' 份已生成 · 目标 '+c.target_score+' 分</div>'+
-      '<div class="bar"><i style="width:'+(c.generated?Math.min(92, 30+c.generated*12):8)+'%"></i></div>'+
-      '<div class="course-foot"><span>'+(ready?'资料就绪':'资料缺失')+'</span>'+
+      '<h3>'+esc(c.name)+'</h3>'+
+      '<div class="meta"><span>'+c.days_left+' 天后考试</span><span>'+c.materials+' 份资料</span><span>'+c.generated+' 份生成</span></div>'+
+      '<div class="spacer"></div>'+
+      '<div class="bar" style="height:4px"><i style="width:'+p+'%"></i></div>'+
+      '<div class="tf-course-foot"><span class="tf-mini">'+(ready?'资料就绪':'资料缺失')+'</span>'+
       '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course='+c.id+'">资料</a>'+
       '<a class="btn ghost sm" href="generate.html?course='+c.id+'">生成</a>'+
-      '<a class="btn sm" href="course_detail.html?course='+c.id+'">打开课程</a></span></div>'+
+      '<a class="btn sm" href="course_detail.html?course='+c.id+'">打开</a></span></div>'+
       '</article>';
   }
 
