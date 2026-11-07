@@ -167,3 +167,10 @@ topics 全部落在白名单内
   - `_stems`：不再把试卷标题当题干；题数统计只看题目区。
 - 真实证据：`/tmp/tf_verify/exam_real2.md`、`exam_real2.log`。
 - 测试增至 **93 项**全绿（新增 exam cleanup 5 项、多答案分区 1 项）。
+
+## README / 版本 / 浅色回归（00:55–01:00）
+
+- README 三张预览图替换为夜间新 UI：今日工作台 / 阅读器 / 生成工作台。
+- `build_info.VERSION` 0.2.0 → 0.3.0，构建时间 2026-11-08 01:00。
+- 浅色复习计划截图：象牙底 + 深绿主色，可用；`plan_light.png`。
+- 首次启动欢迎页在空 profile 下截图：`welcome2.png`，分屏编辑感，保留。

@@ -32,11 +32,11 @@ TermFinale 是一个面向大学生的**桌面端期末复习工具**：导入 P
 
 ## 界面预览
 
-![仪表盘](docs/screenshots/dashboard.png)
+![今日工作台](docs/screenshots/dashboard.png)
 
-![复习模式](docs/screenshots/review.png)
+![阅读器](docs/screenshots/review.png)
 
-![训练出卷](docs/screenshots/training.png)
+![生成工作台](docs/screenshots/training.png)
 
 ![设置](docs/screenshots/settings.png)
 

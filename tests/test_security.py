@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 
-os.environ.setdefault("TERMFINALE_HOME", tempfile.mkdtemp(prefix="tf_security_"))
+os.environ["TERMFINALE_HOME"] = tempfile.mkdtemp(prefix="tf_security_")
 os.environ["TERMFINALE_SKIP_PROJECT_ENV"] = "1"
 
 from fastapi.testclient import TestClient  # noqa: E402
