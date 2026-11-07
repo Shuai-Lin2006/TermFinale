@@ -74,7 +74,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 - `python -m unittest discover -s tests` → **109 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`、`tools/restore_backup.py`；server import smoke。
-- 本地 CI 门禁：`compileall` + `pyflakes` 全净 + **105 项测试全绿**。
+- 本地 CI 门禁：`compileall` + `pyflakes` 全净 + **109 项测试全绿**。
 - 本机验证过 `import server.app`；GitHub Actions 尚未在远端跑（没有 push）。
 
 ---
