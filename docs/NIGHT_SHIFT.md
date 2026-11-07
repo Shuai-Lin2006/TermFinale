@@ -108,3 +108,9 @@ topics 全部落在白名单内
 - 空态/骨架沿用 premium；保留新建/编辑/删除/生成物弹窗。
 - 截图：`/tmp/tf_verify/ui2/courses2.png`。
 - 待办：practice / settings / reader 工具栏 / 浅色回归 / 移动端。
+
+## 设置 / 练习（00:16–00:20）
+
+- `settings.html`：修复死的“清除全部数据”脚本；新增“备份与恢复”（立即备份/最近备份）；reset 先备份、只删上传副本、要求 confirm；数据目录显示。
+- `practice.html`：指标条 + 错题本优先 + 训练卷网格；判分错误态/防连点；删除 `quizCourse=7` 兜底。
+- 截图：`/tmp/tf_verify/ui2/settings2.png`、`practice2.png`。

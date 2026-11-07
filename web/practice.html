@@ -39,20 +39,17 @@
         <div class="page-sub">先做套卷，再把错的题收进来，按遗忘曲线复习</div></div>
         <div class="spacer"></div><a class="btn primary" href="generate.html">生成一套试卷</a></div>
 
-      <section class="hero" style="grid-template-columns:1fr 1fr 1fr">
-        <div class="card" style="padding:20px"><div class="tiny muted">训练试卷</div>
-          <div class="serif" style="font-size:34px;margin-top:6px" id="statExams">—</div></div>
-        <div class="card" style="padding:20px"><div class="tiny muted">笔记</div>
-          <div class="serif" style="font-size:34px;margin-top:6px" id="statNotes">—</div></div>
-        <div class="card" style="padding:20px"><div class="tiny muted">待复习</div>
-          <div class="serif" style="font-size:34px;margin-top:6px" id="statDue">—</div></div>
-      </section>
+      <div class="tf-metrics">
+        <div class="tf-metric"><b id="statDue">—</b><span>待复习错题</span></div>
+        <div class="tf-metric"><b id="statExams">—</b><span>套训练试卷</span></div>
+        <div class="tf-metric"><b id="statNotes">—</b><span>条笔记</span></div>
+      </div>
 
-      <div class="section-head"><h2>训练试卷</h2><div class="line"></div></div>
-      <div id="exams" class="course-grid"></div>
-
-      <div class="section-head"><h2>错题本</h2><div class="line"></div><span class="tiny muted" id="dueTip"></span></div>
+      <div class="tf-section-head"><h2>错题本</h2><span class="link" id="dueTip"></span></div>
       <div id="mistakes"></div>
+
+      <div class="tf-section-head"><h2>训练试卷</h2><a class="link" href="generate.html">生成一套</a></div>
+      <div id="exams" class="tf-grid-3"></div>
     </div>
   </main>
 </div>
@@ -80,22 +77,26 @@
     $('statExams').textContent=d.exams.length;
     $('statNotes').textContent=d.notes;
     if(d.mistakes !== undefined){ $('statDue').textContent = d.due + ' / ' + d.mistakes; }
-    if(!d.exams.length){ $('exams').innerHTML='<article class="card course"><div class="meta">还没有试卷，去生成一套。</div><div class="course-foot"><a class="btn sm" href="generate.html">去生成</a></div></article>'; return; }
+    if(!d.exams.length){
+      $('exams').innerHTML='<div class="tf-empty" style="grid-column:1/-1"><h2>还没有训练卷</h2><p>按目标分与题型生成一套，做完自动收错题。</p><a class="btn primary" href="generate.html">生成试卷</a></div>';
+      return;
+    }
     $('exams').innerHTML=d.exams.map(function(e){
-      return '<article class="card hover course"><div class="course-top"><span class="chip">'+e.course+'</span>'+
-        '<span class="tiny muted">'+(e.created_at||'')+'</span></div><h3>'+e.filename.replace(/\.html$/,'')+'</h3>'+
-        '<div class="meta">'+(e.has_md?'可在阅读器打开':'旧文件，需重新生成')+'</div>'+
-        '<div class="course-foot"><span class="tiny muted">'+(e.has_md?'可判分':'—')+'</span>'+
+      return '<article class="tf-course"><div class="tf-course-top"><span class="chip">'+esc(e.course)+'</span>'+
+        '<span class="tiny muted">'+(e.created_at||'')+'</span></div><h3>'+esc(e.filename.replace(/\.html$/,''))+'</h3>'+
+        '<div class="meta"><span>'+(e.has_md?'可判分':'需重新生成')+'</span></div><div class="spacer"></div>'+
+        '<div class="tf-course-foot"><span class="tf-mini">'+(e.has_md?'选择题自动判分':'—')+'</span>'+
         '<span style="display:flex;gap:6px">'+
-        (e.has_md?'<button class="btn sm" data-quiz="'+e.id+'" data-course="'+e.course_id+'">判分练习</button>':'')+
+        (e.has_md?'<button class="btn sm" data-quiz="'+e.id+'" data-course="'+e.course_id+'">判分</button>':'')+
         '<a class="btn ghost sm" href="reader.html?course='+e.course_id+'">打开</a></span></div></article>';
     }).join('');
   }).catch(function(){ $('apiState').textContent='未连接'; });
 
   var quizQuestions = [];
-  var quizCourse = 7;
+  var quizCourse = null;
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function openQuiz(id, courseId){
-    quizCourse = courseId || quizCourse;
+    quizCourse = courseId || null;
     fetch('/api/exams/'+id+'/quiz').then(function(r){return r.json();}).then(function(d){
       if(!d.exists || !d.questions.length){ if(window.__toast) window.__toast(d.reason || '这套卷子没有可判分的选择题'); return; }
       quizQuestions = d.questions;
@@ -112,10 +113,16 @@
           }).join('') + '</div>';
       }).join('');
       $('quizModal').classList.add('show');
+    }).catch(function(){
+      if(window.__toast) window.__toast('判分数据加载失败，请重试');
     });
   }
 
   $('quizSubmit').addEventListener('click', function(){
+    if(this.disabled) return;
+    this.disabled = true;
+    var btn = this;
+    setTimeout(function(){ btn.disabled = false; }, 1200);
     var correct = 0, wrong = [];
     quizQuestions.forEach(function(q, i){
       var sel = document.querySelector('input[name="q'+i+'"]:checked');
@@ -128,6 +135,7 @@
       (wrong.length ? (' · ' + wrong.length + ' 题已加入错题本') : ' · 全对');
     $('quizResult').style.color = correct === total ? 'var(--ok)' : 'inherit';
     wrong.forEach(function(w){
+      if(!quizCourse) return;
       fetch('/api/mistakes', { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ course_id: quizCourse, question: w.q.no + '. ' + w.q.stem,
           answer: w.q.options[w.q.answer] || '',
@@ -156,11 +164,11 @@
       }
       box.innerHTML=list.map(function(m){
         var badge = m.mastered ? '已掌握' : (m.due ? '今天复习' : ('第 ' + (m.stage+1) + ' 轮'));
-        return '<article class="card course" style="margin-bottom:12px"><div class="course-top">'+
-          '<span class="chip">'+m.course+'</span><span class="tiny muted">'+badge+' · 下次 '+m.due_at+'</span></div>'+
-          '<p style="font-size:13.5px;line-height:1.85;margin:10px 0">'+m.question+'</p>'+
-          (m.note ? '<p class="tiny muted">'+m.note+'</p>' : '')+
-          '<div class="course-foot"><span class="tiny muted">第 '+(m.stage+1)+' 轮</span>'+
+        return '<article class="tf-recent" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:10px">'+
+          '<span class="chip">'+esc(m.course)+'</span><span class="tf-mini">'+esc(badge)+' · 下次 '+esc(m.due_at)+'</span></div>'+
+          '<p style="font-size:13.5px;line-height:1.85;margin:6px 0 0;color:var(--ink-2)">'+esc(m.question)+'</p>'+
+          (m.note ? '<p class="tiny muted" style="margin:0">'+esc(m.note)+'</p>' : '')+
+          '<div class="tf-course-foot"><span class="tf-mini">第 '+(m.stage+1)+' 轮</span>'+
           '<span style="display:flex;gap:6px">'+
           '<button class="btn sm" data-known="'+m.id+'">记住了</button>'+
           '<button class="btn ghost sm" data-forgot="'+m.id+'">忘了</button>'+

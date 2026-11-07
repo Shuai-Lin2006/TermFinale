@@ -128,22 +128,58 @@
         </aside>
       </div>
     </div>
-    <section class="card" style="padding:18px 20px;margin-top:14px">
-    <div class="section-head" style="margin:0 0 10px"><h2>危险操作</h2><div class="line"></div></div>
-    <p class="tiny muted" style="margin:0 0 12px">删除全部课程、资料、生成物、笔记、错题，并回到欢迎页。API Key 会保留。</p>
-    <button class="btn" id="resetAll" style="color:var(--danger);border-color:var(--danger)">清除全部数据</button>
-  </section>
+    <section class="card" style="padding:18px 20px;margin:14px 30px 0">
+      <div class="section-head" style="margin:0 0 10px"><h2>备份与恢复</h2><div class="line"></div></div>
+      <p class="tiny muted" style="margin:0 0 12px">生成/清空前先备份；备份是独立 sqlite 文件，可直接打开验证。数据目录：<span id="dataDir">—</span></p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary sm" id="backupNow">立即备份</button>
+        <span class="tiny muted" id="backupMsg">—</span>
+      </div>
+      <div id="backupList" class="tiny muted" style="margin-top:10px;line-height:1.9"></div>
+    </section>
+
+    <section class="card" style="padding:18px 20px;margin:14px 30px 40px">
+      <div class="section-head" style="margin:0 0 10px"><h2>危险操作</h2><div class="line"></div></div>
+      <p class="tiny muted" style="margin:0 0 12px">清除全部课程、上传副本、生成物、笔记、错题，并回到欢迎页。会先自动备份；<b>桌面/Documents 里的原始资料不会删除</b>；API Key 保留。</p>
+      <button class="btn" id="resetAll" style="color:var(--danger);border-color:var(--danger)">清除全部数据</button>
+    </section>
 </main>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=18">  document.getElementById('resetAll').addEventListener('click', function(){
-    if(!confirm('确定删除全部课程、资料、笔记和错题？此操作不可恢复。')) return;
-    if(!confirm('再确认一次：真的要清空所有数据吗？')) return;
-    fetch('/api/reset',{method:'POST'}).then(function(r){ if(!r.ok) throw new Error(); location.href='welcome.html'; })
-      .catch(function(){ alert('清除失败，请重试'); });
+<script src="assets/app.js?v=19"></script>
+<script>
+(function(){
+  function loadBackups(){
+    fetch('/api/backups').then(function(r){ return r.json(); }).then(function(list){
+      var box = document.getElementById('backupList'); if(!box) return;
+      if(!list || !list.length){ box.textContent = '还没有备份'; return; }
+      box.innerHTML = list.slice(0,5).map(function(b){
+        return '· ' + b.mtime + ' · ' + b.size_kb + ' KB · ' + b.name;
+      }).join('<br>');
+    }).catch(function(){});
+  }
+  var bn = document.getElementById('backupNow');
+  if(bn) bn.addEventListener('click', function(){
+    bn.disabled = true;
+    fetch('/api/backup', {method:'POST'}).then(function(r){ return r.json(); }).then(function(d){
+      document.getElementById('backupMsg').textContent = d.ok ? ('已备份：' + d.path) : '备份失败';
+      loadBackups();
+    }).catch(function(){ document.getElementById('backupMsg').textContent = '备份失败'; })
+      .finally(function(){ bn.disabled = false; });
   });
-
+  var reset = document.getElementById('resetAll');
+  if(reset) reset.addEventListener('click', function(){
+    if(!confirm('确定清除全部课程、上传副本、生成物、笔记和错题？会先自动备份。')) return;
+    if(!confirm('再确认一次：真的要清空吗？桌面上的原始资料不会被删除。')) return;
+    fetch('/api/reset', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({confirm:'DELETE-ALL'})})
+      .then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(d.detail || '失败'); return d; }); })
+      .then(function(){ location.href = 'welcome.html'; })
+      .catch(function(e){ alert('清除失败：' + (e && e.message ? e.message : '请重试')); });
+  });
+  loadBackups();
+})();
 </script>
 <script>
 (function(){
@@ -168,6 +204,7 @@
       $('apiState').textContent = '已连接';
       $('sub').textContent = 'v' + d.version + ' · ' + d.build_time;
       $('version').textContent = 'v' + d.version;
+      var dd = document.getElementById('dataDir'); if(dd) dd.textContent = (d.paths && d.paths.data) || '—';
       $('build').textContent = d.build_time;
       $('dsState').textContent = d.keys.deepseek.configured ? ('已配置 · 尾号 ' + d.keys.deepseek.tail) : '未配置';
       $('qwState').textContent = d.keys.dashscope.configured ? ('已配置 · 尾号 ' + d.keys.dashscope.tail) : '未配置';
