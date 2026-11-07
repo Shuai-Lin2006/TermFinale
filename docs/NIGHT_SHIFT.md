@@ -149,3 +149,9 @@ topics 全部落在白名单内
 - 答案覆盖 <80% 判硬失败；题号后为空判失败；答案重复题号仍为提示。
 - 新增 2 项答案自洽测试；全套 **87 项**通过。
 - CI 改为 `unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`；新增 server import smoke。
+
+## 900 窄窗导航 + 移动 tab（00:42–00:46）
+
+- premium.css 在 900 以下补 `.mobile-tab`；app.js 全局注入移动 tab（reader 已有则跳过）。
+- dashboard 内联移动 tab；900px 截图确认可切页。
+- 截图：`dash_900b.png`。

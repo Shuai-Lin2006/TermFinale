@@ -310,3 +310,9 @@ a{color:inherit}
 .note-card .meta{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .note-card .answer{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .note-card.open .meta,.note-card.open .answer{display:block;-webkit-line-clamp:unset;overflow:visible}
+
+/* 860–900 之间：rail 已隐藏，但 app.css 的移动 tab 还没出现，补上导航 */
+@media(max-width:900px){
+  .mobile-tab{display:flex!important}
+  .page{padding-bottom:96px}
+}

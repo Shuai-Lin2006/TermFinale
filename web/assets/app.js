@@ -328,6 +328,18 @@
   }
   renderNav();
   renderFoot(null);
+  (function renderMobileNav(){
+    if (document.querySelector('.mobile-tab')) return;
+    var path = location.pathname.split('/').pop() || 'dashboard.html';
+    var items = [['dashboard.html','今日'],['courses.html','课程'],['practice.html','练习'],
+                 ['review_plan.html','计划'],['settings.html','设置']];
+    var nav = document.createElement('nav');
+    nav.className = 'mobile-tab';
+    nav.innerHTML = items.map(function(it){
+      return '<a href="' + it[0] + '"' + (path === it[0] ? ' class="active"' : '') + '>' + it[1] + '</a>';
+    }).join('');
+    document.body.appendChild(nav);
+  })();
 
   /* 真实档案：先用缓存立即渲染，再拉接口更新 */
   function applyProfile(p) {
