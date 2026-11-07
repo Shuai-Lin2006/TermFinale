@@ -299,7 +299,17 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     }});
     function showModal(title, content) {{
         document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalContent').innerText = content;
+        var _mc = document.getElementById('modalContent');
+        _mc.innerText = content;
+        // 名词解释里可能有 $...$；弹窗也要渲染，不能直接显示源码
+        if (window.renderMathInElement) {{
+            try {{
+                renderMathInElement(_mc, {{delimiters: [
+                    {{left: '$$', right: '$$', display: true}},
+                    {{left: '$', right: '$', display: false}}
+                ], throwOnError: false}});
+            }} catch (e) {{}}
+        }}
         document.getElementById('myModal').style.display = "flex";
     }}
     function closeModal() {{ document.getElementById('myModal').style.display = "none"; }}

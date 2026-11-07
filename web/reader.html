@@ -56,7 +56,6 @@
           <button class="btn sm" id="searchBtn"><svg class="icon sm"><use href="#i-search"/></svg>搜索</button>
           <button class="btn ghost sm" id="moreTools" title="更多工具">⋯</button>
           <span id="toolExtras" style="display:none;gap:6px;align-items:center">
-            <button class="btn sm" id="editBtn"><svg class="icon sm"><use href="#i-edit"/></svg>编辑</button>
             <button class="btn sm" id="wordBtn"><svg class="icon sm"><use href="#i-word"/></svg>Word</button>
             <button class="btn sm" id="pdfBtn"><svg class="icon sm"><use href="#i-word"/></svg>PDF</button>
             <button class="btn sm" onclick="window.print()"><svg class="icon sm"><use href="#i-print"/></svg>打印</button>
@@ -278,7 +277,8 @@
   if($('mAsk')) $('mAsk').addEventListener('click', function(e){ e.preventDefault(); if(window.TF_ASK) window.TF_ASK('', '解释这一节'); });
 
   var editing = false;
-  $('editBtn').addEventListener('click', function(){
+  var editBtn = $('editBtn');
+  if (editBtn) editBtn.addEventListener('click', function(){
     editing = !editing;
     $('content').setAttribute('contenteditable', editing ? 'true' : 'false');
     $('content').style.outline = editing ? '2px dashed var(--brand)' : 'none';
@@ -340,9 +340,19 @@
   $('pdfBtn').addEventListener('click', function(){
     if(!cid){ toast('请从课程进入阅读器'); return; }
     var btn = this, old = btn.innerHTML;
-    btn.disabled = true; btn.textContent = '生成中…';
-    toast('在打印窗口选择「另存为 PDF」');
-    setTimeout(function(){ window.print(); btn.disabled=false; btn.innerHTML=old; }, 200);
+    btn.disabled = true; btn.textContent = '生成 PDF…';
+    toast('正在生成 PDF，稍等');
+    fetch('/api/courses/' + cid + '/pdf').then(function(r){
+      if(!r.ok) return r.json().then(function(e){ throw new Error(e.detail || '生成失败'); });
+      return r.blob();
+    }).then(function(blob){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (window.TF_COURSE || '讲义') + '.pdf';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+    }).catch(function(e){ toast('PDF 生成失败：' + (e && e.message ? e.message : '请改用打印')); })
+      .finally(function(){ btn.disabled = false; btn.innerHTML = old; });
   });
 
   $('wordBtn').addEventListener('click', function(){

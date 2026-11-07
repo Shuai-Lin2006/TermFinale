@@ -129,9 +129,10 @@ def _stems(markdown: str) -> list[str]:
     body = re.split(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown)[0]
     stems = []
     for block in QUESTION_RE.split(body):
-        block = block.strip()
+        # split 的第一段是试卷标题/满分行，不是题干
+        block = re.sub(r"(?m)^#{1,6}.*$", "", block or "").strip()
         stem = _stem_of(block) if block else ""
-        if len(stem) >= 12:
+        if len(stem) >= 12 and not stem.startswith("#"):
             stems.append(stem)
     return stems
 
@@ -201,8 +202,9 @@ def validate_paper(markdown: str, blueprint: Blueprint | None = None,
         found = re.findall(r"共\s*(\d+)\s*分", markdown)
         found_total = float(sum(int(x) for x in found[:4])) if found else 0.0
 
-    # 重复题检测：只看题干首行，阈值 0.75
-    stems = _stems(markdown)
+    # 重复题/题数只看题目区，不能把答案里的编号也算成题
+    body = re.split(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown)[0]
+    stems = _stems(body)
     grams = [_ngrams(s) for s in stems]
     dup_pairs = 0
     for i in range(len(grams)):
@@ -214,7 +216,7 @@ def validate_paper(markdown: str, blueprint: Blueprint | None = None,
     if dup_pairs:
         report.add("warn", f"疑似重复题目 {dup_pairs} 对")
 
-    point_tags = len(re.findall(r"【考点[:：]", markdown))
+    point_tags = len(re.findall(r"【考点[:：]", body))
     if stems and point_tags < len(stems) * 0.6:
         report.add("warn", f"考点标注不足 {point_tags}/{len(stems)}")
 

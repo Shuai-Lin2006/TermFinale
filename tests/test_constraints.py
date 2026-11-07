@@ -398,3 +398,16 @@ class AnswerConsistencyTest(unittest.TestCase):
         report = validate_output(paper, c, source_text=SOURCE, stage="final")
         self.assertFalse(report.ok)
         self.assertTrue(any("为空" in i for i in report.issues), report.issues)
+
+
+class MultiAnswerPaperTest(unittest.TestCase):
+    def test_second_answer_section_fails(self):
+        paper = _exam_paper() + "\n# 答案与解析\n1. A\n## 填空题（2 题，每题 10 分）\n1. 新题\n"
+        c = TaskConstraints(task="exam", answer_mode="required", sections=[
+            {"name": "单项选择题", "count": 6, "points": 5},
+            {"name": "填空题", "count": 3, "points": 10},
+            {"name": "计算题", "count": 2, "points": 20},
+        ])
+        report = validate_output(paper, c, source_text=SOURCE, stage="final")
+        self.assertFalse(report.ok)
+        self.assertTrue(any("答案分区" in i for i in report.issues), report.issues)

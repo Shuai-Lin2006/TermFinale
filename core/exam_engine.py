@@ -275,6 +275,64 @@ def _qwen_fallback(system: str, user: str, max_tokens: int = 3000) -> str:
         return ""
 
 
+def _clean_section_output(md: str, title: str, count: int, points: float) -> str:
+    """单题型生成结果清洗：模型常违反指令，顺手把答案和别的题型也吐出来。
+
+    只保留请求的题型、去掉答案分区；没有可识别内容时返回空串，让上层失败/重试，
+    绝不把“题+答案+另一套题”的混合物交给验卷器。
+    """
+    import re as _re
+    text = (md or "").strip()
+    if not text:
+        return ""
+    text = _re.split(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", text)[0].strip()
+    if not text:
+        return ""
+    lines = text.splitlines()
+    start = None
+    for idx, line in enumerate(lines):
+        if _re.match(r"^##\s*", line) and title in line:
+            start = idx
+            break
+    if start is None:
+        # 没有目标标题：只有在没有其他 ## 题型时才敢兜底
+        if any(_re.match(r"^##\s*", ln) for ln in lines):
+            return ""
+        body = "\n".join(lines).strip()
+        if not body or not _re.search(r"(?m)^\s*\d{1,2}\s*[.、．)）]", body):
+            return ""
+        return f"## {title}（{count} 题，每题 {points:g} 分，共 {count * points:g} 分）\n\n{body}"
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if _re.match(r"^##\s*", lines[j]):
+            end = j
+            break
+    body = "\n".join(lines[start + 1:end]).strip()
+    if not body or not _re.search(r"(?m)^\s*\d{1,2}\s*[.、．)）]", body):
+        return ""
+    return f"## {title}（{count} 题，每题 {points:g} 分，共 {count * points:g} 分）\n\n{body}"
+
+
+def _clean_answer_output(md: str) -> str:
+    """答案清洗：只保留第一段答案，去掉重复答案分区/混进来的第二套题。"""
+    import re as _re
+    text = (md or "").strip()
+    if not text:
+        return ""
+    # 多个答案分区：只保留第一个
+    parts = _re.split(r"(?m)^(?=#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析))", text)
+    if len(parts) > 1:
+        text = parts[1]
+    else:
+        text = "# 答案与解析\n" + text
+    # 混进来的“## 单项选择题（4 题，每题 5 分…）”说明模型又开了一套题
+    paper_heading = _re.search(
+        r"(?m)^##\s*\S+?（\s*\d+\s*题[^）]*）", text)
+    if paper_heading:
+        text = text[:paper_heading.start()].rstrip()
+    return text.strip()
+
+
 def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str = "mock",
                        reference_exam: bool = False, *, blueprint=None, user_note: str = "",
                        constraint_block: str = "", retry_note: str = "",
@@ -353,8 +411,11 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
         if not md.strip():
             logger.warning("主模型空返回，切换备用模型：{}", title)
             md = _qwen_fallback(sys_p, chunk, max_tokens=2500)
-        if md.strip():
-            parts.append(md.strip())
+        cleaned = _clean_section_output(md, title, count, points)
+        if cleaned:
+            parts.append(cleaned)
+        elif md.strip():
+            logger.warning("单题型输出无法清洗，已丢弃：{}", title)
     if not parts:
         return ""
     head = (f"# {course_name} 期末试卷\n" if course_name else "# 期末试卷\n") + \
@@ -371,6 +432,7 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
     answers = call_ai_with_retry(answer_sys, questions[:8000], temp=0.2, min_budget=4096)
     if not answers.strip():
         answers = _qwen_fallback(answer_sys, questions[:8000], max_tokens=3000)
+    answers = _clean_answer_output(answers)
     return questions.rstrip() + "\n\n" + answers.strip() if answers.strip() else questions
 
 

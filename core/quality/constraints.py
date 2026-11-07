@@ -719,7 +719,9 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
         nums = [int(n) for n in re.findall(r"(?m)^\s*(\d{1,3})\s*[.、．)）]", answers)]
         if nums:
             dups = sorted({n for n in nums if nums.count(n) > 1})
-            if dups:
+            # 答案按大题分节时，每节从 1 开始编号是合法的，不算重复
+            sectioned = bool(re.search(r"(?m)^##\s+", answers))
+            if dups and not sectioned:
                 report.warn("答案题号重复：" + "、".join(str(n) for n in dups[:6]))
             report.metrics["answer_numbers"] = len(nums)
 
@@ -743,10 +745,17 @@ def _check_answer_mode(report: ValidationReport, text: str, c: TaskConstraints,
         return
 
     if c.task == "exam":
+        # 只允许一个答案分区；模型偶尔会把“答案 + 第二套题”一起吐出来，
+        # 旧逻辑只 split 第一个答案分区，会把后面的题目算成答案，误判通过。
+        heads = re.findall(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", text or "")
+        if len(heads) > 1:
+            report.add(f"出现 {len(heads)} 个答案分区，试卷混入了第二套题")
         body, answers = _split_answer(text)
         if not answers:
             report.add("缺少「# 答案与解析」分区")
             return
+        if re.search(r"(?m)^##\s*\S+?（\s*\d+\s*题[^）]*）", answers):
+            report.add("答案分区后混入了题目（第二套题）")
         questions = len(_QUESTION_RE.findall(body))
         answered = len(_QUESTION_RE.findall(answers))
         report.metrics["answered"] = answered

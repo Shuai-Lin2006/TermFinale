@@ -155,3 +155,15 @@ topics 全部落在白名单内
 - premium.css 在 900 以下补 `.mobile-tab`；app.js 全局注入移动 tab（reader 已有则跳过）。
 - dashboard 内联移动 tab；900px 截图确认可切页。
 - 截图：`dash_900b.png`。
+
+## 真实试卷验卷（00:46–00:55）
+
+- 真实调用 FINAL高数（8 页，题型 4/2/2=100 分，只考 4 个考点）：**1 次通过**，15.7s。
+- 结果：9 题区识别为 8 题、8 个答案、1 个答案分区；`validation.ok=True`，无 warning；`only_topics` 4 个全部命中。
+- 发现并修掉一个真 bug：模型在单题型里又输出“答案 + 第二套题”，旧验卷只 split 第一个答案分区，把后续题目算成答案而**误判通过**。
+  - `_clean_section_output`：单题型只保留请求题型、切掉答案；
+  - `_clean_answer_output`：只保留第一段答案、切掉第二套题；
+  - `_check_answer_mode`：多个答案分区/答案后混入题目 → 硬失败；
+  - `_stems`：不再把试卷标题当题干；题数统计只看题目区。
+- 真实证据：`/tmp/tf_verify/exam_real2.md`、`exam_real2.log`。
+- 测试增至 **93 项**全绿（新增 exam cleanup 5 项、多答案分区 1 项）。
