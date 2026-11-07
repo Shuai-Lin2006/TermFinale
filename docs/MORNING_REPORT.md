@@ -49,6 +49,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 老师重点 | 只考/必考/不考/页码/基团；8 页高数 8/8 引用、0 超范围；化学 10 基团通过 |
 | 1001 页真实概览 | 1001 页 / 7 章 / 抽样 33 页 / **35.9s** / 15,725 字 / `qa_ok=true`（不是逐页提取） |
 | 真实试卷 | FINAL高数 4/2/2=100 分，8 题 8 答案，1 次通过，15.7s，`validation.ok=True` |
+| API 端到端 | 临时库 + cookie POST 提取任务：4 页 4/4 / 22.1s / `validation.ok=True` / 2 条超范围考点被“只考”白名单过滤 |
 | 试卷清洗 | 修掉“单题型输出答案+第二套题”导致误判通过；多答案分区/答案后混题 → 硬失败 |
 | 引用修复 | 3 条漏出处考点用原文 2-gram 匹配补回真实页码；匹配不到不编 |
 
@@ -68,7 +69,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ### 2.4 测试与 CI
 
-- `python -m unittest discover -s tests` → **97 项全绿**。
+- `python -m unittest discover -s tests` → **100 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`；server import smoke。
 - 本机验证过 `import server.app`；GitHub Actions 尚未在远端跑（没有 push）。
@@ -89,6 +90,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 171 页逐页补提取（98.8%） | `docs/evidence/extract171_filled.md` |
 | 171 页补提取日志 | `docs/evidence/fill171.log` |
 | 1001 页真实概览 | `docs/evidence/guide1001.md` / `guide1001.log` |
+| API 端到端日志 | `docs/evidence/api_e2e.log` |
 | 171 页日志 | `docs/evidence/extract171.log` |
 | UI 截图 | `docs/screenshots/`（见下） |
 | README 预览图 | `docs/screenshots/dashboard.png` / `review.png` / `training.png` |
@@ -121,7 +123,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 6. **UI 不是终版**：`upload.html`、`welcome.html` 基本沿用旧结构（已套主题）；阅读页正文排版还可继续打磨；AI 抽屉/关键词弹窗只做了公式修复。
 7. **测试数据还在库里**：46 门测试课只是隐藏，没有删；用户若要彻底清掉，需单独确认。
 8. **GitHub 未推送**：本地 14+ 个提交；推不推、仓库名、release 文案由你决定。
-9. **CI 未在 GitHub 跑过**；本机 97 项通过不等于三平台通过。
+9. **CI 未在 GitHub 跑过**；本机 100 项通过不等于三平台通过。
 10. **API token 鉴权**后，外部 curl / 旧脚本要带 cookie 或 `X-TF-Token`；没有对外 API 文档。
 
 ---
@@ -130,7 +132,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ```bash
 cd /Users/lan/PycharmProjects/TermFinale
-.venv/bin/python -m unittest discover -s tests          # 97 项
+.venv/bin/python -m unittest discover -s tests          # 100 项
 .venv/bin/python -m pyflakes server/app.py core services models tools/build.py
 
 # 鉴权 + 数据

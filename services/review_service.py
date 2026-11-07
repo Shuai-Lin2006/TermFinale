@@ -119,6 +119,78 @@ def _fingerprint(text: str) -> str:
     return cleaned[:48]
 
 
+_META_TOPIC_RE = re.compile(
+    r"^(?:第\s*\d+(?:\.\d+)*\s*(?:页|节|章|部分)?[^：:]{0,30}(?:内容说明|范围说明|考点范围|说明)"
+    r"|第\s*\d+\s*页"
+    r"|(?:本页|本章|本节|本部分|以上|综上|说明|备注|总结))$"
+)
+
+
+def clean_extract_topics(markdown: str) -> tuple[str, int]:
+    """清掉模型把“第N页内容说明/本节考点范围说明”当成考点的占位块。
+
+    这些块没有真实考点，却会被老师“只考”白名单判成超范围，导致整份提取硬失败。
+    只删标题明显是元信息的块；真实考点（“第2章 导数”）不动。
+    """
+    text = markdown or ""
+    if "### 考点" not in text:
+        return text, 0
+    parts = re.split(r"(?m)(?=^###\s*考点[:：])", text)
+    kept: list[str] = []
+    dropped = 0
+    for block in parts:
+        if not block.lstrip().startswith("### 考点"):
+            kept.append(block)
+            continue
+        title = block.split("\n", 1)[0]
+        title = re.sub(r"^###\s*考点[:：]\s*", "", title).strip()
+        title = re.sub(r"^\d+(?:\.\d+)*\s*", "", title).strip()
+        if _META_TOPIC_RE.match(title):
+            dropped += 1
+            continue
+        kept.append(block)
+    return "".join(kept), dropped
+
+
+def _topic_subsequence(needle: str, haystack: str) -> bool:
+    """needle 的字符是否按顺序出现在 haystack 里（允许“的”等插入）。
+
+    “高阶导数间接法” ⊂ “高阶导数的间接法先化简再求导”；
+    “隐函数求导” ⊂ “隐函数求导法”/“隐函数求二阶导数代回一阶结果”；
+    “隐函数求导” ⊄ “复合函数求导法则”（缺“隐”），不会误留超范围考点。
+    """
+    it = iter(haystack)
+    return all(ch in it for ch in needle)
+
+
+def filter_out_of_scope_topics(markdown: str, only_topics: list[str]) -> tuple[str, int]:
+    """按老师“只考”白名单过滤 `### 考点：` 块；过滤不是失败，是执行老师约束。
+
+    只在有 only_topics 时启用；过滤条数会写进日志/指标，用户能知道少了什么。
+    """
+    if not only_topics or "### 考点" not in (markdown or ""):
+        return markdown or "", 0
+    only = [re.sub(r"[\s，,。.、；;：:（）()]", "", t) for t in only_topics if t.strip()]
+    only = [t for t in only if t]
+    if not only:
+        return markdown or "", 0
+    parts = re.split(r"(?m)(?=^###\s*考点[:：])", markdown)
+    kept: list[str] = []
+    dropped = 0
+    for block in parts:
+        if not block.lstrip().startswith("### 考点"):
+            kept.append(block)
+            continue
+        title = block.split("\n", 1)[0]
+        title = re.sub(r"^###\s*考点[:：]\s*", "", title)
+        title = re.sub(r"[\s，,。.、；;：:（）()]", "", title)
+        if any(_topic_subsequence(t, title) for t in only):
+            kept.append(block)
+        else:
+            dropped += 1
+    return "".join(kept), dropped
+
+
 def dedupe_markdown(markdown: str) -> tuple[str, int]:
     """按块指纹去重，保留首次出现顺序。返回 (结果, 删掉的块数)。"""
     blocks = re.split(r"\n\s*\n", markdown or "")
@@ -210,6 +282,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         return "", {"coverage": 0}, None
     results: list[str] = [""] * len(chunks)
     reports: dict[int, object] = {}
+    scope_drops = [0]
     done = 0
 
     def work(i: int, chunk: str) -> tuple[int, str, object]:
@@ -235,6 +308,13 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                         chunk[:4000], max_tokens=2500)
                 except Exception:
                     pass
+            md, _dropped = clean_extract_topics(md)
+            if _dropped:
+                logger.info("清理元信息考点 {} 条", _dropped)
+            md, _filtered = filter_out_of_scope_topics(md, constraints.only_topics)
+            if _filtered:
+                scope_drops[0] += _filtered
+                logger.info("按老师只考范围过滤超范围考点 {} 条", _filtered)
             return md
 
         md, report = generate_until_valid(
@@ -326,6 +406,12 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
             logger.warning("逐页补提取失败 page={} err={}", _n, str(_e)[:80])
 
     merged, removed = dedupe_markdown("\n\n".join(results))
+    merged, _meta_dropped = clean_extract_topics(merged)
+    if _meta_dropped:
+        logger.info("最终清理元信息考点 {} 条", _meta_dropped)
+    merged, _scope_dropped = filter_out_of_scope_topics(merged, constraints.only_topics)
+    if _scope_dropped:
+        logger.info("最终按老师只考范围过滤 {} 条", _scope_dropped)
     merged, _cite_fixed = repair_topic_citations(merged, pages)
     if _cite_fixed:
         logger.info("引用修复：{} 条考点补回页码", _cite_fixed)
@@ -347,6 +433,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         "attempts": sum(int(getattr(r, "metrics", {}).get("attempts", 1)) for r in reports.values()),
         "duplicates_removed": removed,
         "page_fills": _page_fills,
+        "scope_filtered": scope_drops[0],
         "coverage": (round(len(_covered) / len(_src_pages), 3) if _src_pages
                      else (round(ok_chunks / len(chunks), 3) if chunks else 0.0)),
         "has_page_headers": bool(_src_pages),

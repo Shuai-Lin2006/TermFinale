@@ -187,7 +187,7 @@ def parse_teacher_note(note: str, source_text: str = "") -> TeacherRules:
     # “只考”里如果也混进了不考项，剔除
     rules.ban_topics = [t for t in rules.ban_topics if t not in rules.only_topics]
     if rules.only_topics and not rules.must_topics:
-        rules.notes.append("按“只考”白名单执行：白名单外的考点判失败")
+        rules.notes.append("按“只考”白名单执行：白名单外的考点会被过滤或判失败")
     return rules
 
 

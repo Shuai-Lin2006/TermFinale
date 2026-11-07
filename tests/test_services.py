@@ -288,3 +288,38 @@ class OverviewCoverageTest(unittest.TestCase):
             "第1页 第2页 第3页", "【《x》第 1 页】\n【《x》第 2 页】\n【《x》第 3 页】", False)
         self.assertNotIn("coverage_mode", cov)
         self.assertAlmostEqual(cov["coverage"], 1.0)
+
+
+class MetaTopicCleanTest(unittest.TestCase):
+    def test_drops_page_description_placeholders(self):
+        md = ("### 考点：隐函数求导\n- 两边求导。\n\n"
+              "### 考点：第2页内容说明\n- 本页讲求导。\n\n"
+              "### 考点：第2.2节求导基本法则的考点范围说明\n- 范围。\n\n"
+              "### 考点：高阶导数\n- 定义。\n")
+        out, dropped = review_service.clean_extract_topics(md)
+        self.assertEqual(dropped, 2)
+        self.assertIn("隐函数求导", out)
+        self.assertIn("高阶导数", out)
+        self.assertNotIn("内容说明", out)
+        self.assertNotIn("范围说明", out)
+
+    def test_keeps_real_chapter_topic(self):
+        md = "### 考点：第2章 导数与微分\n- 定义。\n"
+        out, dropped = review_service.clean_extract_topics(md)
+        self.assertEqual(dropped, 0)
+        self.assertIn("第2章 导数与微分", out)
+
+
+class ScopeFilterTest(unittest.TestCase):
+    def test_filters_composite_and_inverse_but_keeps_subsequence(self):
+        md = ("### 考点：隐函数求导法\n- a\n\n"
+              "### 考点：高阶导数的间接法先化简再求导\n- b\n\n"
+              "### 考点：复合函数求导法则链式法则\n- c\n\n"
+              "### 考点：反函数的导数\n- d\n")
+        out, dropped = review_service.filter_out_of_scope_topics(
+            md, ["隐函数求导", "高阶导数间接法"])
+        self.assertEqual(dropped, 2)
+        self.assertIn("隐函数求导法", out)
+        self.assertIn("高阶导数的间接法", out)
+        self.assertNotIn("复合函数", out)
+        self.assertNotIn("反函数", out)

@@ -560,6 +560,9 @@
                 cl.style.color = 'var(--ok)';
                 cl.textContent = '逐页覆盖 100%';
               }
+              if(cov.scope_filtered){
+                cl.textContent += ' · 按老师只考过滤 ' + cov.scope_filtered + ' 条';
+              }
             } else { cl.style.display = 'none'; }
             var line = $('qualityLine');
             if(v && !v.ok){
