@@ -46,6 +46,60 @@ def _save_ocr_cache() -> None:
         pass
 
 
+
+
+def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, total: int) -> list:
+    """对 PPT 中没有文字的页：整本转 PDF，逐页渲染后 OCR 回填。"""
+    present = set()
+    for block in all_pages:
+        m = re.search(r"第\s*(\d+)\s*页", block)
+        if not m:
+            continue
+        plain = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", block, flags=re.S)
+        if len(plain.strip()) > 12:
+            present.add(int(m.group(1)))
+    missing = [n for n in range(1, total + 1) if n not in present]
+    if not missing:
+        return all_pages
+    try:
+        import subprocess, tempfile, fitz
+        outdir = tempfile.mkdtemp(prefix="pptocr_")
+        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", outdir, file_path],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=240)
+        pdfs = [os.path.join(outdir, x) for x in os.listdir(outdir) if x.lower().endswith(".pdf")]
+        if not pdfs:
+            return all_pages
+        doc = fitz.open(pdfs[0])
+        for n in missing:
+            if n > len(doc):
+                continue
+            txt = _ocr_page(doc[n - 1])
+            txt = _clean_ocr_text(txt) if txt else ""
+            if txt.strip():
+                all_pages.append(f"【《{file_name}》第 {n} 页】\n{txt.strip()}")
+        doc.close()
+    except Exception as e:
+        logger.warning("PPT 图片页 OCR 回填失败: {}", str(e)[:100])
+    return all_pages
+
+
+def _clean_slide_ocr(text: str) -> str:
+    """清洗整页 OCR：去校名/页眉/孤立符号，合并断行，保留公式。"""
+    if not text:
+        return ""
+    out = []
+    for line in text.splitlines():
+        t = line.strip()
+        if not t:
+            continue
+        if any(k in t for k in ("大学", "学院", "University", "College")):
+            continue
+        if t.isdigit() and len(t) <= 3:
+            continue
+        out.append(t)
+    return "\n".join(out)
+
+
 def _clean_ocr_text(text: str) -> str:
     """qwen-vl-ocr 常返回 ```html 包裹的 HTML，这里转成纯文本。"""
     import html as html_lib
@@ -235,6 +289,20 @@ def process_image(img_bytes, img_filename, with_caption=True, caption_text=None)
 
     import hashlib as _hashlib
     img_filename = f"{_hashlib.md5(img_bytes).hexdigest()[:16]}.{img_filename.rsplit('.', 1)[-1]}"
+    try:
+        probe = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        w, h = probe.size
+        if w / max(1, h) > 8 or h / max(1, w) > 8:
+            return ""
+        small = probe.resize((24, 24))
+        colors = small.getcolors(24 * 24) or []
+        if colors:
+            dominant = max(colors)[0] / (24 * 24)
+            if dominant > 0.96:
+                return ""
+    except Exception:
+        pass
+
     img_path = os.path.join(IMG_DIR, img_filename)
     with open(img_path, 'wb') as f:
         f.write(img_bytes)
@@ -326,6 +394,12 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                             w, h = probe.size
                             if w < 160 or h < 120 or w * h < 40000:
                                 continue
+                            try:
+                                ratio = (float(shape.width) * float(shape.height)) / (float(prs.slide_width) * float(prs.slide_height))
+                            except Exception:
+                                ratio = 0.0
+                            if ratio > 0.65:
+                                continue
                             candidates.append((w * h, image.blob, image.ext.lower()))
                         except Exception:
                             pass
@@ -341,9 +415,28 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                             slide_text += f"\n{img_tag}\n"
                     except Exception:
                         pass
+                if not slide_text.strip() and candidates:
+                    try:
+                        import tempfile
+                        _blob = candidates[0][1]; _ext = candidates[0][2]
+                        _tmp = tempfile.NamedTemporaryFile(delete=False, suffix="." + _ext)
+                        _tmp.write(_blob); _tmp.close()
+                        _ocr = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
+                        try: os.unlink(_tmp.name)
+                        except OSError: pass
+                        if _ocr and _ocr.strip():
+                            slide_text += "\n" + _ocr.strip()
+                    except Exception as _e:
+                        logger.warning("图片页 OCR 失败: {}", str(_e)[:80])
                 if slide_text.strip():
                     cleaned = "\n".join(clean_text_lines(slide_text))
                     if cleaned.strip(): all_pages.append(f"【《{file_name}》第 {index + 1} 页】\n{cleaned}")
+
+        if ext == 'pptx':
+            try:
+                all_pages = _fill_missing_ppt_pages(file_path, file_name, all_pages, len(prs.slides))
+            except Exception:
+                pass
 
         elif ext == 'pdf':
             doc = fitz.open(file_path)

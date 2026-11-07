@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import datetime
 import os
 import re
 import hashlib
@@ -20,6 +21,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
 
 ROOT = Path(__file__).resolve().parent.parent
 import sys
@@ -30,6 +32,8 @@ from core.database import Course, GeneratedFile, Material, Mistake, Note, Profil
 from core.parser import extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from core.quality.report import audit_markdown
+from core.quality.constraints import TaskConstraints, scope_pages  # noqa: E402
+from core.quality.gate import ConstraintViolation  # noqa: E402
 from services.task import ProgressEvent  # noqa: E402
 
 WEB = ROOT / "web"
@@ -73,8 +77,11 @@ class Job:
 def _course_dict(course: Course) -> dict:
     return {"id": course.id, "name": course.name, "major": course.major,
             "school": course.school_level, "credits": course.credits,
-            "days_left": course.days_left, "target_score": course.target_score,
-            "difficulty": course.user_difficulty, "is_major": course.is_major,
+            "days_left": (max(0, (datetime.date.fromisoformat(course.exam_date) - datetime.date.today()).days)
+                          if getattr(course, "exam_date", "") else course.days_left), "target_score": course.target_score,
+            "difficulty": getattr(course, "self_difficulty", None) or course.user_difficulty,
+            "foundation": getattr(course, "foundation", None) or 3,
+            "is_major": course.is_major,
             "persona": course.persona or "温柔小姐姐"}
 
 
@@ -87,10 +94,14 @@ from urllib.parse import quote as _quote
 
 def _render_markdown(md: str) -> tuple[str, list[dict]]:
     """把讲义 Markdown 转成阅读器 HTML（数学公式保留给 KaTeX 客户端渲染）。"""
+    def _fig(m):
+        name = m.group(1).strip()
+        if not (paths.assets_dir() / name).is_file():
+            return "\n\n"
+        return (f'\n\n<figure class="figure"><img src="/api/assets/{_quote(name)}"'
+                f' alt="{m.group(2).strip()}"><figcaption>{m.group(2).strip()}</figcaption></figure>\n\n')
     md = _re.sub(r"\[\[\[IMAGE:\s*([^|\]]+?)\s*\|\s*图注:\s*(.*?)\]\]\]",
-                 lambda m: f'\n\n<figure class="figure"><img src="/api/assets/{_quote(m.group(1).strip())}"'
-                           f' alt="{m.group(2).strip()}"><figcaption>{m.group(2).strip()}</figcaption></figure>\n\n',
-                 md)
+                 _fig, md)
     md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]",
                  lambda m: f'<span class="kw" title="{m.group(2).strip()}">{m.group(1).strip()}</span>', md)
 
@@ -117,7 +128,7 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
         toc.append({"level": level, "text": text, "id": anchor})
         body = raw
         if level == "2":
-            m2 = _re.match(r"\s*(?:核心考点|Core Concept)[:：]\s*(.*)", text)
+            m2 = _re.match(r"\s*(?:核心考点|核心考點|Core Concept)[:：]\s*(.*)", text)
             if m2:
                 chapter_no += 1
                 body = f'<span class="chap-no">第 {chapter_no} 章</span>{m2.group(1)}'
@@ -128,6 +139,14 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
     html = _re.sub(r'<p><strong>(例\s*[0-9一二三四五六七八九十][^<]*)</strong>(.*?)</p>',
                    r'<div class="example"><div class="ex-label">\1</div>\2</div>', html, flags=_re.S)
     return html, toc
+
+@app.middleware("http")
+async def no_store_html(request, call_next):
+    response = await call_next(request)
+    if request.url.path.endswith(".html") or request.url.path == "/":
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
+
 
 @app.get("/api/health")
 def health():
@@ -242,7 +261,7 @@ def overview():
         recent = []
         for gen, course in rows:
             path = Path(gen.file_path)
-            recent.append({"course": course.name, "course_id": course.id,
+            recent.append({"course": course.name, "course_id": course.id, "file_id": gen.id,
                            "filename": path.name, "type": gen.file_type,
                            "exists": path.is_file(),
                            "has_md": path.with_suffix(".md").is_file()})
@@ -266,11 +285,15 @@ def create_course(payload: dict):
         c = Course(
             name=name[:100],
             major=(payload.get("major") or "未知")[:100],
-            school_level=payload.get("school_level") or "普通一本",
-            credits=float(payload.get("credits") or 3),
+            school_level=payload.get("school_level") or "一本",
+            credits=max(0.5, min(8.0, float(payload.get("credits") or 3))),
             days_left=max(1, int(payload.get("days_left") or 7)),
+            exam_date=(payload.get("exam_date") or
+                       (datetime.date.today() + datetime.timedelta(days=max(1, int(payload.get("days_left") or 7)))).isoformat()),
             target_score=max(0, min(100, int(payload.get("target_score") or 80))),
-            user_difficulty=max(1, min(5, int(payload.get("user_difficulty") or 3))),
+            user_difficulty=max(1, min(5, int(payload.get("self_difficulty") or payload.get("user_difficulty") or 3))),
+            self_difficulty=max(1, min(5, int(payload.get("self_difficulty") or payload.get("user_difficulty") or 3))),
+            foundation=max(1, min(5, int(payload.get("foundation") or 3))),
             is_major=bool(payload.get("is_major", True)),
             persona=payload.get("persona") or "温柔小姐姐",
         )
@@ -289,9 +312,16 @@ def update_course(course_id: int, payload: dict):
             raise HTTPException(404, "课程不存在")
         for field, cast in (("name", str), ("major", str), ("school_level", str),
                             ("credits", float), ("days_left", int), ("target_score", int),
-                            ("user_difficulty", int)):
+                            ("user_difficulty", int), ("self_difficulty", int), ("foundation", int)):
             if payload.get(field) not in (None, ""):
-                setattr(c, field, cast(payload[field]))
+                value = cast(payload[field])
+                if field == "credits":
+                    value = max(0.5, min(8.0, float(value)))
+                setattr(c, field, value)
+        if payload.get("days_left") not in (None, "") or payload.get("exam_date"):
+            days = int(payload.get("days_left") or 7)
+            c.exam_date = payload.get("exam_date") or (
+                datetime.date.today() + datetime.timedelta(days=max(1, days))).isoformat()
         if "is_major" in payload:
             c.is_major = bool(payload["is_major"])
         if payload.get("persona"):
@@ -384,6 +414,16 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
             body = _parse_material_cached(m, on_parse)
             tag = "重点资料" if (m.file_type or "core") == "core" else "辅助资料"
             pages.extend(f"【{tag}·权重{m.weight or 3}：{m.filename}】\n" + p for p in body)
+
+        # 任务级约束：每个任务独立读取，不跨模块复用
+        constraints = TaskConstraints.from_options(task, options)
+        if task != "guide" and constraints.has_scope:
+            before = len(pages)
+            pages = scope_pages(pages, constraints)
+            text = "\n\n".join(pages)
+            logger.info("任务范围 {}：{} 页 → {} 页", constraints.scope_label(), before, len(pages))
+            if not pages:
+                raise RuntimeError(f"所选页码范围（{constraints.scope_label()}）内没有解析到任何内容")
         text = "\n\n".join(pages)
         if task == "parse":
             job.status = "done"
@@ -501,7 +541,10 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 core_ratio=float(options.get("core_ratio", 0.8)),
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
+                study_mode=options.get("material_mode", "exam"),
+                material_ids=options.get("material_ids") or None,
                 max_pages=(int(options["page_limit"]) if options.get("page_limit") else None),
+                constraints=constraints,
                 on_progress=job.emit, stop_event=job.stop)
         else:
             result = review_service.run_review(
@@ -511,13 +554,18 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 mode=options.get("mode", "bundle"),
                 train_type=options.get("train_type"),
                 num_sets=int(options.get("num_sets", 1)),
-                difficulty=int(options.get("difficulty", 3)),
+                difficulty=max(2, min(4, (lambda base: base + {
+                    "985": 1, "211": 1, "一本": 0, "二本": -1, "专科": -1}.get(course.get("school", "一本"), 0))(
+                    (round((int(options.get("difficulty", 3)) + int(course.get("difficulty", 3))) / 2)
+                     if int(options.get("difficulty", 3)) == 3 else int(options.get("difficulty", 3)))))),
                 diy_config=options.get("diy_config", ""),
                 user_context={"target_score": course["target_score"]},
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
                 sections=options.get("sections") or None,
                 reference_exam=bool(options.get("reference_exam")),
+                material_mode=options.get("material_mode", "exam"),
+                constraints=constraints,
                 on_progress=job.emit, stop_event=job.stop)
 
         if result is None:
@@ -534,14 +582,34 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         job.progress = 1.0
         job.message = "完成"
         md_text = getattr(result, "markdown", "") or ""
+        result_metrics = getattr(result, "metrics", {}) or {}
         job.result = {"output_path": str(result.output_path),
-                      "metrics": getattr(result, "metrics", {}) or {},
-                      "quality": audit_markdown(md_text, source_tags=(((getattr(result, "metrics", {}) or {}).get("images_source") or text.count("[[[IMAGE:")) if task == "guide" else 0),
+                      "metrics": result_metrics,
+                      "validation": result_metrics.get("validation"),
+                      "warnings": getattr(result, "warnings", []) or [],
+                      "quality": audit_markdown(md_text, source_tags=((result_metrics.get("images_source") or text.count("[[[IMAGE:")) if task == "guide" else 0),
                                                        require_headings=(task == "guide"),
                                                        source_text=text)
                       if md_text else None}
+        try:
+            db = get_db_session()
+            latest = (db.query(GeneratedFile)
+                      .filter(GeneratedFile.course_id == course["id"])
+                      .order_by(GeneratedFile.id.desc()).first())
+            if latest:
+                latest.materials_used = len(materials)
+                db.commit()
+        except Exception:
+            pass
+        finally:
+            try: db.close()
+            except Exception: pass
         if md_text and not job.result["quality"]["passed"]:
             job.message = "完成（自检有问题）"
+        validation = job.result.get("validation") or {}
+        if validation and not validation.get("ok", True):
+            # 非严格模式：结果照常交付，但必须让用户看见没过的硬校验
+            job.message = "完成（硬校验未通过）"
         if task == "guide" and options.get("strict"):
             cov = ((getattr(result, "metrics", {}) or {}).get("coverage") or {}).get("coverage", 1.0)
             issues = list(job.result["quality"].get("issues") or [])
@@ -565,6 +633,11 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         if job.stop.is_set():
             job.status = "cancelled"
             job.message = "已取消"
+        elif isinstance(exc, ConstraintViolation):
+            job.status = "error"
+            job.error = str(exc)
+            job.message = "未通过生成后硬校验"
+            job.result = {"validation": exc.to_dict()}
         else:
             job.status = "error"
             job.error = f"{type(exc).__name__}: {exc}"
@@ -577,6 +650,11 @@ def create_job(payload: dict):
     task = payload.get("task") or "guide"
     if task not in {"guide", "analysis", "extract", "exam", "parse", "chapter"}:
         raise HTTPException(400, "未知任务类型")
+    if task in {"guide", "analysis", "extract", "exam", "chapter"}:
+        from core import config as _cfg
+        _k = (_cfg.get_key("DEEPSEEK_API_KEY", "") or "").strip()
+        if not _k or _k == "sk-not-configured":
+            raise HTTPException(400, "还没有填入 DeepSeek API Key，请先到「设置」里填写并测试连接。")
     db = get_db_session()
     try:
         c = db.query(Course).filter(Course.id == course_id).first()
@@ -686,6 +764,72 @@ def delete_note(note_id: int):
         db.delete(n)
         db.commit()
         return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.get("/api/courses/{course_id}/classify")
+def classify_course(course_id: int):
+    from core.material_kind import classify_text
+    db = get_db_session()
+    try:
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
+            raise HTTPException(404, "课程不存在")
+        mats = c.materials
+    finally:
+        db.close()
+    if not mats:
+        return {"kind": "unknown", "confidence": 0.0, "reasons": ["还没有资料"]}
+    m = mats[0]
+    pages = []
+    try:
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FTimeout
+        _ex = ThreadPoolExecutor(max_workers=1)
+        _fut = _ex.submit(_parse_material_cached, m, None)
+        try:
+            pages = _fut.result(timeout=10)
+        except _FTimeout:
+            _fut.cancel()
+            pages = []
+        _ex.shutdown(wait=False)
+    except Exception:
+        pages = []
+    text = "\n".join(pages)[:6000]
+    return classify_text(text, " ".join(x.filename for x in mats))
+
+
+@app.post("/api/open-browser")
+def open_browser(payload: dict):
+    browser = _find_browser()
+    if not browser:
+        raise HTTPException(501, "没有找到 Edge/Chrome")
+    port = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
+    page = payload.get("page") or "dashboard.html"
+    course = payload.get("course")
+    url = f"http://127.0.0.1:{port}/{page}"
+    if course:
+        url += f"?course={int(course)}"
+    subprocess.Popen([browser, "--app=" + url, "--new-window"])
+    return {"ok": True}
+
+
+@app.get("/api/materials/all")
+def all_materials():
+    db = get_db_session()
+    try:
+        rows = db.query(Material, Course).join(Course, Material.course_id == Course.id).all()
+        out = []
+        for m, c in rows:
+            try:
+                size = round(os.path.getsize(m.file_path) / 1024) if os.path.exists(m.file_path) else 0
+            except OSError:
+                size = 0
+            out.append({"id": m.id, "course_id": c.id, "course": c.name,
+                        "filename": m.filename, "role": m.file_type or "core",
+                        "weight": m.weight or 3, "size_kb": size,
+                        "exists": os.path.exists(m.file_path)})
+        return out
     finally:
         db.close()
 
@@ -960,7 +1104,8 @@ def get_profile():
         p = db.query(Profile).order_by(Profile.id).first()
         if not p:
             return {"onboarded": False}
-        return {"onboarded": bool(p.onboarded), "name": p.name or "", "identity": p.identity or "学生"}
+        return {"onboarded": bool(p.onboarded), "name": p.name or "", "identity": p.identity or "学生",
+                "major": p.major or "", "avatar": p.avatar or ""}
     finally:
         db.close()
 
@@ -979,9 +1124,42 @@ def save_profile(payload: dict):
             db.add(p)
         p.name = name[:50]
         p.identity = (payload.get("identity") or "学生")[:50]
+        if payload.get("major") is not None:
+            p.major = (payload.get("major") or "")[:100]
+        if payload.get("avatar") is not None:
+            avatar = payload.get("avatar") or ""
+            if len(avatar) > 400000:
+                raise HTTPException(400, "头像文件过大，请换一张小图")
+            p.avatar = avatar
         p.onboarded = True
         db.commit()
         return {"ok": True, "name": p.name}
+    finally:
+        db.close()
+
+
+@app.post("/api/reset")
+def reset_all_data():
+    import os as _os
+    from pathlib import Path as _Path
+    db = get_db_session()
+    try:
+        for g in db.query(GeneratedFile).all():
+            for q in (_Path(g.file_path), _Path(g.file_path).with_suffix(".md"), _Path(g.file_path).with_suffix(".pdf")):
+                try:
+                    if q.is_file(): q.unlink()
+                except OSError:
+                    pass
+        for m in db.query(Material).all():
+            try:
+                if _Path(m.file_path).is_file(): _Path(m.file_path).unlink()
+            except OSError:
+                pass
+        db.query(Mistake).delete(); db.query(Note).delete()
+        db.query(GeneratedFile).delete(); db.query(Material).delete()
+        db.query(Course).delete(); db.query(Profile).delete()
+        db.commit()
+        return {"ok": True}
     finally:
         db.close()
 
@@ -1015,6 +1193,59 @@ def job_file(job_id: str):
     return FileResponse(target, media_type="text/html", filename=target.name)
 
 
+def _file_view(c, f):
+    path = Path(f.file_path)
+    md_path = path.with_suffix(".md")
+    if not md_path.is_file():
+        return {"exists": False, "reason": "旧文件没有 Markdown 源，请重新生成", "course": _course_dict(c)}
+    html, toc = _render_markdown(md_path.read_text(encoding="utf-8"))
+    import datetime
+    generated_at = datetime.datetime.fromtimestamp(path.stat().st_mtime).strftime("%m-%d %H:%M")
+    return {"exists": True, "course": _course_dict(c), "html": html, "toc": toc,
+            "filename": path.name, "type": f.file_type, "file_id": f.id,
+            "materials": len(c.materials),
+            "materials_used": getattr(f, "materials_used", 0) or len(c.materials),
+            "generated_at": generated_at}
+
+
+@app.get("/api/courses/{course_id}/files")
+def course_files(course_id: int):
+    db = get_db_session()
+    try:
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
+            raise HTTPException(404, "课程不存在")
+        out = []
+        import json as _json
+        for f in sorted(c.generated_files, key=lambda x: x.id, reverse=True):
+            p = Path(f.file_path)
+            try:
+                _m = _json.loads(p.with_suffix(".json").read_text(encoding="utf-8"))
+            except Exception:
+                _m = {}
+            out.append({"id": f.id, "type": f.file_type, "filename": p.name, "meta": _m,
+                        "created_at": p.stat().st_mtime if p.exists() else 0,
+                        "materials_used": getattr(f, "materials_used", 0) or len(c.materials),
+                        "size_kb": round(p.stat().st_size / 1024) if p.exists() else 0,
+                        "exists": p.exists()})
+        return {"course": _course_dict(c), "files": out}
+    finally:
+        db.close()
+
+
+@app.get("/api/files/{file_id}/view")
+def file_view(file_id: int):
+    db = get_db_session()
+    try:
+        f = db.query(GeneratedFile).filter(GeneratedFile.id == file_id).first()
+        if not f:
+            raise HTTPException(404, "文件不存在")
+        c = db.query(Course).filter(Course.id == f.course_id).first()
+        return _file_view(c, f)
+    finally:
+        db.close()
+
+
 @app.get("/api/courses/{course_id}/latest")
 def latest_content(course_id: int):
     db = get_db_session()
@@ -1025,18 +1256,7 @@ def latest_content(course_id: int):
         files = sorted(c.generated_files, key=lambda f: f.id, reverse=True)
         if not files:
             return {"exists": False, "course": _course_dict(c)}
-        f = files[0]
-        path = Path(f.file_path)
-        md_path = path.with_suffix(".md")
-        if not md_path.is_file():
-            return {"exists": False, "reason": "旧文件没有 Markdown 源，请重新生成",
-                    "course": _course_dict(c)}
-        html, toc = _render_markdown(md_path.read_text(encoding="utf-8"))
-        import datetime
-        generated_at = datetime.datetime.fromtimestamp(path.stat().st_mtime).strftime("%m-%d %H:%M")
-        return {"exists": True, "course": _course_dict(c), "html": html, "toc": toc,
-                "filename": path.name, "type": f.file_type,
-                "materials": len(c.materials), "generated_at": generated_at}
+        return _file_view(c, files[0])
     finally:
         db.close()
 
@@ -1075,6 +1295,16 @@ def _page(name: str) -> FileResponse:
 
 
 @app.get("/")
+@app.get("/review_plan.html")
+def review_plan_page():
+    return _page("review_plan.html")
+
+
+@app.get("/materials_stats.html")
+def materials_stats_page():
+    return _page("materials_stats.html")
+
+
 @app.get("/welcome.html")
 def welcome_page():
     return _page("welcome.html")
@@ -1113,6 +1343,16 @@ def generate_page():
 @app.get("/courses.html")
 def courses_page():
     return _page("courses.html")
+
+
+@app.get("/course_detail.html")
+def course_detail_page():
+    return _page("course_detail.html")
+
+
+@app.get("/course_files.html")
+def course_files_page():
+    return _page("course_files.html")
 
 
 @app.get("/reader.html")

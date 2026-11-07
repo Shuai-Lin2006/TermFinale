@@ -5,6 +5,11 @@
 __pycache__/
 *.py[cod]
 
+# Node / Electron 开发壳依赖
+node_modules/
+desktop_shell/node_modules/
+desktop_shell/dist/
+
 # IDE
 .idea/
 

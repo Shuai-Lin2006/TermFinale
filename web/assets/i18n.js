@@ -93,6 +93,74 @@
     "生成中…":"Generating…","重写中":"Rewriting","课程":"Course","大二 · 环境工程":"Sophomore · Env. Engineering",
     "思考中…":"Thinking…","完成":"Done","讲义生成好了":"Guide ready","提取完成":"Extraction done",
     "试卷生成好了":"Paper ready","分析完成":"Analysis done","准备中…":"Preparing…",
+    "普通一本":"Ordinary","二本":"Second tier","专科":"College","211":"Project 211","985":"Project 985",
+    "1 · 很好":"1 · Great","2 · 还行":"2 · Okay","3 · 一般":"3 · Average","4 · 较弱":"4 · Weak","5 · 很弱":"5 · Very weak",
+    "这些信息会影响讲义的讲法和紧迫度":"These affect how the guide is written.",
+    "选好资料和模式，剩下的交给流水线":"Pick materials and a mode; the pipeline does the rest.",
+    "页数上限（分册）":"Page limit (volumes)","全部页":"All pages","30 页 / 册":"30 pages / vol","60 页 / 册":"60 pages / vol","100 页 / 册":"100 pages / vol",
+    "严格模式：覆盖率低于 80% 不交付":"Strict: no delivery below 80% coverage",
+    "温柔小姐姐":"Gentle","老师":"Teacher","学术AI":"Academic AI","阳光小哥哥":"Sunny","暴力极客":"Hacker",
+    "危险操作":"Danger zone","清除全部数据":"Clear all data",
+    "阅读时选中提问，点「存为笔记」就会出现在这里":"Select text and save a note; it appears here.",
+    "在阅读器里选中一段话，问 AI，然后把回答存下来":"Ask AI in the reader and save answers here.",
+    "去阅读 →":"Read →","还没有试卷，去生成一套。":"No papers yet. Generate one.",
+    "选择题自动判分，做错的题自动进错题本":"Auto-grade multiple choice; wrong answers go to mistakes.",
+    "2 星 · 基础":"2★ Basic","3 星 · 常规期末":"3★ Standard","4 星 · 拔高":"4★ Advanced","5 星 · 地狱":"5★ Hard",
+    "自定义题型 / 数量 / 分值（合计必须 100 分）":"Custom types / counts / points (total 100)",
+    "单项选择题":"Multiple choice","多项选择题":"Multi-select","判断题":"True / False","填空题":"Fill blanks",
+    "名词解释":"Definitions","简答题":"Short answer","计算题":"Calculations","推断题":"Inference","综合题":"Comprehensive",
+    "证明题":"Proof","翻译题":"Translation","写作题":"Writing","阅读理解":"Reading","完形填空":"Cloze",
+    "编程题":"Programming","案例分析题":"Case analysis","论述题":"Essay",
+    "模拟练习":"Mock","原题改数":"Numbers changed","原题变式":"Variants","预测仿真":"Prediction",
+    "在阅读器里选中一段话，问 AI，然后把回答存下来。":"Ask AI in the reader and save answers here.",
+    "还没有课程":"No courses yet","还没有课程，先新建一门":"No courses yet. Create one.",
+    "先新建一门课，上传资料，5 分钟后就能开始。":"Create your first course and upload materials to start.",
+    "进行中的课":"In progress","新建课程":"New course",
+    "今天没有到期错题，休息一下。":"No mistakes due today. Take a break.",
+    "还没有资料":"No materials yet","复习计划":"Review plan","资料统计":"Materials","今天该复习":"Due today","最近考试":"Upcoming exams",
+    "去复习":"Review","管理资料 →":"Manage →","共 ":"Total "," 门课":" courses","还没有资料":"No materials yet",
+    "Final Exam Studio · 期末冲刺工作台":"Final Exam Studio","欢迎来到":"Welcome to","开发者 Lan":"Developer Lan",
+    "先花两分钟，":"Take two minutes","把工作台调成你的样子。":"Make this workspace yours.",
+    "开始设置":"Get started","从资料，到分数。":"From materials to marks.",
+    "上传资料，填写你的个人情况":"Upload materials and fill in your profile",
+    "PDF、PPTX、Word、扫描件、教材照片、音频都可以。":"PDF, PPTX, Word, scans, textbook photos, audio.",
+    "生成讲义与题目，随时编辑、保留、导出、打印":"Generate guides and papers; edit, keep, export, print",
+    "按你的资料写，标注来源页，图片只引用原图。":"Written from your materials, with source pages and original figures.",
+    "可练习，可随时提问 AI":"Practice and ask AI anytime",
+    "选中正文提问，存笔记、收错题，选择题自动判分。":"Ask about any passage, save notes, collect mistakes, auto-grade.",
+    "继续":"Continue","返回":"Back","怎么称呼你？":"What should we call you?",
+    "只用来在首页打招呼和预填课程专业，保存在本机，之后可以随时修改。":"Used for the homepage greeting and course major. Stored locally.",
+    "名字 / ID":"Name / ID","专业":"Major","完成，进入工作台":"Finish and enter",
+    "一本":"Tier 1","二本":"Tier 2","PH:搜索课程…":"Search courses…",
+    "题 ×":"questions ×","分":"pts","+ 加题型":"+ Add type","按科目推荐":"Suggest by subject",
+    "准备好就开始":"Ready when you are","个人资料":"Profile","首页与侧栏显示":"Shown on home and sidebar",
+    "建议 200KB 以内的正方形图片":"Square image under 200KB recommended",
+    "保存资料":"Save profile",
+    "删除全部课程、资料、生成物、笔记、错题，并回到欢迎页。API Key 会保留。":"Delete all courses, files, outputs, notes and mistakes, then return to welcome. API keys are kept.",
+    "PH:已配置，留空表示不修改":"Configured; leave blank to keep",
+    "阅读时选中题目，点「加入错题」；之后按 1/2/4/7 天提醒复习。":"Select a question and choose Add to mistakes; review on a 1/2/4/7-day schedule.",
+    "← 返回":"← Back","去课程里上传第一份资料。":"Upload your first file from a course.",
+    "PH:例如：老师强调第 3 章 / 多给计算题 / 我基础差，讲慢一点 / 不要英文缩写":"e.g. focus on chapter 3 / more calculations / explain slowly",
+    "搜索课程…":"Search courses…",
+    "中文":"Chinese","繁體中文":"Traditional Chinese",
+    "参考历年真题":"Reference past papers",
+    "例如：老师强调第 3 章 / 多给计算题 / 我基础差，讲慢一点 / 不要英文缩写":"e.g. focus on chapter 3 / more calculations / explain slowly",
+    "已配置，留空表示不修改":"Configured; leave blank to keep",
+    "资料类型判断":"Material type","生成模式":"Study mode","期末冲刺":"Exam sprint","课堂理解":"Lecture mode",
+    "更像课堂讲义":"Looks like lecture notes","更像考试资料":"Looks like exam material","不确定":"Uncertain",
+    "考试相关词":"exam keywords","课堂/活动词":"lecture keywords","习题词":"exercise keywords","个":"",
+    "自设难度（这门课）":"Self difficulty","你的基础（这门课）":"Your foundation",
+    "1 · 很容易":"1 · Very easy","2 · 比较简单":"2 · Easy","3 · 常规期末":"3 · Standard",
+    "4 · 比较难":"4 · Hard","5 · 很难":"5 · Very hard",
+    "1 · 基础很好":"1 · Strong","2 · 基础还行":"2 · Okay","3 · 基础一般":"3 · Average",
+    "4 · 基础较弱":"4 · Weak","5 · 基础很弱":"5 · Very weak",
+    "打开课程":"Open course","课程详情":"Course","资料":"Materials","生成物":"Generated",
+    "上传资料":"Upload material","再生成":"Generate again","剩余天数":"Days left",
+    "目标分":"Target","自设难度":"Self difficulty","自身基础":"Foundation","讲解人设":"Persona",
+    "可用":"Available","缺失":"Missing","权重":"Weight","去生成":"Generate",
+    "还没有资料":"No materials yet","还没有生成物":"Nothing generated yet",
+    "旧生成物，未记录语言/人设参数":"Legacy output, no language/persona metadata",
+    "选择一份打开":"Choose one to open","进行中":"In progress","临近考试":"Exam soon",
     "下午好":"Good afternoon","上午好":"Good morning","晚上好":"Good evening"
   };
   var RULES = [
@@ -105,6 +173,8 @@
     [/^目标 (\d+) 分$/, "Target $1"],
     [/^剩余 (\d+) 天$/, "$1 days left"],
     [/^共 (\d+) 条笔记$/, "$1 notes"],
+    [/^旧生成物，未记录语言\/人设参数 · 资料 (\d+) 份 · (\d+) KB$/, "Legacy output · $1 files · $2 KB"],
+    [/^资料 (\d+) 份 · (\d+) KB$/, "$1 files · $2 KB"],
     [/^共 (\d+) 题.*$/, "$1 questions"],
     [/^(\d+) 题已加入错题本$/, "$1 added to mistakes"],
     [/^(\d+) 天后考试 · /, "Exam in $1 days · "],
@@ -115,6 +185,15 @@
     [/^共 (\d+) 题 · 今天该复习 (\d+) 题$/, "$1 questions · $2 due today"],
     [/^共 (\d+) 门课[·，,]\s*最近考试在 (\d+) 天后$/, "$1 courses · next exam in $2 days"],
     [/^已配置 · 尾号 (\w+)$/, "Configured · ends $1"],
+    [/^(\d+) 份$/, "$1 files"],
+    [/^(\d+) 个 · ([\d.]+[A-Za-z]+)$/, "$1 items · $2"],
+    [/^(\d+) 页 \/ 册$/, "$1 pages / vol"],
+    [/^共 (\d+) 道到期错题 · (\d+) 门课$/, "$1 due · $2 courses"],
+    [/^共 (\d+) 份资料 · (\d+) MB · (\d+) 门课$/, "$1 files · $2 MB · $3 courses"],
+    [/^(\d+) 题$/, "$1 questions"],
+    [/^合计 (\d+) 分$/, "Total $1 pts"],
+    [/^共 (\d+) files · (\d+) MB · (\d+) 门课$/, "$1 files · $2 MB · $3 courses"],
+    [/^共 (\d+) files · (\d+) MB$/, "$1 files · $2 MB"],
     [/^距 (.+?) 考试 · (\d+) 天$/, "$1 exam in $2 days"],
     [/^还有 (\d+) 天，目标 (\d+) 分$/, "$1 days left · Target $2"],
     [/^还有 (\d+) 天，Target (\d+)$/, "$1 days left · Target $2"],
@@ -156,34 +235,63 @@
         if (out !== null) n.nodeValue = out;
       });
       (root.querySelectorAll ? root : document).querySelectorAll('[placeholder]').forEach(function (el) {
-        var out = translateString(el.getAttribute('placeholder'));
+        var ph = el.getAttribute('placeholder') || '';
+        var out = translateString(ph);
+        if (out === null && ph.indexOf('已配置') === 0) out = 'Configured; leave blank to keep';
         if (out !== null) el.setAttribute('placeholder', out);
       });
     } finally { translating = false; }
   }
 
+  var HANT = null;
+  var HANT_PHRASES = [["软件","軟體"],["网络","網路"],["信息","資訊"],["视频","影片"],["打印","列印"],
+    ["设置","設定"],["默认","預設"],["支持","支援"],["保存","儲存"],["质量","品質"],["数据","資料"],
+    ["用户","使用者"],["文件","檔案"],["项目","專案"],["课程","課程"],["复习","複習"]];
+  function hantStr(s) {
+    if (!HANT || !s) return s;
+    HANT_PHRASES.forEach(function (p) { s = s.split(p[0]).join(p[1]); });
+    return s.split('').map(function (c) { return HANT[c] || c; }).join('');
+  }
+  function applyHant(root) {
+    if (!HANT) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var tag = n.parentNode && n.parentNode.nodeName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE') return;
+      var _h = hantStr(n.nodeValue); if (_h !== n.nodeValue) n.nodeValue = _h;
+    });
+    (root.querySelectorAll ? root : document).querySelectorAll('[placeholder]').forEach(function (el) {
+      el.setAttribute('placeholder', hantStr(el.getAttribute('placeholder')));
+    });
+  }
   function apply() {
-    if (lang !== 'en') return;
-    document.documentElement.lang = 'en';
-    walk(document.body);
+    if (lang === 'en') {
+      document.documentElement.lang = 'en';
+      walk(document.body);
+    } else if (lang === 'zh-Hant') {
+      document.documentElement.lang = 'zh-Hant';
+      if (HANT) applyHant(document.body);
+      else fetch('assets/hant.json?v=1').then(function (r) { return r.json(); }).then(function (m) {
+        HANT = m; applyHant(document.body);
+      }).catch(function () {});
+    }
   }
 
-  function toggleButton() {
-    var btn = document.createElement('button');
-    btn.className = 'btn ghost sm';
-    var bar = document.querySelector('.topbar');
-    if (bar) {
-      btn.style.cssText = 'font-size:12px;padding:6px 10px;margin-left:8px';
-    } else {
-      btn.style.cssText = 'position:fixed;right:18px;top:14px;z-index:9999;font-size:11px;padding:6px 10px';
-    }
-    btn.textContent = lang === 'en' ? '中文' : 'EN';
-    btn.title = 'Switch UI language';
-    btn.addEventListener('click', function () {
-      localStorage.setItem('tf-lang', lang === 'en' ? 'zh' : 'en');
+  function langSelect() {
+    var sel = document.createElement('select');
+    sel.className = 'lang-select';
+    var labels = lang === 'en' ? ['Simplified Chinese','Traditional Chinese','English']
+      : (lang === 'zh-Hant' ? ['簡體中文','繁體中文','English'] : ['简体中文','繁體中文','English']);
+    sel.innerHTML = '<option value="zh">'+labels[0]+'</option><option value="zh-Hant">'+labels[1]+'</option><option value="en">'+labels[2]+'</option>';
+    sel.value = lang;
+    sel.addEventListener('change', function () {
+      localStorage.setItem('tf-lang', sel.value);
       location.reload();
     });
-    if (bar) bar.appendChild(btn); else document.body.appendChild(btn);
+    var bar = document.querySelector('.topbar');
+    if (bar) bar.appendChild(sel); else document.body.appendChild(sel);
   }
 
   function message(text) {
@@ -202,7 +310,9 @@
       [/^正在生成…$/, "Generating…"],
       [/^完成（自检有问题）$/, "Done (with warnings)"],
       [/^模型生成中…（已用 (\d+) 秒）$/, "Model is writing… ($1s)"],
-      [/^完成$/, "Done"]
+      [/^共 (\d+) 道到期错题 · (\d+) 门课$/, "$1 due · $2 courses"],
+    [/^共 (\d+) 份资料 · (\d+) MB · (\d+) 门课$/, "$1 files · $2 MB · $3 courses"],
+    [/^完成$/, "Done"]
     ];
     for (var i = 0; i < rules.length; i++) {
       if (rules[i][0].test(text)) return text.replace(rules[i][0], rules[i][1]);
@@ -212,10 +322,15 @@
 
   window.TF_LANG = { get: function () { return lang; }, apply: apply, msg: message };
   document.addEventListener('DOMContentLoaded', function () {
-    apply(); toggleButton();
-    if (lang === 'en') {
+    apply(); langSelect();
+    if (lang === 'en' || lang === 'zh-Hant') {
       new MutationObserver(function (muts) {
         muts.forEach(function (m) {
+          if (lang === 'zh-Hant') {
+            if (m.type === 'characterData') { var _h2 = hantStr(m.target.nodeValue); if (_h2 !== m.target.nodeValue) m.target.nodeValue = _h2; }
+            m.addedNodes.forEach(function (n) { if (n.nodeType === 1) applyHant(n); });
+            return;
+          }
           if (m.type === 'characterData') {
             var out = translateString(m.target.nodeValue);
             if (out !== null) m.target.nodeValue = out;

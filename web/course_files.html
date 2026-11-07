@@ -1,0 +1,52 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程文件 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=20"></head>
+<body>
+<div class="app">
+  <aside class="rail"><div class="brand"><div class="brand-mark">TF</div><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
+    <nav class="nav" id="nav"></nav></aside>
+  <main class="main">
+    <div class="topbar"><div class="crumb" id="crumb">课程文件</div><div class="spacer"></div></div>
+    <div class="page-head"><div><h1 class="page-title" id="title">课程文件</h1><div class="page-sub" id="sub">加载中…</div></div></div>
+    <section id="list" class="course-grid"></section>
+  </main>
+</div>
+<script src="assets/app.js?v=20"></script>
+<script>
+(function(){
+  var cid=new URLSearchParams(location.search).get('course');
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  if(!cid){document.getElementById('sub').textContent='缺少课程编号';return;}
+  fetch('/api/courses/'+cid+'/files').then(function(r){return r.json();}).then(function(d){
+    document.getElementById('title').textContent=d.course.name;
+    document.getElementById('sub').textContent='共 '+d.files.length+' 份生成物，选择一份打开';
+    document.getElementById('crumb').textContent=d.course.name+' · 文件';
+    if(!d.files.length){document.getElementById('list').innerHTML='<div class="card">还没有生成物</div>';return;}
+    var labels={guide:'讲义',extract:'资料提取',exam:'训练试卷',analysis:'逻辑分析'};
+    document.getElementById('list').innerHTML=d.files.map(function(f){
+      var name=f.filename.replace(/\.html$/i,'');
+      var base=d.course.name+'_';
+      if(name.indexOf(base)===0) name=name.slice(base.length);
+      name=name.replace(/_/g,' · ').replace(/ · (\d{2})(\d{2}) · (\d{2})(\d{2})$/, ' · $1-$2 $3:$4');
+      var _lab=labels[f.type]||f.type;
+      if(name.indexOf(_lab)===0) name=name.slice(_lab.length).replace(/^ · /,'');
+      var m=f.meta||{};
+      var bits=[];
+      if(m.lang && m.lang!=='中文') bits.push(m.lang);
+      if(m.persona) bits.push(m.persona);
+      if(m.mode) bits.push(m.mode==='key'?'精简':'全量');
+      if(m.extract_type) bits.push({points:'考点',nouns:'名词',questions:'原题'}[m.extract_type]||m.extract_type);
+      if(m.with_answer===false) bits.push('不含答案');
+      if(m.train_type) bits.push({original:'原题改数',variant:'原题变式',predict:'预测仿真',mock:'模拟练习'}[m.train_type]||m.train_type);
+      if(m.difficulty) bits.push('难度'+m.difficulty);
+      var meta=(bits.length?bits.join(' · ')+' · ':'旧生成物，未记录语言/人设参数 · ')+'资料 '+(f.materials_used||1)+' 份 · '+(f.size_kb||0)+' KB';
+      return '<article class="card course"><div class="course-top"><span class="chip">'+(labels[f.type]||f.type)+'</span>'+
+        '<span class="tiny muted">'+(f.exists?'可用':'文件缺失')+'</span></div>'+
+        '<h3 style="font-size:15px;margin:10px 0 6px;line-height:1.5">'+esc(name)+'</h3>'+
+        '<div class="tiny muted" style="margin-bottom:12px">'+meta+'</div>'+
+        '<div class="course-foot"><span class="tiny muted">'+new Date(f.created_at*1000).toLocaleString()+'</span>'+
+        (f.exists?'<a class="btn sm" href="reader.html?course='+cid+'&file='+f.id+'">打开</a>':'')+'</div></article>';
+    }).join('');
+  }).catch(function(){document.getElementById('sub').textContent='加载失败';});
+})();
+</script>
+</body></html>

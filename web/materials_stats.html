@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light" data-accent="graphite"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>资料统计 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=18"></head><body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><span class="logo">TF</span><div><b>TermFinale</b><div class="tiny muted">期末冲刺工作台</div></div></div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html">今日冲刺</a>
+      <a class="nav-item" href="courses.html">我的课程</a>
+      <a class="nav-item" href="practice.html">练习与错题</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item active" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
+      <a class="nav-item" href="notes.html">笔记</a>
+      <a class="nav-item" href="settings.html">设置</a>
+    </nav>
+    <div class="rail-foot"><div class="user"><div class="avatar">L</div><div><b>林同学</b><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><a class="btn ghost sm" href="dashboard.html">← 返回</a><div class="spacer"></div></header>
+    <div class="page">
+      <div class="page-head"><div><h1 class="page-title">资料统计</h1><div class="page-sub" id="sub">按课程汇总</div></div></div>
+      <div id="content"><div class="tiny muted">加载中…</div></div>
+    </div>
+  </main>
+</div>
+<script src="assets/app.js?v=18"></script>
+<script src="assets/i18n.js?v=1"></script><script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  fetch('/api/materials/all').then(function(r){return r.json();}).then(function(list){
+    list=list||[]; var groups={}; list.forEach(function(m){ (groups[m.course_id]=groups[m.course_id]||{name:m.course,items:[]}).items.push(m); });
+    var totalSize=list.reduce(function(a,m){return a+(m.size_kb||0)},0);
+    $('sub').textContent='共 '+list.length+' 份资料 · '+Math.round(totalSize/1024)+' MB · '+Object.keys(groups).length+' 门课';
+    if(!list.length){ $('content').innerHTML='<div class="card" style="padding:34px;text-align:center"><div class="serif" style="font-size:22px">还没有资料</div><p class="muted">去课程里上传第一份资料。</p><a class="btn primary" href="courses.html">我的课程</a></div>'; return; }
+    var out='';
+    Object.keys(groups).forEach(function(cid){
+      var g=groups[cid];
+      out+='<div class="section-head"><h2>'+g.name+'</h2><div class="line"></div><a class="tiny muted" href="upload.html?course='+cid+'">管理资料 →</a></div>';
+      out+='<div class="card" style="padding:6px 16px;margin-bottom:18px">';
+      g.items.forEach(function(m){
+        out+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">'
+          +'<span class="chip">'+(m.role==='core'?'重点':'辅助')+'</span>'
+          +'<span style="flex:1;font-size:13px">'+m.filename+'</span>'
+          +'<span class="tiny muted">'+(m.size_kb||0)+' KB · 权重 '+m.weight+'</span></div>';
+      });
+      out+='</div>';
+    });
+    $('content').innerHTML=out;
+  }).catch(function(){ $('sub').textContent='加载失败'; });
+})();
+</script></body></html>

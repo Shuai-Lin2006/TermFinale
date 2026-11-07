@@ -41,6 +41,30 @@ class Blueprint:
         return "\n".join(lines) + f"\n- 合计：{self.total:g} 分"
 
 
+def blueprint_from_sections(sections, lang: str = "中文") -> Blueprint | None:
+    """把 UI 自定义的题型结构变成校验用蓝图（生成与校验共用同一份，避免两套题数）。"""
+    cleaned: list[Section] = []
+    for item in sections or []:
+        if isinstance(item, dict):
+            name = str(item.get("name") or item.get("type") or "").strip()
+            count = item.get("count")
+            points = item.get("points")
+        else:
+            try:
+                name, count, points = item
+            except (TypeError, ValueError):
+                continue
+            name = str(name or "").strip()
+        try:
+            count = max(1, min(100, int(count)))
+            points = max(1.0, min(100.0, float(points)))
+        except (TypeError, ValueError):
+            continue
+        if name:
+            cleaned.append(Section(name, count, points))
+    return Blueprint(cleaned, lang) if cleaned else None
+
+
 def build_blueprint(difficulty: int = 3, target_score: int = 80, lang: str = "中文") -> Blueprint:
     """按目标分微调结构：目标越高，计算/综合占比越大。"""
     if target_score >= 90:
@@ -79,7 +103,7 @@ class PaperReport:
 # --------------------------------------------------------------------------- #
 def _split_sections(markdown: str) -> dict[str, str]:
     """按大题标题切段（只看答案之前的部分）。"""
-    body = markdown.split("# 答案与解析")[0]
+    body = re.split(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown)[0]
     parts = re.split(r"^#{1,3}\s*(.+)$", body, flags=re.MULTILINE)
     sections: dict[str, str] = {}
     for i in range(1, len(parts), 2):
@@ -102,7 +126,7 @@ def _stem_of(block: str) -> str:
 
 
 def _stems(markdown: str) -> list[str]:
-    body = markdown.split("# 答案与解析")[0]
+    body = re.split(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown)[0]
     stems = []
     for block in QUESTION_RE.split(body):
         block = block.strip()
@@ -134,14 +158,20 @@ def _check_syntax(markdown: str) -> list[str]:
 # --------------------------------------------------------------------------- #
 # 验卷
 # --------------------------------------------------------------------------- #
-def validate_paper(markdown: str, blueprint: Blueprint | None = None) -> PaperReport:
+def validate_paper(markdown: str, blueprint: Blueprint | None = None,
+                   strict_counts: bool = False) -> PaperReport:
+    """验卷。
+
+    strict_counts=True 时，题数与蓝图不一致按 error 处理（用户明确设定了结构，
+    不能只是"提示一下"就交付）。默认仍按 warn，保持旧调用行为。
+    """
     report = PaperReport()
     markdown = markdown or ""
 
     for issue in _check_syntax(markdown):
         report.add("error", issue)
 
-    if "# 答案与解析" not in markdown:
+    if not re.search(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown):
         report.add("error", "缺少「答案与解析」分区")
 
     sections = _split_sections(markdown)
@@ -161,7 +191,8 @@ def validate_paper(markdown: str, blueprint: Blueprint | None = None) -> PaperRe
             if count == 0:
                 report.add("error", f"{sec.name} 未识别到题号")
             elif count != sec.count:
-                report.add("warn", f"{sec.name} 题数 {count} ≠ 计划 {sec.count}")
+                report.add("error" if strict_counts else "warn",
+                           f"{sec.name} 题数 {count} ≠ 计划 {sec.count}")
         if abs(found_total - blueprint.total) > 0.5:
             report.add("error", f"实际分值合计 {found_total:g} ≠ 计划 {blueprint.total:g}")
     else:

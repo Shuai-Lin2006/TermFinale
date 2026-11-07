@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, event, Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import create_engine, event, Column, Integer, String, Float, Boolean, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from loguru import logger
 
@@ -36,8 +36,11 @@ class Course(Base):
     school_level = Column(String(50), nullable=False)
     credits = Column(Float, nullable=False)
     days_left = Column(Integer, nullable=False)
+    exam_date = Column(String(20), default="")
     target_score = Column(Integer, nullable=False)
     user_difficulty = Column(Integer, nullable=False)
+    self_difficulty = Column(Integer, default=3)
+    foundation = Column(Integer, default=3)
     is_major = Column(Boolean, nullable=False)
     persona = Column(String(50), default="温柔小姐姐")
 
@@ -93,6 +96,7 @@ class GeneratedFile(Base):
     file_path = Column(String(500), nullable=False)
     created_at = Column(String(50))
     file_type = Column(String(50), default="guide")
+    materials_used = Column(Integer, default=0)
 
     course = relationship("Course", back_populates="generated_files")
 
@@ -102,6 +106,8 @@ class Profile(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), default="")
     identity = Column(String(50), default="学生")
+    major = Column(String(100), default="")
+    avatar = Column(Text, default="")
     onboarded = Column(Boolean, default=False)
     created_at = Column(String(50))
 
@@ -118,6 +124,22 @@ def init_db():
         try:
             with engine.connect() as conn:
                 cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(materials)")]
+                prof_cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(profile)")]
+                if "avatar" not in prof_cols:
+                    conn.exec_driver_sql("ALTER TABLE profile ADD COLUMN avatar TEXT DEFAULT ''")
+                if "major" not in prof_cols:
+                    conn.exec_driver_sql("ALTER TABLE profile ADD COLUMN major VARCHAR(100) DEFAULT ''")
+                course_cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(courses)")]
+                gen_cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(generated_files)")]
+                if "materials_used" not in gen_cols:
+                    conn.exec_driver_sql("ALTER TABLE generated_files ADD COLUMN materials_used INTEGER DEFAULT 0")
+                if "self_difficulty" not in course_cols:
+                    conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN self_difficulty INTEGER DEFAULT 3")
+                    conn.exec_driver_sql("UPDATE courses SET self_difficulty = user_difficulty")
+                if "foundation" not in course_cols:
+                    conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN foundation INTEGER DEFAULT 3")
+                if "exam_date" not in course_cols:
+                    conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN exam_date VARCHAR(20) DEFAULT ''")
                 if "weight" not in cols:
                     conn.exec_driver_sql("ALTER TABLE materials ADD COLUMN weight INTEGER DEFAULT 3")
                     conn.commit()

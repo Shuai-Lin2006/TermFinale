@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TermFinale · 今日冲刺</title>
-<link rel="stylesheet" href="assets/app.css?v=13">
+<link rel="stylesheet" href="assets/app.css?v=18">
 <script>
 fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
   if(!p.onboarded){ location.replace('welcome.html'); return; }
@@ -16,6 +16,32 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
     });
   }
 }).catch(function(){});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  fetch('/api/overview').then(function(r){return r.json();}).then(function(d){
+    if(d.courses && d.courses.length) return;
+    document.querySelectorAll('.task-list').forEach(function(el){
+      el.style.display='none';
+      var h=el.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
+    });
+    document.querySelectorAll('.marks').forEach(function(el){
+      var sec=el.closest('section'); if(sec){ sec.style.display='none'; var h=sec.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
+    });
+    var rg=document.getElementById('recentGrid');
+    if(rg){ rg.innerHTML=''; var h=rg.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
+    var cg=document.getElementById('courseGrid'); if(cg) cg.innerHTML='';
+    var week=document.querySelector('.rail-foot > .card'); if(week) week.style.display='none';
+    var streak=document.querySelector('.page-head .chip'); if(streak) streak.style.display='none';
+    var hero=document.querySelector('.hero');
+    if(hero) hero.innerHTML='<div style="width:100%;padding:54px 30px;text-align:center">'
+      +'<div class="serif" style="font-size:30px;margin-bottom:8px">还没有课程</div>'
+      +'<p class="muted" style="margin:0 0 20px">先新建一门课，上传资料，5 分钟后就能开始。</p>'
+      +'<a class="btn primary" href="courses.html?new=1">新建课程</a></div>';
+    document.querySelectorAll('.page .section-head').forEach(function(h){ h.style.display='none'; });
+    var sub=document.getElementById('homeSub'); if(sub) sub.textContent='还没有课程，先新建一门';
+  }).catch(function(){});
+});
 </script>
 </head>
 <body>
@@ -46,7 +72,8 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
       <a class="nav-item active"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
       <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
       <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>上传资料</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
       <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
       <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
     </nav>
@@ -107,16 +134,12 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
             </span>
           </div>
         </div>
-        <div class="hero-side card">
-          <div class="ring">
-            <svg width="112" height="112" viewBox="0 0 112 112">
-              <circle cx="56" cy="56" r="48" fill="none" stroke="var(--paper-2)" stroke-width="10"/>
-              <circle cx="56" cy="56" r="48" fill="none" stroke="var(--brand)" stroke-width="10"
-                      stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="96"/>
-            </svg>
-            <div class="ring-num"><div><b id="ringPct">—</b><span id="ringLabel">材料就绪</span></div></div>
-          </div>
-          <div class="stat-row">
+        <div class="hero-side card" style="padding:22px;display:flex;flex-direction:column;justify-content:center">
+          <div class="eyebrow" style="margin-bottom:8px">下一步建议</div>
+          <h3 id="nextTitle" style="margin:0 0 6px;font-size:18px">—</h3>
+          <p class="muted" id="nextDesc" style="font-size:12.5px;line-height:1.7;margin:0 0 14px">—</p>
+          <a class="btn primary sm" id="nextBtn" href="#" style="align-self:flex-start">继续复习</a>
+          <div class="stat-row" style="margin-top:18px">
             <div class="stat"><b id="statMaterials">—</b><span>资料</span></div>
             <div class="stat"><b id="statGenerated">—</b><span>已生成</span></div>
             <div class="stat"><b id="statCourses">—</b><span>课程</span></div>
@@ -124,7 +147,7 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
         </div>
       </section>
 
-      <div class="section-head"><h2>进行中的课</h2><div class="line"></div><a class="btn ghost sm">全部课程 <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
+      <div class="section-head"><h2>进行中的课</h2><div class="line"></div><a class="btn ghost sm" href="courses.html">全部课程 <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
       <section class="course-grid" id="courseGrid">
         <article class="card hover course">
           <div class="course-top"><span class="chip brand">重点</span><span class="tiny muted">12 天后考试</span></div>
@@ -169,12 +192,7 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
         <div class="task"><span class="dot green"></span><div class="grow"><b>复习 3 个错题</b><p>约 8 分钟 · 遗忘曲线提醒</p></div><button class="btn sm" data-toast="错题本即将上线">复习</button></div>
       </section>
 
-      <div class="section-head"><h2>最近生成</h2><div class="line"></div></div>
-      <section class="course-grid" id="recentGrid">
-        <article class="card hover course"><h3>大学物理 · 精简讲义</h3><div class="meta">8 章 · 36 张图 · 今天 16:40</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
-        <article class="card hover course"><h3>物理化学 · 练习卷</h3><div class="meta">55 题 · 无答案 · 昨天</div><div class="course-foot"><span class="chip">已打印</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
-        <article class="card hover course"><h3>数据结构 · 逻辑分析</h3><div class="meta">知识图谱 · 因果链 · 昨天</div><div class="course-foot"><span class="chip ok">已完成</span><a class="btn ghost sm" href="reader.html">打开</a></div></article>
-      </section>
+      
     </div>
   </main>
 </div>
@@ -187,7 +205,7 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
 </nav>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=18"></script>
 
 <script>
 (function(){
@@ -201,7 +219,7 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
       + '<div class="course-foot"><span>' + (c.materials ? '资料就绪' : '待上传') + '</span>'
       + '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course=' + c.id + '">资料</a>'
       + '<a class="btn ghost sm" href="generate.html?course=' + c.id + '">生成</a>'
-      + '<a class="btn sm" href="reader.html?course=' + c.id + '">打开</a></span></div></article>';
+      + '<a class="btn sm" href="course_detail.html?course=' + c.id + '">打开课程</a></span></div></article>';
   }
   fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
     if(p.name){
@@ -210,7 +228,32 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
       document.querySelectorAll('.rail-foot b, aside b').forEach(function(el){ if(el.textContent==='林同学') el.textContent=p.name; });
     }
   }).catch(function(){});
+  function scrubDemo(){
+    document.querySelectorAll('.task-list').forEach(function(el){
+      el.style.display='none';
+      var h=el.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
+    });
+    document.querySelectorAll('.marks').forEach(function(el){
+      var sec=el.closest('section'); if(sec) sec.style.display='none';
+      var h=sec && sec.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
+    });
+    var week=document.querySelector('.rail-foot > .card'); if(week) week.style.display='none';
+    var streak=document.querySelector('.page-head .chip'); if(streak) streak.style.display='none';
+    var rg=document.getElementById('recentGrid');
+    if(rg){ rg.innerHTML=''; var h=rg.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
+  }
+  function emptyHome(){
+    var hero=document.querySelector('.hero');
+    hero.innerHTML='<div style="width:100%;padding:54px 30px;text-align:center">'
+      +'<div class="serif" style="font-size:30px;margin-bottom:8px">还没有课程</div>'
+      +'<p class="muted" style="margin:0 0 20px">先新建一门课，上传资料，5 分钟后就能开始。</p>'
+      +'<a class="btn primary" href="courses.html?new=1">新建课程</a></div>';
+    document.getElementById('homeSub').textContent='还没有课程，先新建一门';
+    document.getElementById('courseGrid').innerHTML='';
+  }
   fetch('/api/overview').then(function(r){ return r.json(); }).then(function(d){
+    scrubDemo();
+    if(!d.courses.length){ emptyHome(); applyFilter(); return; }
     var focus = d.stats.focus || d.courses[0];
     if(focus){
       document.getElementById('heroKicker').textContent = '距 ' + focus.name + ' 考试 · ' + focus.days_left + ' 天';
@@ -218,24 +261,28 @@ fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
       document.getElementById('heroDesc').textContent = '已有 ' + focus.materials + ' 份资料、' + focus.generated + ' 份生成材料。先把重点章节过一遍，再做题。';
       document.getElementById('heroRead').href = 'reader.html?course=' + focus.id;
       document.getElementById('homeSub').textContent = '共 ' + d.stats.courses + ' 门课 · 最近考试在 ' + (d.stats.nearest === null ? '—' : d.stats.nearest + ' 天后');
-      document.getElementById('ringPct').textContent = Math.min(99, 10 + focus.generated * 18) + '%';
-      document.getElementById('ringLabel').textContent = '材料就绪';
+      var nextT=document.getElementById('nextTitle'), nextD=document.getElementById('nextDesc'), nextB=document.getElementById('nextBtn');
+      if(nextT){
+        if(!focus.generated){ nextT.textContent='先生成第一份讲义'; nextD.textContent=focus.name+' 已有 '+focus.materials+' 份资料，还没有生成物。'; nextB.textContent='去生成'; nextB.href='generate.html?course='+focus.id; }
+        else { nextT.textContent='继续复习 ' + focus.name; nextD.textContent='距离考试还有 '+focus.days_left+' 天，已生成 '+focus.generated+' 份材料。'; nextB.textContent='继续阅读'; nextB.href='reader.html?course='+focus.id; }
+      }
       document.getElementById('statMaterials').textContent = d.stats.materials;
       document.getElementById('statGenerated').textContent = d.courses.reduce(function(a,c){ return a + c.generated; }, 0);
       document.getElementById('statCourses').textContent = d.stats.courses;
     }
     if(d.courses.length) document.getElementById('courseGrid').innerHTML = d.courses.slice(0,6).map(courseCard).join('');
     var labels = {guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'};
+    document.getElementById('recentGrid').innerHTML = '';
     if(d.recent.length){
       document.getElementById('recentGrid').innerHTML = d.recent.map(function(r){
         return '<article class="card hover course"><h3>' + esc(r.course) + ' · ' + (labels[r.type] || '材料') + '</h3>'
           + '<div class="meta">' + esc(r.filename) + '</div><div class="course-foot">'
           + '<span class="chip">' + (r.has_md ? '可阅读' : '需重生成') + '</span>'
-          + '<a class="btn ghost sm" href="reader.html?course=' + r.course_id + '">打开</a></div></article>';
+          + '<a class="btn ghost sm" href="reader.html?course=' + r.course_id + '&file=' + r.file_id + '">阅读</a></div></article>';
       }).join('');
     }
     applyFilter();
-  }).catch(function(){});
+  }).catch(function(e){ console.error('overview failed', e); });
   function applyFilter(){
     var q = (document.getElementById('globalSearch').value || '').trim().toLowerCase();
     ['courseGrid','recentGrid'].forEach(function(id){

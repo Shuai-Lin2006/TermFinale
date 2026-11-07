@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>我的课程 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=13">
+<link rel="stylesheet" href="assets/app.css?v=18">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -33,7 +33,8 @@
       <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
       <a class="nav-item active"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
       <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>上传资料</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
       <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
       <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
     </nav>
@@ -84,19 +85,22 @@
     <div class="field"><label>课程名</label><input id="fName" placeholder="例如：物理化学"></div>
     <div class="field-row">
       <div class="field"><label>学校层次</label>
-        <select id="fSchool"><option>普通一本</option><option>211</option><option>985</option><option>二本</option><option>专科</option></select></div>
+        <select id="fSchool"><option>985</option><option>211</option><option selected>一本</option><option>二本</option><option>专科</option></select></div>
       <div class="field"><label>专业</label><input id="fMajor" placeholder="环境工程"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>学分</label><input id="fCredits" type="number" step="0.5" value="3"></div>
+      <div class="field"><label>学分</label><input id="fCredits" type="number" min="0.5" max="8" step="0.5" value="3"></div>
       <div class="field"><label>剩余天数</label><input id="fDays" type="number" value="7"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>目标分数</label><input id="fTarget" type="number" value="80"></div>
-      <div class="field"><label>基础难度</label>
-        <select id="fDiff"><option value="1">1 · 很好</option><option value="2">2 · 还行</option>
-          <option value="3" selected>3 · 一般</option><option value="4">4 · 较弱</option><option value="5">5 · 很弱</option></select></div>
+      <div class="field"><label>自设难度（这门课）</label>
+        <select id="fSelfDiff"><option value="1">1 · 很容易</option><option value="2">2 · 比较简单</option>
+          <option value="3" selected>3 · 常规期末</option><option value="4">4 · 比较难</option><option value="5">5 · 很难</option></select></div>
     </div>
+    <div class="field"><label>你的基础（这门课）</label>
+      <select id="fFoundation"><option value="1">1 · 基础很好</option><option value="2">2 · 基础还行</option>
+        <option value="3" selected>3 · 基础一般</option><option value="4">4 · 基础较弱</option><option value="5">5 · 基础很弱</option></select></div>
     <label class="tiny" style="display:flex;align-items:center;gap:8px">
       <input type="checkbox" id="fMajorFlag" checked style="accent-color:var(--brand)"> 这是专业课
     </label>
@@ -108,7 +112,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=18"></script>
 <script>
 (function(){
   var list = document.getElementById('courseList');
@@ -143,7 +147,7 @@
       '<div class="course-foot"><span>'+(ready?'资料就绪':'资料缺失')+'</span>'+
       '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course='+c.id+'">资料</a>'+
       '<a class="btn ghost sm" href="generate.html?course='+c.id+'">生成</a>'+
-      '<a class="btn sm" href="reader.html?course='+c.id+'">打开</a></span></div>'+
+      '<a class="btn sm" href="course_detail.html?course='+c.id+'">打开课程</a></span></div>'+
       '</article>';
   }
 
@@ -185,14 +189,21 @@
 
   function openModal(c){
     editingId = c ? c.id : null;
+    if(!c){
+      fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
+        var f=document.getElementById('fMajor');
+        if(f && !f.value && p.major) f.value=p.major;
+      }).catch(function(){});
+    }
     document.getElementById('modalTitle').textContent = c ? '编辑课程' : '新建课程';
     document.getElementById('fName').value = c ? c.name : '';
-    document.getElementById('fSchool').value = c ? c.school : '普通一本';
+    document.getElementById('fSchool').value = c ? c.school : '一本';
     document.getElementById('fMajor').value = c ? c.major : '';
     document.getElementById('fCredits').value = c ? c.credits : 3;
     document.getElementById('fDays').value = c ? c.days_left : 7;
     document.getElementById('fTarget').value = c ? c.target_score : 80;
-    document.getElementById('fDiff').value = c ? c.difficulty : 3;
+    document.getElementById('fSelfDiff').value = c ? c.difficulty : 3;
+    document.getElementById('fFoundation').value = c ? (c.foundation || 3) : 3;
     document.getElementById('fMajorFlag').checked = c ? c.is_major : true;
     document.getElementById('courseModal').classList.add('show');
   }
@@ -203,10 +214,11 @@
       name: document.getElementById('fName').value.trim(),
       school_level: document.getElementById('fSchool').value,
       major: document.getElementById('fMajor').value.trim() || '未知',
-      credits: parseFloat(document.getElementById('fCredits').value) || 3,
+      credits: Math.max(0.5, Math.min(8, parseFloat(document.getElementById('fCredits').value) || 3)),
       days_left: parseInt(document.getElementById('fDays').value) || 7,
       target_score: parseInt(document.getElementById('fTarget').value) || 80,
-      user_difficulty: parseInt(document.getElementById('fDiff').value) || 3,
+      self_difficulty: parseInt(document.getElementById('fSelfDiff').value) || 3,
+      foundation: parseInt(document.getElementById('fFoundation').value) || 3,
       is_major: document.getElementById('fMajorFlag').checked
     };
     if(!payload.name){ if(window.__toast) window.__toast('课程名不能为空'); return; }
@@ -221,9 +233,44 @@
   document.getElementById('modalSave').addEventListener('click', save);
   document.getElementById('courseModal').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
   load();
-  if(new URLSearchParams(location.search).get('new') === '1'){ openModal(null); }
+  var _edit = new URLSearchParams(location.search).get('edit');
+  if(_edit){ fetch('/api/courses/'+_edit).then(function(r){return r.json();}).then(function(c){ if(c) openModal(c); }); }
+  else if(new URLSearchParams(location.search).get('new') === '1'){ openModal(null); }
 })();
 </script>
   <script src="assets/i18n.js?v=1"></script>
+
+<div id="filesModal" style="display:none;position:fixed;inset:0;background:rgba(20,20,20,.42);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--paper);border-radius:14px;width:min(560px,90vw);max-height:80vh;overflow:auto;padding:22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">生成物</h3><button class="btn ghost sm" id="closeFiles">关闭</button>
+    </div>
+    <div id="filesList" class="tiny muted">加载中…</div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  var modal=document.getElementById('filesModal'), list=document.getElementById('filesList');
+  var labels={guide:'讲义',extract:'提取',exam:'试卷',analysis:'逻辑分析'};
+  document.addEventListener('click', function(e){
+    var b=e.target.closest('[data-files]'); if(!b) return;
+    modal.style.display='flex'; list.textContent='加载中…';
+    fetch('/api/courses/'+b.dataset.files+'/files').then(function(r){return r.json();}).then(function(d){
+      if(!d.files || !d.files.length){ list.innerHTML='<p>还没有生成物</p>'; return; }
+      list.innerHTML=d.files.map(function(f){
+        return '<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)">'+
+          '<a href="reader.html?course='+d.course.id+'&file='+f.id+'" style="color:var(--ink);text-decoration:none">'+
+          '<b>'+(labels[f.type]||f.type)+'</b> · '+f.filename+'</a>'+
+          '<span class="tiny muted">'+(f.exists?'可打开':'文件缺失')+'</span></div>';
+      }).join('');
+    }).catch(function(){ list.textContent='加载失败'; });
+  });
+  document.getElementById('closeFiles').addEventListener('click',function(){ modal.style.display='none'; });
+  modal.addEventListener('click',function(e){ if(e.target===modal) modal.style.display='none'; });
+})();
+</script>
+
 </body>
 </html>

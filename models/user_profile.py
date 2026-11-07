@@ -20,37 +20,38 @@ DEFAULT_DAILY_HOURS = 4.0
 
 class CourseInfo:
     def __init__(self, name: str, school_level: str, major: str, is_core_major: bool,
-                 credits: float, days_left: int, target_score: int, user_difficulty: int):
+                 credits: float, days_left: int, target_score: int, user_difficulty: int,
+                 self_difficulty: int | None = None, foundation: int | None = None):
         self.name = name
         self.school_level = school_level
         self.major = major
         self.is_core_major = is_core_major
-        self.credits = max(0.5, min(10.0, float(credits)))
+        self.credits = max(0.5, min(8.0, float(credits)))
         self.days_left = max(1, int(days_left))
         self.target_score = max(0, min(100, int(target_score)))
-        self.user_difficulty = max(1, min(5, int(user_difficulty)))
+        self.self_difficulty = max(1, min(5, int(self_difficulty or user_difficulty)))
+        self.foundation = max(1, min(5, int(foundation or user_difficulty)))
+        self.user_difficulty = self.self_difficulty
 
     # ------------------------------------------------------------------ #
     def course_hardness(self) -> float:
         """课程绝对硬度 0~100：学分 + 是否专业课 + 学校层级 + 主观难度。"""
-        credit_base = min(40.0, self.credits * 8.0)
+        credit_base = min(40.0, self.credits * 5.0)
         major_base = 30.0 if self.is_core_major else 10.0
 
-        school_factor = {"985": 1.0, "211": 0.9, "普通一本": 0.8, "普通二本": 0.6, "专科": 0.4}
-        base_school_val = school_factor.get(self.school_level, 0.8) * 15
+        school_factor = {"985": 1.0, "211": 0.9, "一本": 0.8, "二本": 0.6, "专科": 0.4,
+                         "普通一本": 0.8, "普通二本": 0.6}
+        base_school_val = school_factor.get(self.school_level, 0.8) * 20
 
         # 难度非线性放大：3 星为基准，4 星 1.5 倍，5 星 2 倍
-        if self.user_difficulty >= 3:
-            diff_multiplier = 1.0 + (self.user_difficulty - 3) * 0.5
-        else:
-            diff_multiplier = 1.0 - (3 - self.user_difficulty) * 0.2
-        diff_val = min(15.0, 15 * diff_multiplier)
+        # 难度贡献：1→5，3→10，5→15，保证单调且不封顶重复
+        diff_val = 5.0 + (self.self_difficulty - 1) * 2.5
 
         return min(100.0, credit_base + major_base + base_school_val + diff_val)
 
     def required_hours(self) -> float:
         """达到目标分大概需要多少小时。"""
-        base = self.credits * 12 * (self.user_difficulty / 3.0)
+        base = self.credits * 10 * (1.0 + (self.foundation - 3) * 0.25)
         score_multiplier = 1.0 + (self.target_score - 60) / 100.0  # 60→1.0，100→1.4
         return max(1.0, base * score_multiplier)
 
@@ -69,8 +70,11 @@ class CourseInfo:
         time_ratio = available / required
         predicted = max(30.0, min(100.0, 40.0 + 60.0 * min(1.0, time_ratio)))
         gap = max(0.0, self.target_score - predicted) / 60.0
+        # 目标分始终参与，不因“时间充足”被完全吞掉
+        target_pressure = max(0.0, min(1.0, (self.target_score - 60) / 40.0))
 
-        weight = 100.0 * (0.45 * stress + 0.35 * hardness_norm + 0.20 * min(1.0, gap))
+        weight = 100.0 * (0.38 * stress + 0.30 * hardness_norm +
+                          0.17 * min(1.0, gap) + 0.15 * target_pressure)
         weight = max(0.0, min(100.0, weight))
 
         if time_ratio < 0.5:

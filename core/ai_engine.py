@@ -50,10 +50,12 @@ def build_learner_radar(course: CourseInfo) -> str:
 
 def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老师",
                          user_choice: str = "option_1_保命流", weight_prompt: str = "", lang: str = "中文",
-                         chapter: dict | None = None, user_note: str = "") -> str:
+                         chapter: dict | None = None, user_note: str = "",
+                         constraint_block: str = "", retry_note: str = "") -> str:
     """生成一章讲义。
 
     chapter: {title, index, total, must_know, neighbors, target_words}
+    constraint_block/retry_note: 任务级约束与上一次校验失败的修正说明。
     """
     persona_prompt = PERSONAS.get(persona, PERSONAS["温柔小姐姐"])
     learner_radar = build_learner_radar(course)
@@ -91,8 +93,11 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【篇幅要求】约 {target_words} 字（中文字符计），明显不足或大幅超出都算不合格。
     【紧迫度】{chapter.get('urgency', '未评估')}
     【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
+    【课堂理解模式】{('这是课堂讲义，不是考试重点。不要强行输出考点、例题、分值、易错点；按理解讲清楚，例子只用于说明。' if chapter.get('study_mode') == 'lecture' else '')}
+    【院校层级】{chapter.get('school', '普通本科')} 期末常规难度；结合用户基础与目标分调整深浅，不出偏题、怪题、超纲题，也不要低到送分。
+    【内容难度】课程自设难度 {chapter.get('self_difficulty', 3)}/5，学生基础 {chapter.get('foundation', 3)}/5。难度 1~2 多铺垫、多例子；3 按常规期末；4~5 加强推导与综合，但必须限制在资料范围内，禁止偏题怪题和超纲内容。
     """
-    must_cover = chapter.get("must_cover") or []
+    must_cover = (chapter or {}).get("must_cover") or []
     if must_cover:
         chapter_block += ("\n【必须引用页码】本章资料页码：" + "、".join(f"P.{n}" for n in must_cover) +
                           "。每个知识点末尾必须标注来源页（如（P.12）），且只能使用这些页码；"
@@ -142,6 +147,8 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     {("【用户补充要求】" + user_note.strip() + "（与资料冲突时以资料为准，不要因此编造）") if user_note.strip() else ""}
     {mode_prompt}
     {weight_instruction}
+    {(constraint_block or "").strip()}
+    {(retry_note or "").strip()}
     {chapter_block}
 
     🚨【资料边界铁律】🚨

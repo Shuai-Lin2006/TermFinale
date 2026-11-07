@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>设置 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=13">
+<link rel="stylesheet" href="assets/app.css?v=18">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -25,7 +25,8 @@
       <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
       <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
       <a class="nav-item"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>上传资料</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
       <a class="nav-item active"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
     </nav>
     <div class="rail-foot"><div class="user"><div class="avatar">林</div>
@@ -48,6 +49,22 @@
 
       <div class="grid-2" style="grid-template-columns:minmax(0,1fr) 380px">
         <div>
+          <section class="card" style="padding:18px 20px;margin-bottom:14px">
+            <div class="section-head" style="margin:0 0 12px"><h2>个人资料</h2><div class="line"></div>
+              <span class="tiny muted">首页与侧栏显示</span></div>
+            <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px">
+              <div id="avatarPreview" style="width:54px;height:54px;border-radius:50%;background:var(--line);display:grid;place-items:center;overflow:hidden;font-family:var(--serif);font-size:22px">L</div>
+              <div><input type="file" id="avatarFile" accept="image/*" style="font-size:12px">
+                <div class="tiny muted" style="margin-top:4px">建议 200KB 以内的正方形图片</div></div>
+            </div>
+            <div class="set-row"><div class="k">名字 / ID</div><div class="v"><input class="select" id="profileName" style="width:100%"></div></div>
+            <div class="set-row"><div class="k">专业</div><div class="v"><input class="select" id="profileMajor" style="width:100%"></div></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn primary" id="saveProfile">保存资料</button>
+              <span class="tiny muted" id="profileMsg" style="align-self:center"></span>
+            </div>
+          </section>
+
           <section class="card" style="padding:18px 20px;margin-bottom:14px">
             <div class="section-head" style="margin:0 0 12px"><h2>API Key</h2><div class="line"></div>
               <span class="tiny muted">只存本机</span></div>
@@ -109,11 +126,23 @@
         </aside>
       </div>
     </div>
-  </main>
+    <section class="card" style="padding:18px 20px;margin-top:14px">
+    <div class="section-head" style="margin:0 0 10px"><h2>危险操作</h2><div class="line"></div></div>
+    <p class="tiny muted" style="margin:0 0 12px">删除全部课程、资料、生成物、笔记、错题，并回到欢迎页。API Key 会保留。</p>
+    <button class="btn" id="resetAll" style="color:var(--danger);border-color:var(--danger)">清除全部数据</button>
+  </section>
+</main>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=18">  document.getElementById('resetAll').addEventListener('click', function(){
+    if(!confirm('确定删除全部课程、资料、笔记和错题？此操作不可恢复。')) return;
+    if(!confirm('再确认一次：真的要清空所有数据吗？')) return;
+    fetch('/api/reset',{method:'POST'}).then(function(r){ if(!r.ok) throw new Error(); location.href='welcome.html'; })
+      .catch(function(){ alert('清除失败，请重试'); });
+  });
+
+</script>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
@@ -199,5 +228,47 @@
 })();
 </script>
   <script src="assets/i18n.js?v=1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var avatarData = '';
+  fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
+    var n=document.getElementById('profileName'); if(n) n.value=p.name||'';
+    var m=document.getElementById('profileMajor'); if(m) m.value=p.major||'';
+    avatarData=p.avatar||'';
+    var prev=document.getElementById('avatarPreview');
+    if(prev){ if(avatarData) prev.innerHTML='<img src="'+avatarData+'" style="width:100%;height:100%;object-fit:cover">'; else prev.textContent=(p.name||'?').slice(0,1); }
+  }).catch(function(){});
+  var af=document.getElementById('avatarFile');
+  if(af) af.addEventListener('change', function(){
+    var f=this.files[0]; if(!f) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var size=256, c=document.createElement('canvas'); c.width=size; c.height=size;
+        var ctx=c.getContext('2d');
+        var s=Math.min(im.width, im.height);
+        ctx.drawImage(im, (im.width-s)/2, (im.height-s)/2, s, s, 0, 0, size, size);
+        avatarData=c.toDataURL('image/jpeg', 0.85);
+        var prev=document.getElementById('avatarPreview');
+        prev.innerHTML='<img src="'+avatarData+'" style="width:100%;height:100%;object-fit:cover">';
+      };
+      im.src=reader.result;
+    };
+    reader.readAsDataURL(f);
+  });
+  var sp=document.getElementById('saveProfile');
+  if(sp) sp.addEventListener('click', function(){
+    var name=document.getElementById('profileName').value.trim();
+    if(!name){ alert('名字不能为空'); return; }
+    fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:name, major:document.getElementById('profileMajor').value.trim(), avatar:avatarData})})
+      .then(function(r){ if(!r.ok) throw new Error(); document.getElementById('profileMsg').textContent='已保存'; setTimeout(function(){ location.reload(); }, 400); })
+      .catch(function(e){ document.getElementById('profileMsg').textContent='保存失败：'+(e&&e.message?e.message:'请重试'); });
+  });
+
+});
+
+</script>
 </body>
 </html>

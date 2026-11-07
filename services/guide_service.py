@@ -22,11 +22,20 @@ from core.database import GeneratedFile as DBGeneratedFile, Material as DBMateri
 from core.exam_engine import call_ai_with_retry
 from core.exporter import export_to_html
 from core.quality.dedupe import dedupe_markdown
+from core.lang_convert import to_hant
 from core.generate import outline_store
 from core.generate.outline import Chapter, Outline, generate_outline
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
 from core.quality.qa import check_chapters
+from core.quality.constraints import (
+    TaskConstraints,
+    default_constraints,
+    render_prompt,
+    scope_pages,
+    validate_output,
+)
+from core.quality.gate import ConstraintViolation, aggregate_reports, generate_until_valid
 from models.user_profile import CourseInfo
 from services.task import (
     ProgressCb,
@@ -186,7 +195,9 @@ def build_course_info(course: dict) -> CourseInfo:
         credits=course["credits"],
         days_left=course["days_left"],
         target_score=course["target_score"],
-        user_difficulty=course["difficulty"],
+        user_difficulty=course.get("foundation") or course["difficulty"],
+        self_difficulty=course["difficulty"],
+        foundation=course.get("foundation") or course["difficulty"],
     )
 
 
@@ -234,6 +245,9 @@ def run_guide(
     ai_call=None,
     guide_generator=None,
     max_pages: int | None = None,
+    study_mode: str = "exam",
+    material_ids: list[int] | None = None,
+    constraints: TaskConstraints | None = None,
 ) -> RunResult | None:
     """生成一份讲义。被用户中断时返回 None。
 
@@ -241,12 +255,17 @@ def run_guide(
     """
     stop_event = stop_event or threading.Event()
     started = time.time()
+    constraints = constraints or default_constraints("guide", material_kind=study_mode)
+    constraint_block = render_prompt(constraints)
     is_key = mode == "key"
     user_choice = "option_1_保命流" if is_key else "option_2_硬核流"
 
     db = get_db_session()
     try:
-        materials = db.query(DBMaterial).filter(DBMaterial.course_id == course["id"]).all()
+        _q = db.query(DBMaterial).filter(DBMaterial.course_id == course["id"])
+        if material_ids:
+            _q = _q.filter(DBMaterial.id.in_(material_ids))
+        materials = _q.all()
     finally:
         db.close()
     if not materials:
@@ -276,6 +295,15 @@ def run_guide(
 
         pages = extract_text_from_file(material.file_path, on_progress=_parse_progress)
         (core_pages if material.file_type == "core" else ref_pages).extend(pages)
+
+    if constraints.has_scope:
+        _before = len(core_pages) + len(ref_pages)
+        core_pages = scope_pages(core_pages, constraints)
+        ref_pages = scope_pages(ref_pages, constraints)
+        logger.info("讲义范围 {}：{} 页 → {} 页", constraints.scope_label(),
+                    _before, len(core_pages) + len(ref_pages))
+        if not core_pages and not ref_pages:
+            raise RuntimeError(f"所选页码范围（{constraints.scope_label()}）内没有解析到任何内容")
 
     weight_prompt = build_weight_prompt(core_pages, ref_pages, core_ratio)
     core_pages, ref_pages = truncate_pages(core_pages, ref_pages, core_ratio)
@@ -312,13 +340,16 @@ def run_guide(
     urgency_text = (f"紧迫度 {evaluation['final_priority_weight']:.0f}/100（{evaluation['status']}），"
                     f"建议每天 {evaluation['suggested_daily_hours']:g} 小时")
     chapter_mds: list[tuple[str, str]] = []
+    warnings: list[str] = []
     images_expected = images_reinjected = 0
     empty_calls = 0
 
     # 先把所有块排成任务，再按并发度执行（保持章节顺序输出）
     jobs: list[tuple[int, int, str, list[str], dict]] = []
     tags_map: dict[tuple[int, int], list[str]] = {}
+    chapter_labels: dict[int, list[int]] = {}
     for ci, chapter in enumerate(outline.chapters):
+        chapter_labels[ci] = [page_labels[p] for p in chapter.pages if p < len(page_labels)]
         target_words = max(700, min(2800, int(chapter.est_words * (0.6 if is_key else 1.0))))
         blocks = chapter_blocks(chapter, pages)
         for bi, (content, tags) in enumerate(blocks):
@@ -330,14 +361,18 @@ def run_guide(
                 "neighbors": _neighbors(outline, ci),
                 "target_words": max(400, target_words // max(1, len(blocks))),
                 "urgency": urgency_text,
-                "must_cover": ([page_labels[p] for p in chapter.pages if p < len(page_labels)]
-                               if bi == 0 else []),
+                "must_cover": (chapter_labels[ci] if bi == 0 else []),
+                "study_mode": study_mode,
+                "school": course.get("school", "一本"),
+                "self_difficulty": course.get("difficulty", 3),
+                "foundation": course.get("foundation", 3),
             }
             jobs.append((ci, bi, content, tags, context))
             tags_map[(ci, bi)] = tags
             images_expected += len(tags)
 
     results: dict[tuple[int, int], str] = {}
+    block_reports: dict[tuple[int, int], object] = {}
     total_jobs = len(jobs)
     done = 0
     retries = 0
@@ -346,29 +381,40 @@ def run_guide(
         nonlocal retries
         ci, bi, content, tags, context = job
         if stop_event.is_set():
-            return (ci, bi), ""
-        markdown = ""
-        for attempt in (1, 2):
-            payload = content if attempt == 1 else content[: max(1500, len(content) // 2)]
+            return (ci, bi), "", None
+        attempt_state = {"n": 0}
+
+        def _generate(feedback: str) -> str:
+            attempt_state["n"] += 1
+            payload = content if attempt_state["n"] == 1 else content[: max(1500, len(content) // 2)]
+            note = user_note
+            if feedback:
+                note = (user_note + "\n\n" + feedback).strip() if user_note else feedback
             try:
-                markdown = generator(f"【本章资料】\n{payload}", info, persona=persona,
-                                     user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
-                                     chapter=context, user_note=user_note)
+                return generator(f"【本章资料】\n{payload}", info, persona=persona,
+                                 user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
+                                 chapter=context, user_note=note,
+                                 constraint_block=constraint_block)
             except Exception as exc:  # noqa: BLE001
                 logger.error("第 {} 章第 {} 块生成异常: {}", ci + 1, bi + 1, exc)
-                markdown = ""
-            if markdown and len(markdown.strip()) >= 20 and "跳过" not in markdown:
-                return (ci, bi), markdown
-            if attempt == 1:
-                retries += 1
-                logger.warning("第 {} 章第 {} 块为空（疑似截断），缩短输入重试一次", ci + 1, bi + 1)
-        return (ci, bi), ""
+                return ""
 
-    def _report(key, markdown):
+        markdown, report = generate_until_valid(
+            _generate, constraints, source_text=source_text,
+            allowed_pages=chapter_labels.get(ci) or None,
+            stage="chapter", raise_on_fail=False)
+        retries += max(0, int(report.metrics.get("attempts", 1)) - 1)
+        if len(markdown.strip()) < 20 or "跳过" in markdown:
+            return (ci, bi), "", report
+        return (ci, bi), markdown, report
+
+    def _report(key, markdown, report=None):
         nonlocal done
         done += 1
         if markdown:
             results[key] = markdown
+        if report is not None:
+            block_reports[key] = report
         eta = int((time.time() - started) / max(1, done) * (total_jobs - done)) if done else None
         on_progress(ProgressEvent(f"🧠 已生成 {done}/{total_jobs} 个章节块", 
                                   0.15 + done / max(1, total_jobs) * 0.75, eta))
@@ -379,19 +425,29 @@ def run_guide(
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(_call, job) for job in jobs]
             for future in as_completed(futures):
-                key, markdown = future.result()
-                _report(key, markdown)
+                key, markdown, report = future.result()
+                _report(key, markdown, report)
                 if stop_event.is_set():
                     break
     else:
         for job in jobs:
             if stop_event.is_set():
                 return None
-            key, markdown = _call(job)
-            _report(key, markdown)
+            key, markdown, report = _call(job)
+            _report(key, markdown, report)
 
     if stop_event.is_set():
         return None
+
+    # 分块硬校验汇总：重试后仍有违规，严格模式下整份讲义判失败
+    block_violations = aggregate_reports("guide", block_reports)
+    if not block_violations.ok:
+        logger.warning("讲义分块校验未通过：{}", "；".join(block_violations.issues[:5]))
+        if constraints.strict:
+            dump_debug("guide_rejected", "\n\n".join(results.values()),
+                       {"constraints": constraints.to_dict(),
+                        "validation": block_violations.to_dict()})
+            raise ConstraintViolation(block_violations)
 
     grouped: dict[int, list[tuple[int, str]]] = {}
     for (ci, bi), markdown in results.items():
@@ -419,7 +475,8 @@ def run_guide(
             chapter_mds.append((chapter.title, dedupe_markdown(chapter_md)))
 
     if not chapter_mds:
-        raise RuntimeError("未提取到有效考点（所有章节均生成失败）")
+        raise RuntimeError("未提取到有效考点（所有章节均生成失败）。"
+                           "可能是模型临时返回空或限流，请点「重试」；仍失败可换精简模式或稍后再试。")
 
     on_progress(ProgressEvent("🎨 正在排版公式、图片与高亮名词...", 0.92))
 
@@ -434,8 +491,28 @@ def run_guide(
     img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
+
+    # 最终硬校验：排除项、页码范围、结构、答案要求（结语是固定文案，不参与校验）
+    final_report = validate_output(final_markdown, constraints, source_text=source_text,
+                                   stage="final")
+    final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
+    if not final_report.ok:
+        logger.warning("讲义最终校验未通过：{}", "；".join(final_report.issues[:5]))
+        if constraints.strict:
+            dump_debug("guide_rejected", final_markdown,
+                       {"constraints": constraints.to_dict(),
+                        "validation": final_report.to_dict()})
+            raise ConstraintViolation(final_report)
+        warnings.extend(final_report.issues)
+    warnings.extend(final_report.warnings)
+
     final_markdown += "\n\n---\n\n" + OUTROS[outro_lang].get(persona, OUTROS[outro_lang]["温柔小姐姐"])
 
+    if lang in ("繁體中文", "繁体中文", "zh-Hant"):
+        final_markdown = to_hant(final_markdown)
+    elif lang == "English":
+        from core.lang_convert import to_english
+        final_markdown = to_english(final_markdown)
     time_str = time.strftime("%m%d_%H%M", time.localtime())
     mode_str = "精简" if is_key else "全量"
     output_path = str(default_output_dir() / f"{course['name']}_{mode_str}_{time_str}.html")
@@ -445,8 +522,14 @@ def run_guide(
 
     db = get_db_session()
     try:
+        import json as _json
+        from pathlib import Path as _Path
+        _meta = {"lang": lang, "persona": persona, "mode": mode,
+                 "materials_used": len(materials), "page_limit": max_pages or "全部"}
+        _Path(output_path).with_suffix(".json").write_text(_json.dumps(_meta, ensure_ascii=False), encoding="utf-8")
         db.add(DBGeneratedFile(course_id=course["id"], file_path=output_path,
-                               created_at=time_str, file_type="guide"))
+                               created_at=time_str, file_type="guide",
+                               materials_used=len(materials)))
         db.commit()
     finally:
         db.close()
@@ -477,12 +560,17 @@ def run_guide(
         "qa_ok": qa.ok,
         "qa_issues": qa.issues[:20],
         "qa_chapters": qa.metrics.get("chapters", []),
+        "constraints": constraints.to_dict(),
+        "constraint_attempts": block_violations.metrics.get("attempts", 1),
+        "validation": final_report.to_dict(),
     }
     dump_debug("guide", final_markdown, metrics)
 
     on_progress(ProgressEvent("✅ 渲染完成，即将打开...", 1.0))
     time.sleep(0.5)
 
+    warnings = list(dict.fromkeys(
+        warnings + block_violations.issues + block_violations.warnings + qa.issues))[:20]
     return RunResult(output_path=output_path, doc_type="专属讲义",
                      markdown=final_markdown, metrics=metrics,
-                     warnings=qa.issues[:20])
+                     warnings=warnings)

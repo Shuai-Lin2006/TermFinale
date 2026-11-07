@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>阅读 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=13">
+<link rel="stylesheet" href="assets/app.css?v=18">
 <link rel="stylesheet" href="assets/katex/katex.inline.css">
 <script src="assets/katex/katex.min.js"></script>
 <script src="assets/katex/auto-render.min.js"></script>
@@ -93,10 +93,6 @@
         <svg class="icon sm"><use href="#i-send"/></svg>发送
       </button>
     </div>
-    <div class="ask-hint">
-      <svg class="icon sm"><use href="#i-bulb"/></svg>
-      选中正文任意一段 → 解释 / 举例 / 出题；回答会保留在这里。
-    </div>
   </aside>
 </div>
 
@@ -122,6 +118,11 @@
   </header>
   <div class="quote" id="quote">选中一段正文，我会结合上下文解释。</div>
   <div class="answer" id="answer">你可以先选中一句话，或者直接在右侧输入问题。</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px">
+      <button class="btn ghost sm" data-follow="再解释得详细一点，最好给一个例子">解释更深</button>
+      <button class="btn ghost sm" data-follow="给一个期末可能考的例题，并给答案">举个例子</button>
+      <button class="btn ghost sm" data-follow="用一句话总结这里最该记住的点">一句话总结</button>
+    </div>
   <footer style="display:flex;flex-direction:column;gap:8px">
     <div style="display:flex;gap:6px">
       <input id="followUp" placeholder="继续追问…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:12.5px;background:var(--paper);color:var(--ink)">
@@ -138,16 +139,17 @@
 
 <button class="ask-fab" id="askFab"><svg class="icon sm"><use href="#i-spark"/></svg>问 AI</button>
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=18"></script>
 <script>
 (function(){
   var params = new URLSearchParams(location.search);
   var cid = params.get('course');
+  var fileId = params.get('file');
   var $ = function(id){ return document.getElementById(id); };
   function toast(msg){ (window.__toast || function(){}) (msg); }
 
   function load(id){
-    fetch('/api/courses/' + id + '/latest').then(function(r){ return r.json(); }).then(function(d){
+    fetch(fileId ? ('/api/files/' + fileId + '/view') : ('/api/courses/' + id + '/latest')).then(function(r){ return r.json(); }).then(function(d){
       if(!d.exists){ showEmpty(d); return; }
       render(d);
     }).catch(function(){ showEmpty({ reason: '本地服务没有启动' }); });
@@ -182,7 +184,7 @@
     $('coverDesc').textContent = 'TermFinale 精品讲义 · ' + wishes[Math.floor(Math.random() * wishes.length)];
     $('metaFile').textContent = d.filename;
     var stats = [['本次目标', c.target_score + ' 分'], ['剩余天数', c.days_left + ' 天'],
-                 ['资料', (d.materials || 0) + ' 份'], ['生成', d.generated_at || '—']];
+                 ['资料', (d.materials_used || d.materials || 0) + ' 份'], ['生成', d.generated_at || '—']];
     if(!(d.type && String(d.type).indexOf('exam') >= 0)){
       stats.splice(2, 0, ['讲解人设', c.persona || '—']);
     }
@@ -190,8 +192,12 @@
       return '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>';
     }).join('');
     $('content').innerHTML = d.html;
+    window.TF_PAGE_TEXT = ($('content').textContent || '').slice(0, 3000);
+    window.TF_DOC_TEXT = ($('content').textContent || '').slice(0, 24000);
+    var _fresh = $('content').cloneNode(true);
+    $('content').parentNode.replaceChild(_fresh, $('content'));
     if(window.renderMathInElement){
-      try { renderMathInElement($('content'), { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false }); } catch(e){}
+      try { renderMathInElement($('content'), { delimiters: [{left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}], throwOnError:false }); } catch(e){}
     }
     var toc = d.toc || [];
     buildToc(toc);
@@ -209,7 +215,7 @@
       if(item.level !== '2') return;
       var a = document.createElement('a');
       a.href = '#' + item.id;
-      a.textContent = item.text.replace(/^(?:核心考点|Core Concept)[:：]\s*/, '');
+      a.textContent = item.text.replace(/^(?:核心考点|核心考點|Core Concept)[:：]\s*/, '');
       box.appendChild(a);
     });
     var links = Array.prototype.slice.call(box.querySelectorAll('a'));
@@ -262,12 +268,6 @@
     });
   }
 
-  $('railSend').addEventListener('click', function(){
-    var q = $('railAsk').value.trim();
-    if(!q){ return; }
-    if(window.TF_ASK){ window.TF_ASK('', q); } else { toast('问答脚本未加载，请刷新页面'); }
-    $('railAsk').value = '';
-  });
   if($('mAsk')) $('mAsk').addEventListener('click', function(e){ e.preventDefault(); if(window.TF_ASK) window.TF_ASK('', '解释这一节'); });
 
   var editing = false;
@@ -288,32 +288,49 @@
     if(bar.style.display === 'flex') $('searchInput').focus();
   });
   $('searchClose').addEventListener('click', function(){ $('searchBar').style.display = 'none'; });
+  function clearHits(){
+    document.querySelectorAll('#content mark.tf-hit').forEach(function(m){
+      var t=document.createTextNode(m.textContent); m.parentNode.replaceChild(t,m);
+    });
+    document.getElementById('content').normalize();
+  }
+  function doSearch(q, back){
+    clearHits(); if(!q) return 0;
+    var root=document.getElementById('content');
+    var walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes=[], n;
+    while(n=walker.nextNode()){ if(n.nodeValue && n.nodeValue.indexOf(q)>=0) nodes.push(n); }
+    var first=null, count=0;
+    nodes.forEach(function(node){
+      var parts=node.nodeValue.split(q);
+      if(parts.length<2) return;
+      var frag=document.createDocumentFragment();
+      parts.forEach(function(part,i){
+        frag.appendChild(document.createTextNode(part));
+        if(i<parts.length-1){
+          var mark=document.createElement('mark'); mark.className='tf-hit'; mark.textContent=q;
+          frag.appendChild(mark); if(!first) first=mark; count++;
+        }
+      });
+      node.parentNode.replaceChild(frag,node);
+    });
+    if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
+    return count;
+  }
   $('searchInput').addEventListener('keydown', function(e){
     if(e.key !== 'Enter') return;
     e.preventDefault();
-    var q = this.value.trim(); if(!q) return;
-    var found = window.find(q, false, e.shiftKey, true, false, false, false);
-    if(!found) toast('没有找到「' + q + '」');
+    var q=this.value.trim(); if(!q) return;
+    var c=doSearch(q, e.shiftKey);
+    if(!c) toast('没有找到「' + q + '」'); else toast('找到 ' + c + ' 处');
   });
 
   $('pdfBtn').addEventListener('click', function(){
     if(!cid){ toast('请从课程进入阅读器'); return; }
     var btn = this, old = btn.innerHTML;
     btn.disabled = true; btn.textContent = '生成中…';
-    fetch('/api/courses/' + cid + '/pdf')
-      .then(function(r){
-        if(!r.ok) return r.json().then(function(d){ throw new Error(d.detail || 'PDF 生成失败'); });
-        return r.blob();
-      })
-      .then(function(blob){
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = (window.TF_COURSE || 'TermFinale') + '-讲义.pdf';
-        a.click();
-        toast('PDF 已导出');
-      })
-      .catch(function(e){ toast(e.message || '导出失败，请用打印'); })
-      .finally(function(){ btn.disabled = false; btn.innerHTML = old; });
+    toast('在打印窗口选择「另存为 PDF」');
+    setTimeout(function(){ window.print(); btn.disabled=false; btn.innerHTML=old; }, 200);
   });
 
   $('wordBtn').addEventListener('click', function(){
@@ -343,16 +360,31 @@
     });
   });
 
+
+  $('content').addEventListener('dblclick', function(e){
+    var el=e.target.closest('p,li,blockquote,td');
+    if(!el) return;
+    var text=(el.innerText||'').trim();
+    if(text.length<2) return;
+    if(window.TF_SELECT_TEXT){ window.TF_SELECT_TEXT(text); toast('已选中整段，可点下方按钮提问'); }
+  });
+
+
   function sendFollow(){
     var q = ($('followUp').value || '').trim();
     if(!q){ toast('先写一个问题'); return; }
-    if(window.TF_ASK){ window.TF_ASK('', q); } else { toast('问答脚本未加载，请刷新页面'); }
+    if(window.TF_ASK){ window.TF_ASK(window.TF_SELECTED || window.TF_PAGE_TEXT || '', q); } else { toast('问答脚本未加载，请刷新页面'); }
     $('followUp').value = '';
   }
   $('sendFollow').addEventListener('click', sendFollow);
-  $('askFab').addEventListener('click', function(){ if(window.TF_ASK) window.TF_ASK('', '这一节的重点是什么？'); });
+  $('askFab').addEventListener('click', function(){ if(window.TF_ASK) window.TF_ASK(window.TF_PAGE_TEXT || '', '这一节的重点是什么？'); });
   $('followUp').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); sendFollow(); } });
 
+  document.querySelectorAll('[data-follow]').forEach(function(b){
+    b.addEventListener('click', function(){
+      if(window.TF_ASK) window.TF_ASK(window.TF_LAST_CONTEXT || '', b.dataset.follow);
+    });
+  });
   $('saveNote').addEventListener('click', function(){
     if(!cid){ toast('请从课程进入阅读器再存笔记'); return; }
     var quote = $('quote').textContent.trim();

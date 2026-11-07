@@ -24,11 +24,13 @@ _state: dict = {"server": None, "port": None, "token": None}
 _rate: list[float] = []
 _RATE_LIMIT = 12  # 每分钟最多 12 次
 
-_SYSTEM = """你是期末复习助手。规则：
-1. 只依据【资料片段】回答；片段没有的内容，明确说「资料未涉及」，可补充但必须标注【延伸】。
-2. 回答控制在 350 字以内，直接给结论和步骤，不要客套。
-3. 公式用 $...$ 包裹。
-4. 不要编造页码、定理编号。"""
+_SYSTEM = """你是期末复习助教，像坐在学生旁边的老师一样回答。
+规则：
+1. 用户选中的【资料片段】就是依据。片段里有定义、公式、步骤时，必须直接解释，绝对不要要求用户重新贴原文，也不要说「资料未涉及」。
+2. 只有当片段确实为空或只有章节标题时，才说「这段资料没有展开」，然后给出【延伸】解释。
+3. 先给一句直接结论，再拆步骤或举一个例子；不要客套，不要复述问题。
+4. 公式用 $...$ 包裹；不要编造页码、定理编号。
+5. 回答控制在 500 字以内，但要把话说完整，不能只给一句敷衍。"""
 
 _MODES = {
     "explain": "请用通俗的话解释这段内容，必要时给一个类比。",
@@ -49,7 +51,7 @@ def bridge_config() -> dict | None:
 
 
 def _answer(payload: dict) -> str:
-    context = (payload.get("context") or "").strip()[:3000]
+    context = (payload.get("context") or "").strip()[:24000]
     question = (payload.get("question") or "").strip()[:500]
     mode = payload.get("mode") or "explain"
     course = (payload.get("course") or "").strip()[:80]
@@ -59,12 +61,14 @@ def _answer(payload: dict) -> str:
 
     load_env()
     prompt = (f"课程：{course or '未知'}\n章节：{chapter or '未知'}\n"
-              f"【资料片段】\n{context or '（无，用户只选了很少内容）'}\n\n"
-              f"【问题】{question}\n{_MODES.get(mode, _MODES['explain'])}")
+              f"【讲义内容 / 用户选中的片段】（这是你的依据；选中时优先针对选中部分）\n"
+              f"{context or '（空）'}\n\n"
+              f"【问题】{question}\n{_MODES.get(mode, _MODES['explain'])}\n"
+              f"如果片段里有定义或公式，直接解释它；不要要求用户再贴一次。")
     client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"),
                     base_url="https://api.deepseek.com")
     resp = client.chat.completions.create(
-        model=text_model(), max_tokens=min(1200, max_tokens()), temperature=0.3,
+        model=text_model(), max_tokens=min(1800, max_tokens()), temperature=0.3,
         messages=[{"role": "system", "content": _SYSTEM},
                   {"role": "user", "content": prompt}],
         **model_extra())

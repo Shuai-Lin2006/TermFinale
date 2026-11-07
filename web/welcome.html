@@ -4,65 +4,58 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>欢迎 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=14">
+<link rel="stylesheet" href="assets/app.css?v=18">
 <style>
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--paper);color:var(--ink);font-family:var(--sans)}
   .shell{min-height:100vh;display:grid;grid-template-columns:minmax(340px,42%) 1fr}
-  /* 左侧品牌页 */
-  .brandside{position:relative;background:#14161a;color:#f4f2ec;padding:56px 54px 40px;display:flex;flex-direction:column;overflow:hidden}
-  .brandside:after{content:"";position:absolute;right:-120px;bottom:-140px;width:420px;height:420px;border:1px solid rgba(244,242,236,.12);border-radius:50%}
-  .brandside:before{content:"";position:absolute;right:-40px;top:-80px;width:240px;height:240px;border:1px solid rgba(244,242,236,.08);border-radius:50%}
-  .wordmark{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-size:21px;letter-spacing:.02em;z-index:1}
+  .brandside{position:relative;background:#14161a;color:#f4f2ec;padding:54px 52px 44px;display:flex;flex-direction:column;overflow:hidden}
+  .brandside:after{content:"";position:absolute;right:-130px;bottom:-150px;width:440px;height:440px;border:1px solid rgba(244,242,236,.12);border-radius:50%}
+  .brandside:before{content:"";position:absolute;right:-30px;top:-90px;width:240px;height:240px;border:1px solid rgba(244,242,236,.08);border-radius:50%}
+  .wordmark{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-size:21px;z-index:1}
   .mark{width:36px;height:36px;border:1px solid rgba(244,242,236,.35);display:grid;place-items:center;font-size:13px;letter-spacing:.08em}
-  .hero-copy{margin-top:auto;padding-bottom:28px;z-index:1}
+  .hero-copy{margin-top:auto;padding-bottom:30px;z-index:1}
   .kicker{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:rgba(244,242,236,.55);margin-bottom:20px}
-  .hero-copy h1{font-family:var(--serif);font-size:clamp(38px,4.4vw,62px);line-height:1.14;font-weight:600;margin:0 0 22px;letter-spacing:-.02em}
-  .hero-copy h1 em{font-style:normal;color:#d9c7a6}
-  .hero-copy p{max-width:360px;font-size:13px;line-height:1.95;color:rgba(244,242,236,.62);margin:0}
-  .brand-meta{display:flex;gap:22px;margin-top:34px;font-size:11px;color:rgba(244,242,236,.42)}
-  .brand-meta span:before{content:"—";margin-right:8px;color:rgba(244,242,236,.25)}
-  /* 右侧步骤区 */
-  .stage{padding:46px clamp(28px,6vw,86px) 36px;display:flex;flex-direction:column;min-height:100vh}
-  .stage-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
-  .stepcount{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-  .progress{display:flex;gap:6px}
-  .progress i{display:block;width:28px;height:2px;background:var(--line);transition:.25s}
-  .progress i.on{background:var(--brand);width:44px}
-  .steps{flex:1;display:flex;align-items:center;padding:34px 0}
-  .step{display:none;width:100%;max-width:620px}
-  .step.on{display:block;animation:rise .38s cubic-bezier(.2,.7,.3,1)}
-  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  .eyebrow{font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
-  .step h2{font-family:var(--serif);font-size:clamp(28px,3.2vw,40px);line-height:1.3;margin:0 0 12px;font-weight:600;letter-spacing:-.01em}
-  .lead{font-size:13.5px;line-height:1.95;color:var(--muted);margin:0;max-width:540px}
-  .rows{margin-top:26px;border-top:1px solid var(--line)}
-  .row{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
-  .row b{font-family:var(--serif);font-size:18px;font-weight:500;color:var(--muted)}
-  .row h3{margin:0 0 4px;font-size:14px}
+  .hero-copy h1{font-family:var(--serif);font-size:clamp(40px,4.2vw,60px);line-height:1.18;font-weight:600;margin:0 0 24px;letter-spacing:-.02em}
+  .hero-copy p{max-width:390px;font-size:13px;line-height:2;color:rgba(244,242,236,.68);margin:0}
+  .developer{display:flex;align-items:center;gap:14px;margin-top:38px;font-size:12px;letter-spacing:.18em;color:rgba(244,242,236,.55)}
+  .developer b{font-family:var(--serif);font-size:17px;letter-spacing:.08em;color:#d9c7a6;font-weight:500}
+  .stage{padding:40px clamp(26px,6vw,80px);display:flex;flex-direction:column;min-height:100vh}
+  .stage-top{display:flex;justify-content:center}
+  .progress{display:flex;gap:7px}
+  .progress i{width:22px;height:2px;background:var(--line);transition:.25s}
+  .progress i.on{width:40px;background:var(--brand)}
+  .steps{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 0}
+  .step{display:none;width:100%;max-width:560px;text-align:center}
+  .step.on{display:block;animation:rise .35s cubic-bezier(.2,.7,.3,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .step h2{font-family:var(--serif);font-size:clamp(30px,3.3vw,42px);line-height:1.32;margin:0 0 20px;font-weight:600;letter-spacing:-.015em}
+  .lead{font-size:13.5px;line-height:2;color:var(--muted);margin:0 auto 8px;max-width:470px}
+  .rows{margin:30px auto 0;border-top:1px solid var(--line);max-width:480px;text-align:left}
+  .row{display:grid;grid-template-columns:38px 1fr;gap:14px;padding:17px 0;border-bottom:1px solid var(--line)}
+  .row b{font-family:var(--serif);font-size:17px;color:var(--muted);font-weight:500}
+  .row h3{margin:0 0 3px;font-size:13.5px}
   .row p{margin:0;font-size:12.5px;line-height:1.8;color:var(--muted)}
-  .field{margin-top:20px;max-width:420px}
-  .field label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:2px;padding:13px 14px;font:inherit;
-    font-size:14px;background:transparent;color:var(--ink);outline:none;transition:.2s}
-  .field input:focus,.field select:focus{border-color:var(--brand)}
-  .keys{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:620px}
-  .fine{font-size:11.5px;line-height:1.8;color:var(--muted);margin-top:14px}
-  .fine a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-  .actions{display:flex;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap}
-  .btn-line{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;border-bottom:1px solid transparent}
-  .btn-line:hover{color:var(--ink);border-bottom-color:var(--ink)}
-  .hint{margin-left:auto;font-size:11px;color:var(--muted)}
+  .field{margin:26px auto 0;max-width:390px;text-align:left}
+  .field label{display:block;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+  .field input{width:100%;border:1px solid var(--line);border-radius:3px;padding:14px 15px;font:inherit;font-size:14px;
+    background:transparent;color:var(--ink);outline:none;transition:.2s}
+  .field input:focus{border-color:var(--brand)}
+  .actions{display:flex;justify-content:center;margin-top:34px}
+  .actions .btn{min-width:220px;justify-content:center;padding:13px 26px;font-size:14px}
+  .backline{display:flex;justify-content:center;margin-top:16px}
+  .btn-line{background:none;border:0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer;padding:0 4px}
+  .btn-line:hover{color:var(--ink)}
   @media(max-width:900px){
     .shell{grid-template-columns:1fr}
-    .brandside{min-height:auto;padding:30px 24px 26px}
-    .hero-copy{margin-top:26px}
+    .brandside{padding:28px 22px 24px;min-height:auto}
+    .hero-copy{margin-top:24px}
     .hero-copy h1{font-size:34px}
-    .hero-copy p,.brand-meta{display:none}
-    .stage{min-height:auto;padding:26px 22px 30px}
-    .steps{padding:20px 0}
-    .keys{grid-template-columns:1fr}
-    .hint{display:none}
+    .hero-copy p{display:none}
+    .developer{margin-top:18px}
+    .stage{min-height:auto;padding:24px 20px 30px}
+    .steps{padding:18px 0}
+    .step h2{font-size:29px}
   }
 </style>
 </head>
@@ -72,117 +65,72 @@
     <div class="wordmark"><span class="mark">TF</span>TermFinale</div>
     <div class="hero-copy">
       <div class="kicker">Final Exam Studio · 期末冲刺工作台</div>
-      <h1>把一门课，<br><em>读薄一点。</em></h1>
-      <p>上传课件、真题、扫描件，生成一份真正按你的资料写的讲义。选中任何一段，随时问 AI。所有资料只留在本机。</p>
-      <div class="brand-meta"><span>本地优先</span><span>无需注册</span><span>开发者 Lan</span></div>
+      <h1>欢迎来到<br>TermFinale！</h1>
+      <p>上传你的资料，生成一份真正个性化的复习资料：讲义、题目、练习、模拟。还是看不懂？内置 AI 对话框，选中任何一段，随时问 AI。</p>
+      <div class="developer"><span>—</span><b>开发者 Lan</b><span>—</span></div>
     </div>
   </aside>
 
   <main class="stage">
-    <div class="stage-top">
-      <div class="stepcount" id="stepCount">01 / 04 · 开始</div>
-      <div class="progress" id="progress"><i class="on"></i><i></i><i></i><i></i></div>
-    </div>
-
+    <div class="stage-top"><div class="progress" id="progress"><i class="on"></i><i></i><i></i></div></div>
     <div class="steps">
-      <section class="step on" data-step="0" data-label="开始">
-        <div class="eyebrow">Welcome</div>
+      <section class="step on" data-step="0">
         <h2>先花两分钟，<br>把工作台调成你的样子。</h2>
-        <p class="lead">不用注册账号。下一步会简单说明怎么用，然后只需要一个称呼。</p>
-        <div class="actions">
-          <button class="btn primary" data-next>开始设置</button>
-          <span class="hint">约 2 分钟</span>
-        </div>
+        <div class="actions"><button class="btn primary" data-next>开始设置</button></div>
       </section>
 
-      <section class="step" data-step="1" data-label="使用说明">
-        <div class="eyebrow">How it works</div>
+      <section class="step" data-step="1">
         <h2>从资料，到分数。</h2>
         <div class="rows">
-          <div class="row"><b>01</b><div><h3>上传你真正要考的资料</h3><p>PDF、PPTX、Word、扫描件、教材照片、音频。资料按课程独立保存，不会串课。</p></div></div>
-          <div class="row"><b>02</b><div><h3>生成讲义、提取、试卷</h3><p>讲义标注来源页，图片只引用资料原图；试卷可选择题型、数量、分值，凑满 100 分。</p></div></div>
-          <div class="row"><b>03</b><div><h3>读、问、练、复习</h3><p>选中正文提问，存笔记，加入错题；选择题自动判分，错题按遗忘曲线提醒。</p></div></div>
+          <div class="row"><b>01</b><div><h3>上传资料，填写你的个人情况</h3><p>PDF、PPTX、Word、扫描件、教材照片、音频都可以。</p></div></div>
+          <div class="row"><b>02</b><div><h3>生成讲义与题目，随时编辑、保留、导出、打印</h3><p>按你的资料写，标注来源页，图片只引用原图。</p></div></div>
+          <div class="row"><b>03</b><div><h3>可练习，可随时提问 AI</h3><p>选中正文提问，存笔记、收错题，选择题自动判分。</p></div></div>
         </div>
-        <p class="fine">文件只在本机解析，不上传云端；AI 请求直接发给你自己的模型账号。</p>
-        <div class="actions">
-          <button class="btn-line" data-prev>返回</button>
-          <button class="btn primary" data-next>继续</button>
-        </div>
+        <div class="actions"><button class="btn primary" data-next>继续</button></div>
+        <div class="backline"><button class="btn-line" data-prev>返回</button></div>
       </section>
 
-      <section class="step" data-step="2" data-label="建立档案">
-        <div class="eyebrow">Profile</div>
+      <section class="step" data-step="2">
         <h2>怎么称呼你？</h2>
-        <p class="lead">只用来在首页打招呼，保存在本机，之后可以在设置里改。</p>
+        <p class="lead">只用来在首页打招呼和预填课程专业，保存在本机，之后可以随时修改。</p>
         <div class="field">
           <label>名字 / ID</label>
-          <input id="nameInput" placeholder="例如：林同学" maxlength="20" autocomplete="off">
+          <input id="nameInput" maxlength="20" autocomplete="off">
         </div>
         <div class="field">
-          <label>身份</label>
-          <select id="identitySelect"><option>学生</option><option>老师</option><option>其他</option></select>
+          <label>专业</label>
+          <input id="majorInput" maxlength="30" autocomplete="off">
         </div>
-        <div class="actions">
-          <button class="btn-line" data-prev>返回</button>
-          <button class="btn primary" id="nameNext">继续</button>
-        </div>
-      </section>
-
-      <section class="step" data-step="3" data-label="连接模型">
-        <div class="eyebrow">API Keys · 可跳过</div>
-        <h2>最后一步，<br>连上你的模型。</h2>
-        <p class="lead">Key 只写入本机 .env。没有可以先跳过，之后在「设置」里填。</p>
-        <div class="keys">
-          <div class="field"><label>DeepSeek API Key</label><input id="deepseekKey" placeholder="sk-..." autocomplete="off"></div>
-          <div class="field"><label>阿里云百炼 Key</label><input id="dashscopeKey" placeholder="识图 / OCR / 音频" autocomplete="off"></div>
-        </div>
-        <p class="fine">申请地址：<a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开放平台</a> ·
-          <a href="https://bailian.console.aliyun.com" target="_blank" rel="noopener">阿里云百炼</a></p>
-        <div class="actions">
-          <button class="btn-line" data-prev>返回</button>
-          <button class="btn primary" id="finish">完成，进入工作台</button>
-          <button class="btn-line" id="skipKeys">先跳过</button>
-        </div>
+        <div class="actions"><button class="btn primary" id="finish">完成，进入工作台</button></div>
+        <div class="backline"><button class="btn-line" data-prev>返回</button></div>
       </section>
     </div>
   </main>
 </div>
-
 <script>
 (function(){
   var step=0, steps=document.querySelectorAll('.step');
-  var labels=['开始','使用说明','建立档案','连接模型'];
   function show(n){
-    step=Math.max(0,Math.min(3,n));
+    step=Math.max(0,Math.min(2,n));
     steps.forEach(function(s){ s.classList.toggle('on', +s.dataset.step===step); });
-    document.getElementById('stepCount').textContent = '0'+(step+1)+' / 04 · ' + labels[step];
     document.querySelectorAll('#progress i').forEach(function(el,i){ el.classList.toggle('on', i<=step); });
   }
   document.querySelectorAll('[data-next]').forEach(function(b){ b.addEventListener('click',function(){ show(step+1); }); });
   document.querySelectorAll('[data-prev]').forEach(function(b){ b.addEventListener('click',function(){ show(step-1); }); });
-  document.getElementById('nameNext').addEventListener('click',function(){
+  document.getElementById('finish').addEventListener('click',function(){
     var input=document.getElementById('nameInput');
     var name=input.value.trim();
     if(!name){ input.focus(); input.style.borderColor='var(--danger)'; return; }
     fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:name, identity:document.getElementById('identitySelect').value})})
-      .then(function(r){ if(!r.ok) throw new Error(); show(3); })
+      body:JSON.stringify({name:name, major:(document.getElementById('majorInput').value||'').trim()})})
+      .then(function(r){ if(!r.ok) throw new Error(); location.href='dashboard.html'; })
       .catch(function(){ alert('保存失败，请重试'); });
   });
-  function finish(skip){
-    var ds=document.getElementById('deepseekKey').value.trim();
-    var qw=document.getElementById('dashscopeKey').value.trim();
-    var done=function(){ location.href='dashboard.html'; };
-    if(skip || (!ds && !qw)) return done();
-    fetch('/api/settings/keys',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({deepseek:ds, dashscope:qw})}).then(done).catch(done);
-  }
-  document.getElementById('skipKeys').addEventListener('click',function(){ finish(true); });
-  document.getElementById('finish').addEventListener('click',function(){ finish(false); });
   fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
     if(p.onboarded){ location.replace('dashboard.html'); }
   }).catch(function(){});
 })();
 </script>
+<script src="assets/i18n.js?v=1"></script>
 </body>
 </html>

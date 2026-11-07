@@ -54,7 +54,8 @@ def _note_block(user_note: str) -> str:
     return (f"【用户补充要求】{note}\n"
             "（在不违背资料事实的前提下尽量满足；与资料冲突时以资料为准，不得因此编造。）\n\n")
 
-def generate_logic_analysis(raw_text: str, mode: str, user_note: str = "") -> str:
+def generate_logic_analysis(raw_text: str, mode: str, user_note: str = "",
+                            constraint_block: str = "", retry_note: str = "") -> str:
     if mode == "mindmap":
         sys_prompt = """
         【系统角色】知识架构师。
@@ -79,10 +80,16 @@ def generate_logic_analysis(raw_text: str, mode: str, user_note: str = "") -> st
         ### 🧠 认知避坑
         【强制溯源】：必须在每个核心推演结束时标注：[出处：《文件名》第X页]。
         """
+    extra = "\n".join(x for x in (_note_block(user_note).strip(),
+                                  (constraint_block or "").strip(),
+                                  (retry_note or "").strip()) if x)
+    if extra:
+        sys_prompt = extra + "\n\n" + sys_prompt
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
-def generate_logic_bundle(raw_text: str, lang: str = "中文", user_note: str = "") -> str:
+def generate_logic_bundle(raw_text: str, lang: str = "中文", user_note: str = "",
+                          constraint_block: str = "", retry_note: str = "") -> str:
     """一次生成「宏观架构 + 知识图谱 + 因果链 + 对照表」的复合逻辑分析。
 
     旧实现把「思维导图」和「文本逻辑」拆成两次生成：费钱、且图文常常对不上。
@@ -155,10 +162,16 @@ graph TD
 4. 不准写"以下是""希望对你有帮助"等废话；
 5. 直接输出正文，不要任何开场白。
         """
+    extra = "\n".join(x for x in (_note_block(user_note).strip(),
+                                  (constraint_block or "").strip(),
+                                  (retry_note or "").strip()) if x)
+    if extra:
+        sys_prompt = extra + "\n\n" + sys_prompt
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.3)
 
 
-def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = True, user_note: str = "") -> str:
+def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = True, user_note: str = "",
+                        constraint_block: str = "") -> str:
     if extract_type == "nouns":
         sys_prompt = (
             "【任务】提取核心名词，每个都要能直接背。格式：\n"
@@ -204,6 +217,10 @@ def generate_extraction(raw_text: str, extract_type: str, with_answer: bool = Tr
 6. 公式用 `$` 包裹，选项各自换行。
 
 {ans_req}"""
+    extra = "\n".join(x for x in (_note_block(user_note).strip(),
+                                  (constraint_block or "").strip()) if x)
+    if extra:
+        sys_prompt = extra + "\n\n" + sys_prompt
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
@@ -228,8 +245,13 @@ def _qwen_fallback(system: str, user: str, max_tokens: int = 3000) -> str:
 
 
 def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str = "mock",
-                       reference_exam: bool = False) -> str:
+                       reference_exam: bool = False, *, blueprint=None, user_note: str = "",
+                       constraint_block: str = "", retry_note: str = "",
+                       with_answers: bool = True, course_name: str = "") -> str:
     """按用户给定结构逐题型生成，避免整卷超出单次输出上限。"""
+    # 生成与校验必须共用同一份结构：有蓝图就按蓝图出题，否则退默认结构
+    if not sections and blueprint is not None:
+        sections = [(s.name, s.count, s.each) for s in blueprint.sections]
     if not sections:
         sections = [("单项选择题", 8, 3), ("填空题", 4, 4), ("计算题", 3, 12), ("综合题", 2, 12)]
     # 兼容 dict 结构
@@ -242,6 +264,7 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
         else:
             name, count, points = item
         parsed.append((name, count, points))
+    total_points = sum(count * points for _, count, points in parsed)
 
     lang_req = "STRICT ENGLISH ONLY." if lang == "English" else "中文作答。"
     style = {
@@ -269,20 +292,24 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
             "参考资料中的原题，保留题型与考法；原题改数只改参数，原题变式要改条件组合或设问角度。")
 
     ref_hint = ("如果资料中包含历年真题，请优先模仿其题型分布、问法与难度。" if reference_exam else "")
+    extra_rules = "\n".join(x for x in (_note_block(user_note).strip(),
+                                        (constraint_block or "").strip(),
+                                        (retry_note or "").strip()) if x)
     parts = []
     import re as _re
     for i, (title, count, points) in enumerate(parsed):
         extra = style.get(title, "按该题型的常规考法命题")
         sys_p = f"""你是大学期末命题老师。{lang_req}
-本次只出「{title}」这一种题型：{count} 题，每题 {points} 分，共 {count * points} 分。
+本次只出「{title}」这一种题型：{count} 题，每题 {points:g} 分，共 {count * points:g} 分。
 题型要求：{extra}
 命题要求：
 - 严格基于给定资料，不超纲、不编造；
 - {deep}
 - {ref_hint}
 - 每题末尾标注【考点：xxx】；
-- 只输出这一种题型，用二级标题 `## {title}（{count} 题，每题 {points} 分，共 {count * points} 分）`，题号从 1 开始；
-- 不要输出答案或解析。"""
+- 只输出这一种题型，用二级标题 `## {title}（{count} 题，每题 {points:g} 分，共 {count * points:g} 分）`，题号从 1 开始；
+- 不要输出答案或解析。
+{extra_rules}"""
         # 轮换资料片段，避免所有题型都只看第一页
         start = (i * 1200) % max(1, len(raw_text) - 1200) if len(raw_text) > 1200 else 0
         chunk = raw_text[start:start + 2200]
@@ -296,8 +323,11 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
             parts.append(md.strip())
     if not parts:
         return ""
-    head = "# 期末试卷\n**满分：100 分**\n\n"
+    head = (f"# {course_name} 期末试卷\n" if course_name else "# 期末试卷\n") + \
+           f"**满分：{total_points:g} 分**\n\n"
     questions = head + "\n\n".join(parts)
+    if not with_answers:
+        return questions.rstrip()
     answer_sys = f"""你是答案撰写人。{lang_req}
 按题号输出 `# 答案与解析`：
 - 选择题给字母；判断题给对/错；填空题给答案；名词解释/简答给要点；
@@ -312,18 +342,18 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
 
 def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficulty: int = 3, diy_config: str = "", user_note: str = "",
                         user_context: dict = None, lang: str = "中文", blueprint=None,
-                        sections=None, reference_exam: bool = False) -> str:
-    if sections:
+                        sections=None, reference_exam: bool = False, *,
+                        constraint_block: str = "", retry_note: str = "",
+                        with_answers: bool = True, course_name: str = "") -> str:
+    if sections or blueprint is not None:
         return _generate_sections(raw_text, lang, sections=sections,
-                                  train_type=train_type, reference_exam=reference_exam)
-    if blueprint is not None and not diy_config:
-        return _generate_sections(raw_text, lang, train_type=train_type,
-                                  reference_exam=reference_exam)
+                                  train_type=train_type, reference_exam=reference_exam,
+                                  blueprint=blueprint, user_note=user_note,
+                                  constraint_block=constraint_block, retry_note=retry_note,
+                                  with_answers=with_answers, course_name=course_name)
 
     if diy_config:
         paper_structure = f"【试卷结构（必须严格遵守）】：{diy_config}"
-    elif blueprint is not None:
-        paper_structure = "【试卷结构（必须严格遵守，不得增删题型）】：\n" + blueprint.render()
     else:
         paper_structure = ("【试卷结构（必须严格遵守）】：\n"
                            "一、选择题 8 题 × 3 分 = 24 分\n"
@@ -350,6 +380,8 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     {type_req}
     {paper_structure}
     {lang_req}
+    {constraint_block}
+    {retry_note}
 
     🚨【出题红线：绝对防幻觉与反模板】🚨
     1. **严格贴合资料**：你只能考察资料中出现的知识点！符合大学期末考真实难度，不出弱智题，不出超纲题。
@@ -370,7 +402,12 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     # 第一步：只出题（避免“题目+解析”超出单次输出上限）
     questions = call_ai_with_retry(sys_prompt, raw_text, temp=0.7, min_budget=8192)
     if not questions.strip():
+        logger.warning("主模型多次返回空，切换备用模型")
+        questions = _qwen_fallback(sys_prompt, (raw_text or "")[:8000], max_tokens=4096)
+    if not questions.strip():
         return ""
+    if not with_answers:
+        return questions.rstrip()
     answer_sys = f"""你是大学期末考试命题组的答案撰写人。
 下面是一份已经出好的试卷题目。请严格按题号输出 `# 答案与解析`：
 1. 选择题只给答案字母；

@@ -6,6 +6,9 @@ import tempfile
 import unittest
 
 os.environ.setdefault("TERMFINALE_HOME", tempfile.mkdtemp(prefix="tf_cfg_"))
+# 其它测试模块会 import core.exam_engine → load_env()；不跳过项目 .env 的话
+# 真实密钥会漏进 os.environ，让"缺密钥"用例变成依赖开发机环境。
+os.environ["TERMFINALE_SKIP_PROJECT_ENV"] = "1"
 os.environ.pop("DEEPSEEK_API_KEY", None)
 os.environ.pop("DASHSCOPE_API_KEY", None)
 

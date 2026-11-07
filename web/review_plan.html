@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light" data-accent="graphite"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>复习计划 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=18"></head><body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><span class="logo">TF</span><div><b>TermFinale</b><div class="tiny muted">期末冲刺工作台</div></div></div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html">今日冲刺</a>
+      <a class="nav-item" href="courses.html">我的课程</a>
+      <a class="nav-item" href="practice.html">练习与错题</a>
+      <a class="nav-item active" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
+      <a class="nav-item" href="notes.html">笔记</a>
+      <a class="nav-item" href="settings.html">设置</a>
+    </nav>
+    <div class="rail-foot"><div class="user"><div class="avatar">L</div><div><b>林同学</b><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><a class="btn ghost sm" href="dashboard.html">← 返回</a><div class="spacer"></div>
+      <a class="btn primary" href="courses.html?new=1">新建课程</a></header>
+    <div class="page">
+      <div class="page-head"><div><h1 class="page-title">复习计划</h1><div class="page-sub" id="sub">正在读取…</div></div></div>
+      <div id="content"></div>
+    </div>
+  </main>
+</div>
+<script src="assets/app.js?v=18"></script>
+<script src="assets/i18n.js?v=1"></script><script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function card(html){return '<article class="card course" style="margin-bottom:12px">'+html+'</article>'}
+  Promise.all([fetch('/api/mistakes').then(r=>r.json()), fetch('/api/courses').then(r=>r.json())]).then(function(res){
+    var ms=res[0]||[], cs=res[1]||[];
+    var due=ms.filter(function(m){return m.due && !m.mastered});
+    var up=cs.slice().sort(function(a,b){return a.days_left-b.days_left});
+    var out='';
+    out+='<div class="section-head"><h2>今天该复习</h2><div class="line"></div><span class="tiny muted">'+due.length+' 题</span></div>';
+    out+=due.length?due.map(function(m){return card('<div class="course-top"><span class="chip">'+m.course+'</span><span class="tiny muted">第 '+(m.stage+1)+' 轮</span></div><p style="margin:10px 0;line-height:1.8">'+m.question+'</p><a class="btn sm" href="practice.html">去复习</a>')}).join(''):'<div class="card" style="padding:26px;text-align:center" class="muted">今天没有到期错题，休息一下。</div>';
+    out+='<div class="section-head"><h2>最近考试</h2><div class="line"></div></div>';
+    out+=up.length?up.map(function(c){return card('<div class="course-top"><span class="chip">'+(c.days_left<=3?'临近考试':'进行中')+'</span><span class="tiny muted">'+c.days_left+' 天后</span></div><h3>'+c.name+'</h3><div class="meta">'+c.materials+' 份资料 · '+c.generated+' 份已生成</div><div class="course-foot"><span>'+(c.materials?'资料就绪':'还没有资料')+'</span><a class="btn sm" href="'+(c.materials?'reader.html?course='+c.id:'upload.html?course='+c.id)+'">'+(c.materials?'打开讲义':'上传资料')+'</a></div>')}).join(''):'<div class="card" style="padding:26px;text-align:center"><span class="muted">还没有课程</span></div>';
+    $('content').innerHTML=out;
+    $('sub').textContent='共 '+due.length+' 道到期错题 · '+cs.length+' 门课';
+  }).catch(function(){ $('sub').textContent='本地服务未启动'; });
+})();
+</script></body></html>

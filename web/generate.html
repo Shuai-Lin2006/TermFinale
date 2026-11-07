@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>生成工作台 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=13">
+<link rel="stylesheet" href="assets/app.css?v=18">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -30,7 +30,8 @@
       <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
       <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
       <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="upload.html"><svg class="icon"><use href="#i-layers"/></svg>上传资料</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
       <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
       <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
     </nav>
@@ -60,6 +61,17 @@
         </div>
       </div>
 
+      <section class="card" id="kindBanner" style="padding:14px 18px;margin-bottom:14px;display:none">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="tiny muted" id="kindText">资料类型判断</span>
+          <div class="spacer" style="flex:1"></div>
+          <span class="tiny muted">生成模式</span>
+          <select class="select" id="materialMode">
+            <option value="exam">期末冲刺</option>
+            <option value="lecture">课堂理解</option>
+          </select>
+        </div>
+      </section>
       <div class="grid-2">
         <div>
           <section class="card" style="padding:18px 20px;margin-bottom:14px">
@@ -79,7 +91,7 @@
               </div>
               <div class="tiny muted" style="margin:14px 0 6px">讲义语言</div>
               <select class="select" id="langSelect" style="margin-bottom:14px">
-                <option value="中文" selected>中文</option><option value="English">English</option>
+                <option value="中文" selected>中文</option><option value="繁體中文">繁體中文</option><option value="English">English</option>
               </select>
               <div class="tiny muted" style="margin:14px 0 6px">页数上限（分册）</div>
               <select class="select" id="pageLimit" style="margin-bottom:14px">
@@ -161,6 +173,9 @@
             <div class="tiny muted" style="letter-spacing:.1em">READY</div>
             <div class="serif" style="font-size:22px;margin:6px 0 8px">准备好就开始</div>
             <p class="muted" style="font-size:13px;margin:0 0 14px">生成过程会实时显示阶段和进度；中途可以取消，已完成的章节不会浪费。</p>
+            <div id="keyGuard" style="display:none;margin-bottom:10px;padding:10px 12px;border:1px solid var(--danger);border-radius:8px;font-size:12px;color:var(--danger)">
+              还没有填入 DeepSeek API Key，先去 <a href="settings.html" style="text-decoration:underline">设置</a> 填写并测试连接。
+            </div>
             <button class="btn primary" id="startBtn" style="width:100%;justify-content:center">
               <svg class="icon sm"><use href="#i-play"/></svg>开始生成
             </button>
@@ -204,7 +219,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=18"></script>
 <script>
 (function(){
   var state = { task:'guide', mode:'key', persona:'温柔小姐姐', extractType:'points',
@@ -255,6 +270,7 @@
       $('courseSub').textContent = c.name + ' · 目标 ' + c.target_score + ' 分 · ' + c.days_left + ' 天后考试';
       state.materials = c.materials || [];
       renderMaterials();
+      if(state.course && state.course.id) detectKind(state.course.id);
     });
   }
 
@@ -328,6 +344,25 @@
   });
   renderPaperRows();
 
+  function detectKind(courseId){
+    fetch('/api/courses/'+courseId+'/classify').then(function(r){return r.json();}).then(function(d){
+      var box=document.getElementById('kindBanner'); if(!box) return;
+      if(!d || d.kind==='unknown'){ box.style.display='none'; return; }
+      box.style.display='block';
+      var _lang = localStorage.getItem('tf-lang') || 'zh';
+      var _en = _lang === 'en';
+      var label = d.kind==='lecture' ? (_en?'Looks like lecture notes':'更像课堂讲义')
+                : (d.kind==='exam' ? (_en?'Looks like exam material':'更像考试资料') : (_en?'Uncertain':'不确定'));
+      var reasons = (d.reasons||[]).map(function(x){
+        if(!_en) return x;
+        return x.replace('考试相关词','exam keywords').replace('课堂/活动词','lecture keywords')
+                .replace('习题词','exercise keywords').replace('还没有资料','No materials yet').replace(' 个','');
+      });
+      var conf = _en ? ('confidence ' + Math.round((d.confidence||0)*100) + '%') : ('置信度 ' + Math.round((d.confidence||0)*100) + '%');
+      document.getElementById('kindText').textContent = label + ' · ' + conf + (reasons.length ? ' · ' + reasons.join(', ') : '');
+      document.getElementById('materialMode').value = d.kind==='lecture' ? 'lecture' : 'exam';
+    }).catch(function(){});
+  }
   function renderMaterials(){
     var box = $('materials');
     if(!state.materials.length){ box.innerHTML = '<div class="tiny muted">这门课还没有资料，先去「我的课程」上传。</div>'; return; }
@@ -343,6 +378,15 @@
         '<span class="tiny muted">' + m.size_kb + ' KB</span>' +
         (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') + '</div>';
     }).join('');
+    function syncMatControls(){
+      var on = box.querySelectorAll('input[type=checkbox]:checked').length;
+      box.querySelectorAll('.mat-role,.mat-weight').forEach(function(el){
+        el.disabled = on <= 1;
+        el.title = on <= 1 ? '只选一份资料时，权重不影响结果' : '';
+      });
+    }
+    box.querySelectorAll('input[type=checkbox]').forEach(function(cb){ cb.addEventListener('change', syncMatControls); });
+    syncMatControls();
     box.querySelectorAll('.mat-role,.mat-weight').forEach(function(el){
       el.addEventListener('change', function(){
         fetch('/api/materials/' + el.dataset.id, { method:'PATCH', headers:{'Content-Type':'application/json'},
@@ -355,7 +399,7 @@
   $('selectAll').addEventListener('click', function(){
     var boxes = document.querySelectorAll('#materials input[type=checkbox]');
     var allOn = Array.prototype.every.call(boxes, function(b){ return b.checked; });
-    boxes.forEach(function(b){ b.checked = !allOn; });
+    boxes.forEach(function(b){ b.checked = !allOn; b.dispatchEvent(new Event('change')); });
     this.textContent = allOn ? '全选' : '取消全选';
   });
 
@@ -411,6 +455,7 @@
     if(!state.course){ toast('先选课程'); return; }
     showRunning();
     var options = { material_ids: ids, user_note: ($('userNote').value || '').trim() };
+    options.material_mode = (document.getElementById('materialMode')||{}).value || 'exam';
     if(state.task === 'guide'){ options.mode = state.mode; options.persona = $('personaSelect').value; options.lang = $('langSelect').value;
       options.strict = $('strictMode').checked; options.page_limit = $('pageLimit').value ? +$('pageLimit').value : null; }
     if(state.task === 'extract'){ options.extract_type = state.extractType; options.with_answer = $('withAnswer').checked; }
@@ -465,6 +510,13 @@
         });
       }).catch(function(e){ $('errState').style.display = 'block'; $('runState').style.display = 'none'; $('errMsg').textContent = '请求失败：' + e.message; });
   }
+
+
+  fetch('/api/settings/keys').then(function(r){return r.json();}).then(function(k){
+    if(k && k.deepseek && k.deepseek.configured) return;
+    var b=document.getElementById('startBtn'); if(b){ b.disabled=true; b.textContent='先填 API Key'; }
+    var g=document.getElementById('keyGuard'); if(g) g.style.display='block';
+  }).catch(function(){});
 
   $('startBtn').addEventListener('click', start);
   $('againBtn').addEventListener('click', showIdle);
