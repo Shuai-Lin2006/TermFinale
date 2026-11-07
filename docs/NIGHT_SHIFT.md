@@ -252,3 +252,9 @@ topics 全部落在白名单内
 - 修复“后端重启后旧 cookie 全失效、必须手动刷新”：token 写入数据目录 `.session_token`（0600），启动优先复用。
 - 实测：拿 cookie → 重启 8903 → **同一 cookie 仍 200**；无 cookie 仍 403；文件权限 `-rw-------`。
 - 测试 110 项全绿。
+
+## 上传→解析→生成真实链路（02:35–02:45）
+
+- 临时库真实 multipart 上传 2 页 PDF → 解析 2/2 → 提取 15 个考点 → 2/2 覆盖 / 32.3s / `validation.ok=True` / 质量检查全过。
+- 同时验证上传 API、cookie、任务轮询、解析器、覆盖账本；证据 `docs/evidence/upload_e2e.log`。
+- 测试 110 项全绿。

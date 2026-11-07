@@ -51,6 +51,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 1001 页真实概览 | 1001 页 / 8 章 / 抽样 50 页 / **43.5s** / 18,676 字 / `qa_ok=true`（不是逐页提取） |
 | 真实试卷 | FINAL高数 4/2/2=100 分，8 题 8 答案，1 次通过，15.7s，`validation.ok=True` |
 | API 端到端 | 临时库 + cookie POST 提取任务：4 页 4/4 / 22.1s / `validation.ok=True` / 2 条超范围考点被“只考”白名单过滤 |
+| 上传→解析→生成 | 真实 multipart 上传 2 页 PDF：解析 2/2、提取 15 个考点、2/2 覆盖、32.3s、`validation.ok=True` |
 | 试卷清洗 | 修掉“单题型输出答案+第二套题”导致误判通过；多答案分区/答案后混题 → 硬失败 |
 | 引用修复 | 3 条漏出处考点用原文 2-gram 匹配补回真实页码；匹配不到不编 |
 
@@ -94,6 +95,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 | 171 页补提取日志 | `docs/evidence/fill171.log` |
 | 1001 页真实概览 | `docs/evidence/guide1001.md` / `guide1001.log` |
 | API 端到端日志 | `docs/evidence/api_e2e.log` |
+| 上传链路日志 | `docs/evidence/upload_e2e.log` |
 | 恢复验证日志 | `docs/evidence/restore_test.log` |
 | 171 页日志 | `docs/evidence/extract171.log` |
 | UI 截图 | `docs/screenshots/`（见下） |

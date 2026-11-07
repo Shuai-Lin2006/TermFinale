@@ -1,0 +1,22 @@
+pdf exists True 6344147
+upload 200 {"id":48,"filename":"吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf","size_kb":6195,"type":"pdf"}
+materials [(45, '终极高数测试.pptx'), (48, '吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf')]
+job 200 {"job_id":"9c9add0b58fa"}
+0 running 0.02 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（0/2）
+1 running 0.02 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（0/2）
+2 running 0.02 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（0/2）
+3 running 0.05 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（1/2）
+4 running 0.05 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（1/2）
+5 running 0.05 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（1/2）
+6 running 0.05 正在解析 吉林师范大学《高等数学》2017-2018学年第二学期期末考试卷.pdf（1/2）
+7 running 0.04 📚 正在整理资料并分块…
+8 running 0.04 📚 正在整理资料并分块…
+9 running 0.04 📚 正在整理资料并分块…
+10 running 0.046 模型生成中…（已用 6 秒）
+11 running 0.046 模型生成中…（已用 6 秒）
+12 running 0.5 🔍 已提取 1/2 个区块（并发 2）...
+13 running 0.5 🔍 已提取 1/2 个区块（并发 2）...
+14 running 0.5 🔍 已提取 1/2 个区块（并发 2）...
+15 running 0.506 模型生成中…（已用 16 秒）
+16 done 1.0 完成
+{"id": "9c9add0b58fa", "task": "extract", "status": "done", "progress": 1.0, "message": "完成", "elapsed": 32.3, "eta": 0.0, "result": {"output_path": "/tmp/tf_upload_home/out/FINAL高数_资料提取_1108_0056.html", "metrics": {"kind": "extract", "doc_type": "资料提取", "chars": 9930, "elapsed_s": 17.9, "lang": "中文", "constraints": {"task": "extract", "page_start": null, "page_end": null, "exclude_terms": [], "answer_mode": "optional", "extract_type": "points", "sections": [], "material_kind": "exam", "strict": true, "max_retries": 2, "teacher_note": "只提取第 1-2 页的考点；参数方程不考", "must_topics": [], "ban_topics": ["参数方程"], "only_topics": [], "literal_bans": [], "required_pages": [1, 2]}, "teacher_rules": {"page_refs": [1, 2], "must_topics": [], "ban_topics": ["参数方程"], "only_topics": [], "literal_bans": [], "unresolved": [], "notes": []}, "validation": {"task": "extract", "ok": true, "issues": [], "warnings": [], "metrics": {"topics": ["二重积分的估值性质", "三重积分的对称性奇偶性化简", "对坐标的曲线积分沿水平直线段", "高斯公式与曲面积分", "交错级数的绝对收敛与条件收敛", "由特解反求常系数齐次线性微分方程", "直线与平面的交点", "全微分", "交换二次积分的积分次序", "二重积分极坐标计算", "三重积分球坐标计算", "高斯公式计算曲面积分", "格林公式计算曲线积分", "一阶可分离变量微分方程", "幂级数求和函数"], "pages_cited": 2, "extract_points": 15, "questions": 0}, "summary": "校验通过"}, "coverage": {"pages": 2, "pages_cited": 2, "pages_missing": [], "pages_missing_count": 0, "chunks": 2, "chunks_ok": 2, "attempts": 2, "duplicates_removed": 0, "page_fills": 0, "scope_filtered": 0, "coverage": 1.0, "has_page_headers": true}, "block_attempts": 2}, "validation": {"task": "extract", "ok": true, "issues": [], "warnings": [], "metrics": {"topics": ["二重积分的估值性质", "三重积分的对称性奇偶性化简", "对坐标的曲线积分沿水平直线段", "高斯公式与曲面积分", "交错级数的绝对收敛与条件收敛", "由特解反求常系数齐次线性微分方程", "直线与平面的交点", "全微分", "交换二次积分的积分次序", "二重积分极坐标计算", "三重积分球坐标计算", "高斯公式计算曲面积分", "格林公式计算曲线积分", "一阶可分离变量微分方程", "幂级数求和函数"], "pages_cited": 2, "extract_points": 15, "questions": 0}, "summary": "校验通过"}, "warnings": [], "quality": {"passed": true, "checks": [{"name": "内容非空", "ok": true}, {"name": "无乱码", "ok": true}, {"name": "公式成对", "ok": true}, {"name": "无占位符残留", "ok": true}, {"name": "无旧模板标题", "ok": true}, {"name": "重复段落<15%", "ok": true}, {"name": "图片均来自资料", "ok": true}, {"name": "图片未重复", "ok": true}, {"name": "图片未堆叠", "ok": true}], "issues": [], "chars": 9930, "chapters": 0, "dup_ratio": 0.0}}, "error": null}
