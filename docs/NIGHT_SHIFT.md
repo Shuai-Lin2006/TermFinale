@@ -246,3 +246,9 @@ topics 全部落在白名单内
 - 真实 1001 页概览重跑：8 章 / 抽样 50 页 / 43.5s / 18,676 字 / qa ok。
 - 发现大纲章名被正文句子污染；加 `clean_outline_titles` 使用点兜底 + `_retitle_first_heading` 覆盖每章首个 `##`；不可读标题退成“第N部分 · 第X–Y页”。
 - 证据更新：`docs/evidence/guide1001.md` / `guide1001.log`；测试 109 项。
+
+## 会话 token 持久化（02:25–02:35）
+
+- 修复“后端重启后旧 cookie 全失效、必须手动刷新”：token 写入数据目录 `.session_token`（0600），启动优先复用。
+- 实测：拿 cookie → 重启 8903 → **同一 cookie 仍 200**；无 cookie 仍 403；文件权限 `-rw-------`。
+- 测试 110 项全绿。

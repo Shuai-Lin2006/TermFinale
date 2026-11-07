@@ -31,7 +31,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 - 新增 `tools/restore_backup.py`：先 `PRAGMA integrity_check` + 表校验，默认 dry-run；`--yes` 前自动用 SQLite backup API 把当前库另存，清掉旧 WAL/SHM 再原子替换；不删上传副本/原资料。真实备份 47 课/47 资料/368 生成物已在临时目录恢复验证。
 - 日志与异常钩子：`setup_logging()`、`install_exception_hooks()` 在 import 时执行。
 - 本地 API 鉴权：
-  - 页面首次加载下发 HttpOnly `SameSite=Strict` 的 `tf_token`；
+  - 页面首次加载下发 HttpOnly `SameSite=Strict` 的 `tf_token`；token 持久化到数据目录 `.session_token`（0600），后端重启后旧页面仍有效；
   - `/api/*`（`/api/health` 除外）无 token → **403**；
   - CORS 只允许 `http://127.0.0.1:<port>` / `http://localhost:<port>`；
   - 跨站 `Origin` → **403**。
@@ -71,7 +71,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ### 2.4 测试与 CI
 
-- `python -m unittest discover -s tests` → **109 项全绿**。
+- `python -m unittest discover -s tests` → **110 项全绿**。
 - 新增：`test_security.py`（4）、`test_exam_engine.py`（5）、答案覆盖/多答案分区/引用修复等。
 - CI：`unittest discover` 全量；pyflakes 覆盖 `server/app.py`、`desktop.py`、`tools/build.py`、`tools/restore_backup.py`；server import smoke。
 - 本地 CI 门禁：`compileall` + `pyflakes` 全净 + **109 项测试全绿**。
@@ -127,7 +127,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 6. **UI 不是终版**：`welcome.html` 仍是旧分屏（已套主题）；阅读页正文排版还可继续打磨；AI 抽屉/关键词弹窗只做了公式修复。
 7. **测试数据还在库里**：46 门测试课只是隐藏，没有删；用户若要彻底清掉，需单独确认。
 8. **GitHub 未推送**：本地 14+ 个提交；推不推、仓库名、release 文案由你决定。
-9. **CI 未在 GitHub 跑过**；本机 109 项通过不等于三平台通过。
+9. **CI 未在 GitHub 跑过**；本机 110 项通过不等于三平台通过。
 10. **API token 鉴权**后，外部 curl / 旧脚本要带 cookie 或 `X-TF-Token`；没有对外 API 文档。
 
 ---
@@ -136,7 +136,7 @@ Electron 窗口如果还开着旧页面，按 **Cmd+R 刷新一次**。后端已
 
 ```bash
 cd /Users/lan/PycharmProjects/TermFinale
-.venv/bin/python -m unittest discover -s tests          # 109 项
+.venv/bin/python -m unittest discover -s tests          # 110 项
 .venv/bin/python -m pyflakes server/app.py core services models tools/build.py
 
 # 鉴权 + 数据

@@ -45,3 +45,14 @@ class LocalAuthTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TokenPersistenceTest(unittest.TestCase):
+    def test_token_file_is_private_and_reused(self):
+        from core import paths
+        from server.app import _AUTH_TOKEN
+        token_file = paths.data_dir() / ".session_token"
+        self.assertTrue(token_file.is_file())
+        self.assertEqual(token_file.read_text(encoding="utf-8").strip(), _AUTH_TOKEN)
+        mode = token_file.stat().st_mode & 0o777
+        self.assertEqual(mode, 0o600)

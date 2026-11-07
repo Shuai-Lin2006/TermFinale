@@ -48,7 +48,27 @@ install_exception_hooks()
 
 # 本地 API 鉴权：页面首次加载时下发 HttpOnly SameSite=Strict cookie；
 # 跨站请求不会带 cookie，恶意网页无法读课程/清库/烧 Key。
-_AUTH_TOKEN = secrets.token_urlsafe(24)
+# token 持久化到数据目录（0600）：重启后端后旧页面不用重新拿 cookie。
+def _load_or_create_token() -> str:
+    try:
+        paths.ensure_dirs()
+        token_file = paths.data_dir() / ".session_token"
+        if token_file.is_file():
+            token = token_file.read_text(encoding="utf-8").strip()
+            if len(token) >= 20:
+                return token
+        token = secrets.token_urlsafe(24)
+        token_file.write_text(token, encoding="utf-8")
+        try:
+            token_file.chmod(0o600)
+        except OSError:
+            pass
+        return token
+    except Exception:
+        return secrets.token_urlsafe(24)
+
+
+_AUTH_TOKEN = _load_or_create_token()
 _DISABLE_AUTH = os.getenv("TERMFINALE_DISABLE_AUTH", "").strip().lower() in ("1", "true", "yes")
 _PORT = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
 _ALLOWED_ORIGINS = [f"http://127.0.0.1:{_PORT}", f"http://localhost:{_PORT}"]
