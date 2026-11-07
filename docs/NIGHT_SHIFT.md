@@ -83,3 +83,13 @@ topics 全部落在白名单内
 - [ ] UI：深色高级 SaaS 方向重构（首页/阅读/复习计划/课程详情/练习）
 - [ ] CI 全量 6 模块 + 新测试
 - [ ] 更新 README/已知限制/AGENTS 交接
+
+## UI 第一版（00:03–00:10）
+
+- 新增 `web/assets/premium.css`：深色近黑画布、薄荷强调、衬线标题、等宽标签、卡片边界、响应式。
+- 重写 `web/dashboard.html`：今日主卡 + 3 指标 + 最近生成 + 我的课程；修掉 `recentGrid` 空指针、假 demo 卡、旧导航。
+- 重写 `web/review_plan.html`：今日目标卡（到期错题/预计用时/进度）+ 按课程 + 下一步。
+- 全站接入 premium.css + 深色默认；修正 `app.css` 的 `data-accent` 把主色覆盖成深灰的问题。
+- 阅读页：封面收窄、正文优先、TOC 无 h2 时用 h3 兜底、工具按钮缩小。
+- 截图：`/tmp/tf_verify/ui2/dash4.png`、`plan2.png`、`reader2.png`。
+- 待办：courses/practice/generate/settings 页面重写；阅读页工具折叠；移动端/浅色回归。

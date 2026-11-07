@@ -1,45 +1,173 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light" data-accent="graphite"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>复习计划 · TermFinale</title><link rel="stylesheet" href="assets/app.css?v=18"></head><body>
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
+<title>复习计划 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=19">
+<link rel="stylesheet" href="assets/premium.css?v=1">
+</head>
+<body>
 <div class="app">
   <aside class="rail">
-    <div class="brand"><span class="logo">TF</span><div><b>TermFinale</b><div class="tiny muted">期末冲刺工作台</div></div></div>
-    <nav class="nav">
-      <a class="nav-item" href="dashboard.html">今日冲刺</a>
-      <a class="nav-item" href="courses.html">我的课程</a>
-      <a class="nav-item" href="practice.html">练习与错题</a>
-      <a class="nav-item active" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
-      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
-      <a class="nav-item" href="notes.html">笔记</a>
-      <a class="nav-item" href="settings.html">设置</a>
-    </nav>
-    <div class="rail-foot"><div class="user"><div class="avatar">L</div><div><b>林同学</b><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+    <div class="brand"><span class="brand-mark">TF</span><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末复习工作台</div></div></div>
+    <nav class="nav"></nav>
+    <div class="rail-foot"></div>
   </aside>
+
   <main class="main">
-    <header class="topbar"><a class="btn ghost sm" href="dashboard.html">← 返回</a><div class="spacer"></div>
-      <a class="btn primary" href="courses.html?new=1">新建课程</a></header>
+    <header class="topbar">
+      <a class="btn ghost sm" href="dashboard.html">← 返回</a>
+      <div class="spacer"></div>
+      <a class="btn primary sm" href="courses.html?new=1">新建课程</a>
+    </header>
+
     <div class="page">
-      <div class="page-head"><div><h1 class="page-title">复习计划</h1><div class="page-sub" id="sub">正在读取…</div></div></div>
-      <div id="content"></div>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px">
+        <div>
+          <div class="eyebrow" id="today">TODAY</div>
+          <h1 class="page-title">复习计划</h1>
+          <div class="page-sub" id="sub">正在读取…</div>
+        </div>
+        <a class="btn ghost sm" href="dashboard.html">今日</a>
+      </div>
+
+      <section class="tf-hero" style="min-height:210px">
+        <div class="tf-hero-main">
+          <div>
+            <div class="eyebrow">Plan · 今天</div>
+            <h1 style="font-size:36px" id="goalTitle">今天没有到期错题</h1>
+            <p id="goalDesc">可以把时间花在一套模拟卷，或者把最近一章再过一遍。</p>
+          </div>
+          <div class="tf-hero-actions">
+            <a class="btn primary" id="goalBtn" href="practice.html">去做模拟卷<svg class="icon sm"><use href="#i-arrow"/></svg></a>
+            <a class="btn ghost" href="courses.html">看课程</a>
+            <span class="tf-mini" id="goalHint">按遗忘曲线排序</span>
+          </div>
+        </div>
+        <div class="tf-hero-side">
+          <div class="tf-stat-row">
+            <div><span>到期错题</span><b id="dueCount">0</b></div>
+            <div><span>预计用时</span><b id="dueMinutes">0 分钟</b></div>
+            <div><span>最近考试</span><b id="nearest">—</b></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+              <span>今日进度</span><span id="progressText">0 / 0</span>
+            </div>
+            <div class="bar" style="height:6px"><i id="progressBar" style="width:0%"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="tf-metrics">
+        <div class="tf-metric"><b id="mDue">0</b><span>到期错题</span></div>
+        <div class="tf-metric"><b id="mCourses">0</b><span>门课程</span></div>
+        <div class="tf-metric"><b id="mExams">0</b><span>套训练卷</span></div>
+      </div>
+
+      <div class="tf-section-head"><h2>按课程</h2><span class="link" id="courseCount"></span></div>
+      <div class="tf-grid-3" id="courseGrid"></div>
+
+      <div class="tf-section-head"><h2>下一步</h2></div>
+      <div id="nextSteps" class="tf-grid-2"></div>
     </div>
   </main>
 </div>
-<script src="assets/app.js?v=18"></script>
-<script src="assets/i18n.js?v=1"></script><script>
+<script src="assets/app.js?v=19"></script>
+<script src="assets/i18n.js?v=2"></script>
+<script>
 (function(){
-  var $=function(id){return document.getElementById(id)};
-  function card(html){return '<article class="card course" style="margin-bottom:12px">'+html+'</article>'}
-  Promise.all([fetch('/api/mistakes').then(r=>r.json()), fetch('/api/courses').then(r=>r.json())]).then(function(res){
-    var ms=res[0]||[], cs=res[1]||[];
-    var due=ms.filter(function(m){return m.due && !m.mastered});
-    var up=cs.slice().sort(function(a,b){return a.days_left-b.days_left});
-    var out='';
-    out+='<div class="section-head"><h2>今天该复习</h2><div class="line"></div><span class="tiny muted">'+due.length+' 题</span></div>';
-    out+=due.length?due.map(function(m){return card('<div class="course-top"><span class="chip">'+m.course+'</span><span class="tiny muted">第 '+(m.stage+1)+' 轮</span></div><p style="margin:10px 0;line-height:1.8">'+m.question+'</p><a class="btn sm" href="practice.html">去复习</a>')}).join(''):'<div class="card" style="padding:26px;text-align:center" class="muted">今天没有到期错题，休息一下。</div>';
-    out+='<div class="section-head"><h2>最近考试</h2><div class="line"></div></div>';
-    out+=up.length?up.map(function(c){return card('<div class="course-top"><span class="chip">'+(c.days_left<=3?'临近考试':'进行中')+'</span><span class="tiny muted">'+c.days_left+' 天后</span></div><h3>'+c.name+'</h3><div class="meta">'+c.materials+' 份资料 · '+c.generated+' 份已生成</div><div class="course-foot"><span>'+(c.materials?'资料就绪':'还没有资料')+'</span><a class="btn sm" href="'+(c.materials?'reader.html?course='+c.id:'upload.html?course='+c.id)+'">'+(c.materials?'打开讲义':'上传资料')+'</a></div>')}).join(''):'<div class="card" style="padding:26px;text-align:center"><span class="muted">还没有课程</span></div>';
-    $('content').innerHTML=out;
-    $('sub').textContent='共 '+due.length+' 道到期错题 · '+cs.length+' 门课';
-  }).catch(function(){ $('sub').textContent='本地服务未启动'; });
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+  function daysText(n){
+    n = Number(n || 0);
+    if(n <= 0) return '今天考试';
+    if(n <= 3) return '还有 ' + n + ' 天 · 冲刺';
+    return '还有 ' + n + ' 天';
+  }
+  function load(){
+    Promise.all([
+      fetch('/api/mistakes').then(function(r){ return r.json(); }),
+      fetch('/api/courses').then(function(r){ return r.json(); }),
+      fetch('/api/practice').then(function(r){ return r.json(); }).catch(function(){ return {}; })
+    ]).then(function(res){
+      var ms = res[0] || [], cs = res[1] || [], pr = res[2] || {};
+      var due = ms.filter(function(m){ return m.due && !m.mastered; });
+      var nearest = cs.length ? Math.min.apply(null, cs.map(function(c){ return Number(c.days_left || 0); })) : null;
+      var minutes = due.length * 2;
+      $('dueCount').textContent = due.length;
+      $('dueMinutes').textContent = minutes + ' 分钟';
+      $('nearest').textContent = nearest == null ? '—' : (nearest + ' 天');
+      $('mDue').textContent = due.length;
+      $('mCourses').textContent = cs.length;
+      $('mExams').textContent = (pr.exams || []).length;
+      $('courseCount').textContent = cs.length + ' 门课';
+      $('sub').textContent = due.length + ' 道到期错题 · ' + cs.length + ' 门课程 · 最近考试在 '
+        + (nearest == null ? '—' : nearest + ' 天后');
+
+      if(due.length){
+        $('goalTitle').textContent = '先清掉 ' + due.length + ' 道到期错题';
+        $('goalDesc').textContent = '约 ' + minutes + ' 分钟。错题按遗忘曲线排期，先做最该复习的。';
+        $('goalBtn').href = 'practice.html';
+        $('goalHint').textContent = '建议先做错题，再开新章';
+      } else {
+        $('goalTitle').textContent = '今天没有到期错题';
+        $('goalDesc').textContent = cs.length ? '可以去做一套模拟卷，或者把最近一章再过一遍。' : '先建一门课、上传资料，计划会自动排起来。';
+        $('goalBtn').href = cs.length ? 'practice.html' : 'courses.html?new=1';
+        $('goalBtn').innerHTML = (cs.length ? '去做模拟卷' : '新建课程')
+          + '<svg class="icon sm"><use href="#i-arrow"/></svg>';
+        $('goalHint').textContent = cs.length ? '模拟卷按目标分与题型生成' : '从一门课开始';
+      }
+      $('progressText').textContent = '0 / ' + due.length;
+      $('progressBar').style.width = (due.length ? 0 : 100) + '%';
+
+      // 按课程分组
+      var byCourse = {};
+      due.forEach(function(m){
+        var key = m.course_id || m.course;
+        if(!byCourse[key]) byCourse[key] = { name: m.course, count: 0, ids: [] };
+        byCourse[key].count += 1;
+        byCourse[key].ids.push(m.id);
+      });
+      var courseCards = cs.map(function(c){
+        var g = byCourse[c.id] || { count: 0, ids: [] };
+        var href = g.count ? ('practice.html?mistake=' + g.ids[0]) : (c.generated ? ('reader.html?course=' + c.id) : ('generate.html?course=' + c.id));
+        return '<a class="tf-course" href="' + href + '">'
+          + '<div class="tf-course-top"><span class="chip">' + esc(c.major || '课程') + '</span>'
+          + '<span class="tiny muted">' + daysText(c.days_left) + '</span></div>'
+          + '<h3>' + esc(c.name) + '</h3>'
+          + '<div class="meta"><span>' + (c.materials || 0) + ' 份资料</span><span>' + (c.generated || 0) + ' 份生成</span></div>'
+          + '<div class="spacer"></div>'
+          + '<div class="tf-course-foot"><span class="tf-mini">' + (g.count ? g.count + ' 道到期' : '按计划') + '</span>'
+          + '<span class="tf-mini" style="color:var(--brand)">' + (g.count ? '去复习 →' : '打开 →') + '</span></div></a>';
+      }).join('');
+      $('courseGrid').innerHTML = courseCards || '<div class="tf-empty" style="grid-column:1/-1"><h2>还没有课程</h2><p>先建一门课，复习计划才会排期。</p><a class="btn primary" href="courses.html?new=1">新建课程</a></div>';
+
+      var steps = [];
+      if(due.length){
+        steps.push('<a class="tf-recent" href="practice.html"><span class="chip brand">优先</span><h3>清掉 ' + due.length + ' 道到期错题</h3><div class="tf-mini">约 ' + minutes + ' 分钟 · 按遗忘曲线</div></a>');
+      }
+      var focus = cs.slice().sort(function(a,b){ return a.days_left - b.days_left; })[0];
+      if(focus){
+        steps.push('<a class="tf-recent" href="' + (focus.generated ? 'reader.html?course=' + focus.id : 'generate.html?course=' + focus.id) + '">'
+          + '<span class="chip">临近考试</span><h3>' + esc(focus.name) + ' · ' + daysText(focus.days_left) + '</h3>'
+          + '<div class="tf-mini">' + (focus.generated ? '继续读最近一章' : '先生成第一份讲义') + '</div></a>');
+      }
+      steps.push('<a class="tf-recent" href="practice.html"><span class="chip">模拟</span><h3>做一套训练卷</h3><div class="tf-mini">按目标分与题型生成</div></a>');
+      $('nextSteps').innerHTML = steps.join('');
+    }).catch(function(){
+      $('sub').textContent = '本地服务未启动，请重新打开 TermFinale。';
+    });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
 })();
-</script></body></html>
+</script>
+</body>
+</html>

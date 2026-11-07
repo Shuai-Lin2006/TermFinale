@@ -1,48 +1,15 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<html lang="zh-CN" data-theme="dark" data-accent="graphite">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TermFinale · 今日冲刺</title>
-<link rel="stylesheet" href="assets/app.css?v=18">
+<title>今日 · TermFinale</title>
+<link rel="stylesheet" href="assets/app.css?v=19">
+<link rel="stylesheet" href="assets/premium.css?v=1">
 <script>
-fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
-  if(!p.onboarded){ location.replace('welcome.html'); return; }
-  if(p.name){
-    document.addEventListener('DOMContentLoaded', function(){
-      var t=document.querySelector('.page-title');
-      if(t) t.textContent = (new Date().getHours()<12?'上午好，':(new Date().getHours()<18?'下午好，':'晚上好，')) + p.name;
-      document.querySelectorAll('b').forEach(function(el){ if(el.textContent==='林同学') el.textContent=p.name; });
-    });
-  }
-}).catch(function(){});
+  try { document.documentElement.dataset.theme = localStorage.getItem('tf-theme') || 'dark'; } catch (e) {}
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  fetch('/api/overview').then(function(r){return r.json();}).then(function(d){
-    if(d.courses && d.courses.length) return;
-    document.querySelectorAll('.task-list').forEach(function(el){
-      el.style.display='none';
-      var h=el.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
-    });
-    document.querySelectorAll('.marks').forEach(function(el){
-      var sec=el.closest('section'); if(sec){ sec.style.display='none'; var h=sec.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
-    });
-    var rg=document.getElementById('recentGrid');
-    if(rg){ rg.innerHTML=''; var h=rg.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
-    var cg=document.getElementById('courseGrid'); if(cg) cg.innerHTML='';
-    var week=document.querySelector('.rail-foot > .card'); if(week) week.style.display='none';
-    var streak=document.querySelector('.page-head .chip'); if(streak) streak.style.display='none';
-    var hero=document.querySelector('.hero');
-    if(hero) hero.innerHTML='<div style="width:100%;padding:54px 30px;text-align:center">'
-      +'<div class="serif" style="font-size:30px;margin-bottom:8px">还没有课程</div>'
-      +'<p class="muted" style="margin:0 0 20px">先新建一门课，上传资料，5 分钟后就能开始。</p>'
-      +'<a class="btn primary" href="courses.html?new=1">新建课程</a></div>';
-    document.querySelectorAll('.page .section-head').forEach(function(h){ h.style.display='none'; });
-    var sub=document.getElementById('homeSub'); if(sub) sub.textContent='还没有课程，先新建一门';
-  }).catch(function(){});
-});
-</script>
+<script defer src="assets/i18n.js?v=2"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -50,252 +17,276 @@ document.addEventListener('DOMContentLoaded', function(){
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
   <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
-  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3s5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 1.5 0 1-4 1-7.5Z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></symbol>
 </svg>
 
 <div class="app">
   <aside class="rail">
     <div class="brand">
       <div class="brand-mark">TF</div>
-      <div>
-        <div class="brand-name">TermFinale</div>
-        <div class="brand-sub">期末冲刺工作台</div>
-      </div>
+      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末复习工作台</div></div>
     </div>
     <nav class="nav">
-      <a class="nav-item active"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
-      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
-      <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
-      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
-      <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
+      <a class="nav-item active" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日</a>
+      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习</a>
+      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>计划</a>
+      <a class="nav-item" href="materials_stats.html"><svg class="icon"><use href="#i-layers"/></svg>资料</a>
+      <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-note"/></svg>笔记</a>
       <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
     </nav>
     <div class="rail-foot">
-      <div class="card" style="padding:14px">
-        <div class="tiny muted">本周学习</div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
-          <b class="serif" style="font-size:24px">6.5</b><span class="tiny muted">小时</span>
-        </div>
-        <div class="bar" style="margin-top:10px"><i style="width:62%"></i></div>
-        <div class="tiny muted" style="margin-top:6px">比上周多 1.2 小时</div>
-      </div>
       <div class="user">
-        <div class="avatar">林</div>
+        <div class="avatar" id="railAvatar">林</div>
         <div style="min-width:0">
-          <div style="font-size:13px;font-weight:600">林同学</div>
-          <div class="tiny muted">大二 · 环境工程</div>
+          <div style="font-size:12.5px;font-weight:600" id="railName">林同学</div>
+          <div class="tiny muted">今天也向目标靠近一点</div>
         </div>
-        <button class="btn ghost sm" style="margin-left:auto;padding:6px" id="themeBtn" title="切换主题">
-          <svg class="icon sm"><use href="#i-moon"/></svg>
-        </button>
       </div>
     </div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div class="search" id="searchBox">
-        <svg class="icon sm"><use href="#i-search"/></svg>
-        <input id="globalSearch" placeholder="搜索课程、章节、笔记…">
-        <span class="kbd">⌘K</span>
+      <div style="display:flex;align-items:center;gap:14px;height:100%;flex:1">
+        <span class="eyebrow">Workspace</span>
+        <div style="position:relative;flex:1;max-width:420px">
+          <input id="globalSearch" placeholder="搜索课程、章节、笔记…"
+                 style="width:100%;padding:9px 12px 9px 34px;font-size:12.5px;border-radius:10px">
+          <svg class="icon sm" style="position:absolute;left:11px;top:11px;color:var(--faint)"><use href="#i-search"/></svg>
+        </div>
       </div>
-      <div class="spacer"></div>
-      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
-      <a class="btn primary" href="courses.html?new=1"><svg class="icon sm"><use href="#i-plus"/></svg>新建课程</a>
+      <button class="btn ghost sm" id="themeBtn" title="切换主题"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+      <a class="btn primary sm" href="courses.html?new=1"><svg class="icon sm"><use href="#i-plus"/></svg>新建课程</a>
     </header>
 
     <div class="page">
-      <div class="page-head">
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px">
         <div>
-          <h1 class="page-title">下午好，林同学</h1>
-          <div class="page-sub" id="homeSub">正在读取课程库…</div>
+          <div class="eyebrow" id="dateLine">—</div>
+          <h1 class="page-title" id="greeting">今天，先做一件事</h1>
+          <div class="page-sub" id="homeSub">正在读取你的课程…</div>
         </div>
-        <div class="spacer"></div>
-        <span class="chip"><svg class="icon sm"><use href="#i-flame"/></svg>连续学习 4 天</span>
+        <a class="btn ghost sm" href="review_plan.html">查看复习计划<svg class="icon sm"><use href="#i-arrow"/></svg></a>
       </div>
 
-      <section class="hero">
-        <div class="hero-main">
-          <div class="hero-kicker" id="heroKicker">距 物理化学 考试 · 12 天</div>
-          <h2 class="hero-title" id="heroTitle">第 3 章 电化学<br><b>还剩 2 个考点没掌握</b></h2>
-          <p class="hero-desc" id="heroDesc">上次学到「可逆电池」，建议先花 18 分钟看完本节，再做 5 道自测题。</p>
-          <div class="hero-actions">
-            <a class="btn solid" id="heroRead" href="reader.html"><svg class="icon sm"><use href="#i-book"/></svg>继续阅读</a>
-            <a class="btn" href="reader.html"><svg class="icon sm"><use href="#i-spark"/></svg>问一下</a>
-            <span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;font-size:12.5px;opacity:.8">
-              预计提分 <b style="font-size:15px;color:#d9c7a6">+8</b>
-            </span>
+      <div id="emptyHome" class="tf-empty" style="display:none">
+        <div class="eyebrow" style="margin-bottom:10px">Start here</div>
+        <h2>先建一门课，5 分钟后开始复习</h2>
+        <p>上传 PPT / PDF / 扫描件，TermFinale 会逐页解析、标出缺失页，再生成能追溯到页码的讲义。</p>
+        <a class="btn primary" href="courses.html?new=1"><svg class="icon sm"><use href="#i-plus"/></svg>新建第一门课</a>
+      </div>
+
+      <div id="homeBody">
+        <section class="tf-hero" id="heroCard">
+          <div class="tf-hero-main">
+            <div>
+              <div class="eyebrow" id="heroEyebrow">TODAY · 最近考试</div>
+              <h1 id="heroTitle">—</h1>
+              <p id="heroDesc">—</p>
+            </div>
+            <div class="tf-hero-actions">
+              <a class="btn primary" id="heroPrimary" href="#">继续学习<svg class="icon sm"><use href="#i-arrow"/></svg></a>
+              <a class="btn ghost" id="heroSecondary" href="#">生成新资料</a>
+              <span class="tf-mini" id="heroHint"></span>
+            </div>
           </div>
-        </div>
-        <div class="hero-side card" style="padding:22px;display:flex;flex-direction:column;justify-content:center">
-          <div class="eyebrow" style="margin-bottom:8px">下一步建议</div>
-          <h3 id="nextTitle" style="margin:0 0 6px;font-size:18px">—</h3>
-          <p class="muted" id="nextDesc" style="font-size:12.5px;line-height:1.7;margin:0 0 14px">—</p>
-          <a class="btn primary sm" id="nextBtn" href="#" style="align-self:flex-start">继续复习</a>
-          <div class="stat-row" style="margin-top:18px">
-            <div class="stat"><b id="statMaterials">—</b><span>资料</span></div>
-            <div class="stat"><b id="statGenerated">—</b><span>已生成</span></div>
-            <div class="stat"><b id="statCourses">—</b><span>课程</span></div>
+          <div class="tf-hero-side">
+            <div style="display:flex;align-items:center;gap:18px">
+              <div class="tf-ring" id="todayRing" style="--p:0"><div><b id="ringValue">0</b><span id="ringLabel">到期错题</span></div></div>
+              <div>
+                <div class="eyebrow">Today</div>
+                <div style="font-size:13px;color:var(--ink-2);margin-top:6px" id="ringHint">先清掉到期错题，再开新章。</div>
+              </div>
+            </div>
+            <div class="tf-stat-row">
+              <div><span>剩余天数</span><b id="statDays">—</b></div>
+              <div><span>目标分</span><b id="statTarget">—</b></div>
+              <div><span>资料 / 已生成</span><b id="statAssets">—</b></div>
+            </div>
           </div>
+        </section>
+
+        <div class="tf-metrics">
+          <div class="tf-metric"><b id="mCourses">0</b><span>门课程</span></div>
+          <div class="tf-metric"><b id="mMaterials">0</b><span>份资料</span></div>
+          <div class="tf-metric"><b id="mGenerated">0</b><span>份生成物</span></div>
         </div>
-      </section>
 
-      <div class="section-head"><h2>进行中的课</h2><div class="line"></div><a class="btn ghost sm" href="courses.html">全部课程 <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
-      <section class="course-grid" id="courseGrid">
-        <article class="card hover course">
-          <div class="course-top"><span class="chip brand">重点</span><span class="tiny muted">12 天后考试</span></div>
-          <h3>物理化学</h3>
-          <div class="meta">3 章 · 18 页讲义 · 5 个错题</div>
-          <div class="bar"><i style="width:42%"></i></div>
-          <div class="course-foot"><span>已学 42%</span><a class="btn ghost sm" href="reader.html">继续</a></div>
-        </article>
-        <article class="card hover course">
-          <div class="course-top"><span class="chip ok">稳</span><span class="tiny muted">5 天后考试</span></div>
-          <h3>大学物理</h3>
-          <div class="meta">刚体力学 · 36 张配图 · 已生成</div>
-          <div class="bar"><i style="width:88%"></i></div>
-          <div class="course-foot"><span>已学 88%</span><a class="btn ghost sm" href="reader.html">复习</a></div>
-        </article>
-        <article class="card hover course">
-          <div class="course-top"><span class="chip accent">刚开始</span><span class="tiny muted">20 天后考试</span></div>
-          <h3>数据结构</h3>
-          <div class="meta">0 页讲义 · 待上传资料</div>
-          <div class="bar"><i style="width:6%;background:var(--faint)"></i></div>
-          <div class="course-foot"><span>未开始</span><button class="btn ghost sm">上传资料</button></div>
-        </article>
-      </section>
-
-
-      <div class="section-head"><h2>这次考试，分都在哪</h2><div class="line"></div><span class="tiny muted">按你上传的 3 份资料统计</span></div>
-      <section class="card" style="padding:18px 20px">
-        <div class="marks">
-          <div class="mark-row"><span>电化学</span><div class="track"><i style="width:35%"></i></div><b>35%</b></div>
-          <div class="mark-row"><span>热力学</span><div class="track"><i style="width:25%"></i></div><b>25%</b></div>
-          <div class="mark-row"><span>化学动力学</span><div class="track"><i style="width:20%"></i></div><b>20%</b></div>
-          <div class="mark-row"><span>统计热力学</span><div class="track"><i style="width:12%"></i></div><b>12%</b></div>
-          <div class="mark-row"><span>其他</span><div class="track"><i style="width:8%"></i></div><b>8%</b></div>
+        <div id="recentWrap">
+          <div class="tf-section-head"><h2>最近生成</h2><a class="link" href="courses.html">全部</a></div>
+          <div class="tf-grid-3" id="recentGrid"></div>
         </div>
-        <p class="note" style="margin:12px 0 0">优先攻「电化学 + 热力学」= 60% 的分值；你现在电化学掌握度 3/5，把这章补完预计能多拿 8 分。</p>
-      </section>
 
-      <div class="section-head"><h2>今天做什么</h2><div class="line"></div><span class="tiny muted">按考试紧迫度排序</span></div>
-      <section class="task-list">
-        <div class="task"><span class="dot"></span><div class="grow"><b>看完「电化学 · 可逆电池」</b><p>约 18 分钟 · 物理化学</p></div><a class="btn sm" href="reader.html">开始</a></div>
-        <div class="task"><span class="dot orange"></span><div class="grow"><b>做 5 道电化学自测</b><p>约 12 分钟 · 覆盖 3 个考点</p></div><button class="btn sm" data-toast="练习模块还在开发中">去练习</button></div>
-        <div class="task"><span class="dot green"></span><div class="grow"><b>复习 3 个错题</b><p>约 8 分钟 · 遗忘曲线提醒</p></div><button class="btn sm" data-toast="错题本即将上线">复习</button></div>
-      </section>
-
-      
+        <div class="tf-section-head">
+          <h2>我的课程</h2>
+          <a class="link" href="courses.html">管理课程 <svg class="icon sm" style="vertical-align:-2px"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="tf-grid-3" id="courseGrid"></div>
+      </div>
     </div>
   </main>
 </div>
 
-<nav class="mobile-tab">
-  <a class="active"><svg class="icon"><use href="#i-home"/></svg>首页</a>
-  <a><svg class="icon"><use href="#i-book"/></svg>课程</a>
-  <a><svg class="icon"><use href="#i-spark"/></svg>练习</a>
-  <a><svg class="icon"><use href="#i-gear"/></svg>设置</a>
-</nav>
-
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=18"></script>
-
 <script>
 (function(){
-  function esc(t){ return String(t).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
-  function courseCard(c){
-    return '<article class="card hover course"><div class="course-top"><span class="chip">'
-      + (c.days_left <= 3 ? '临近考试' : '进行中') + '</span><span class="tiny muted">'
-      + c.days_left + ' 天后考试</span></div><h3>' + esc(c.name) + '</h3>'
-      + '<div class="meta">' + c.materials + ' 份资料 · ' + c.generated + ' 份已生成 · 目标 ' + c.target_score + ' 分</div>'
-      + '<div class="bar"><i style="width:' + Math.min(92, 8 + c.generated * 14) + '%"></i></div>'
-      + '<div class="course-foot"><span>' + (c.materials ? '资料就绪' : '待上传') + '</span>'
-      + '<span style="display:flex;gap:6px"><a class="btn ghost sm" href="upload.html?course=' + c.id + '">资料</a>'
-      + '<a class="btn ghost sm" href="generate.html?course=' + c.id + '">生成</a>'
-      + '<a class="btn sm" href="course_detail.html?course=' + c.id + '">打开课程</a></span></div></article>';
-  }
-  fetch('/api/profile').then(function(r){return r.json();}).then(function(p){
-    if(p.name){
-      var t=document.querySelector('.page-title');
-      if(t) t.textContent = (new Date().getHours()<12?'上午好，':(new Date().getHours()<18?'下午好，':'晚上好，')) + p.name;
-      document.querySelectorAll('.rail-foot b, aside b').forEach(function(el){ if(el.textContent==='林同学') el.textContent=p.name; });
-    }
-  }).catch(function(){});
-  function scrubDemo(){
-    document.querySelectorAll('.task-list').forEach(function(el){
-      el.style.display='none';
-      var h=el.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
     });
-    document.querySelectorAll('.marks').forEach(function(el){
-      var sec=el.closest('section'); if(sec) sec.style.display='none';
-      var h=sec && sec.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none';
-    });
-    var week=document.querySelector('.rail-foot > .card'); if(week) week.style.display='none';
-    var streak=document.querySelector('.page-head .chip'); if(streak) streak.style.display='none';
-    var rg=document.getElementById('recentGrid');
-    if(rg){ rg.innerHTML=''; var h=rg.previousElementSibling; if(h && h.classList.contains('section-head')) h.style.display='none'; }
   }
-  function emptyHome(){
-    var hero=document.querySelector('.hero');
-    hero.innerHTML='<div style="width:100%;padding:54px 30px;text-align:center">'
-      +'<div class="serif" style="font-size:30px;margin-bottom:8px">还没有课程</div>'
-      +'<p class="muted" style="margin:0 0 20px">先新建一门课，上传资料，5 分钟后就能开始。</p>'
-      +'<a class="btn primary" href="courses.html?new=1">新建课程</a></div>';
-    document.getElementById('homeSub').textContent='还没有课程，先新建一门';
-    document.getElementById('courseGrid').innerHTML='';
+  function daysText(n){
+    n = Number(n || 0);
+    if(n <= 0) return '今天考试';
+    if(n <= 3) return '还有 ' + n + ' 天 · 冲刺';
+    return '还有 ' + n + ' 天';
   }
-  fetch('/api/overview').then(function(r){ return r.json(); }).then(function(d){
-    scrubDemo();
-    if(!d.courses.length){ emptyHome(); applyFilter(); return; }
-    var focus = d.stats.focus || d.courses[0];
+  var TYPE = {guide:'讲义', extract:'提取', exam:'试卷', analysis:'分析'};
+
+  function greeting(){
+    var h = new Date().getHours();
+    return h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
+  }
+  function dateLine(){
+    var d = new Date();
+    var w = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    return (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日 · ' + w;
+  }
+
+  function renderEmpty(){
+    $('emptyHome').style.display = 'block';
+    $('homeBody').style.display = 'none';
+    $('homeSub').textContent = '还没有课程。先建一门，资料解析和生成都从这里开始。';
+  }
+
+  function render(d, mistakes){
+    var courses = d.courses || [];
+    var recent = d.recent || [];
+    var stats = d.stats || {};
+    var focus = stats.focus || courses[0];
+    var due = (mistakes || []).filter(function(m){ return m.due && !m.mastered; }).length;
+
+    if(!courses.length){ renderEmpty(); return; }
+    $('emptyHome').style.display = 'none';
+    $('homeBody').style.display = 'block';
+
     if(focus){
-      document.getElementById('heroKicker').textContent = '距 ' + focus.name + ' 考试 · ' + focus.days_left + ' 天';
-      document.getElementById('heroTitle').innerHTML = esc(focus.name) + '<br><b>还有 ' + focus.days_left + ' 天，目标 ' + focus.target_score + ' 分</b>';
-      document.getElementById('heroDesc').textContent = '已有 ' + focus.materials + ' 份资料、' + focus.generated + ' 份生成材料。先把重点章节过一遍，再做题。';
-      document.getElementById('heroRead').href = 'reader.html?course=' + focus.id;
-      document.getElementById('homeSub').textContent = '共 ' + d.stats.courses + ' 门课 · 最近考试在 ' + (d.stats.nearest === null ? '—' : d.stats.nearest + ' 天后');
-      var nextT=document.getElementById('nextTitle'), nextD=document.getElementById('nextDesc'), nextB=document.getElementById('nextBtn');
-      if(nextT){
-        if(!focus.generated){ nextT.textContent='先生成第一份讲义'; nextD.textContent=focus.name+' 已有 '+focus.materials+' 份资料，还没有生成物。'; nextB.textContent='去生成'; nextB.href='generate.html?course='+focus.id; }
-        else { nextT.textContent='继续复习 ' + focus.name; nextD.textContent='距离考试还有 '+focus.days_left+' 天，已生成 '+focus.generated+' 份材料。'; nextB.textContent='继续阅读'; nextB.href='reader.html?course='+focus.id; }
-      }
-      document.getElementById('statMaterials').textContent = d.stats.materials;
-      document.getElementById('statGenerated').textContent = d.courses.reduce(function(a,c){ return a + c.generated; }, 0);
-      document.getElementById('statCourses').textContent = d.stats.courses;
+      $('heroEyebrow').textContent = 'TODAY · ' + daysText(focus.days_left);
+      $('heroTitle').textContent = focus.name;
+      $('heroDesc').textContent = '目标 ' + (focus.target_score || 80) + ' 分 · '
+        + (focus.materials || 0) + ' 份资料 · ' + (focus.generated || 0) + ' 份生成物。'
+        + (due ? ' 今天有 ' + due + ' 道到期错题，先清掉再开新章。' : ' 到期错题已清空，按自己的节奏推进。');
+      $('heroPrimary').href = focus.generated ? ('reader.html?course=' + focus.id) : ('generate.html?course=' + focus.id);
+      $('heroPrimary').innerHTML = (focus.generated ? '继续学习' : '开始生成')
+        + '<svg class="icon sm"><use href="#i-arrow"/></svg>';
+      $('heroSecondary').href = 'generate.html?course=' + focus.id;
+      $('heroSecondary').textContent = focus.generated ? '再生成一份' : '生成讲义';
+      $('heroHint').textContent = focus.generated ? '上次内容已保存' : '先上传资料';
+      $('statDays').textContent = focus.days_left + ' 天';
+      $('statTarget').textContent = (focus.target_score || 80) + ' 分';
+      $('statAssets').textContent = (focus.materials || 0) + ' / ' + (focus.generated || 0);
     }
-    if(d.courses.length) document.getElementById('courseGrid').innerHTML = d.courses.slice(0,6).map(courseCard).join('');
-    var labels = {guide:'讲义', extract:'资料提取', exam:'训练试卷', analysis:'逻辑分析'};
-    document.getElementById('recentGrid').innerHTML = '';
-    if(d.recent.length){
-      document.getElementById('recentGrid').innerHTML = d.recent.map(function(r){
-        return '<article class="card hover course"><h3>' + esc(r.course) + ' · ' + (labels[r.type] || '材料') + '</h3>'
-          + '<div class="meta">' + esc(r.filename) + '</div><div class="course-foot">'
-          + '<span class="chip">' + (r.has_md ? '可阅读' : '需重生成') + '</span>'
-          + '<a class="btn ghost sm" href="reader.html?course=' + r.course_id + '&file=' + r.file_id + '">阅读</a></div></article>';
+
+    var pct = due ? 0 : 100;
+    if($('todayRing')) $('todayRing').style.setProperty('--p', pct);
+    $('ringValue').textContent = due ? due : '✓';
+    $('ringLabel').textContent = due ? '到期错题' : '今日清空';
+    $('ringHint').textContent = due ? '清掉它们，再开始新内容。' : '没有到期错题，可以开始一章新的。';
+
+    $('mCourses').textContent = courses.length;
+    $('mMaterials').textContent = stats.materials || 0;
+    $('mGenerated').textContent = courses.reduce(function(a,c){ return a + (c.generated || 0); }, 0);
+
+    if(recent.length){
+      $('recentWrap').style.display = 'block';
+      $('recentGrid').innerHTML = recent.slice(0,3).map(function(r){
+        var href = r.has_md ? ('reader.html?course=' + r.course_id) : ('generate.html?course=' + r.course_id);
+        return '<a class="tf-recent" href="' + href + '">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+          + '<span class="chip brand">' + esc(TYPE[r.type] || '资料') + '</span>'
+          + '<span class="tf-mini">' + (r.has_md ? '可阅读' : '需重生成') + '</span></div>'
+          + '<h3>' + esc(r.course) + ' · ' + esc(TYPE[r.type] || '资料') + '</h3>'
+          + '<div class="tf-mini" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+          + esc(r.filename) + '</div></a>';
       }).join('');
+    } else {
+      $('recentWrap').style.display = 'none';
     }
-    applyFilter();
-  }).catch(function(e){ console.error('overview failed', e); });
-  function applyFilter(){
-    var q = (document.getElementById('globalSearch').value || '').trim().toLowerCase();
-    ['courseGrid','recentGrid'].forEach(function(id){
-      var box = document.getElementById(id); if(!box) return;
-      Array.prototype.forEach.call(box.children, function(card){
-        card.style.display = !q || card.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
-      });
+
+    $('courseGrid').innerHTML = courses.map(function(c){
+      var href = c.generated ? ('reader.html?course=' + c.id) : ('generate.html?course=' + c.id);
+      var p = Math.min(100, Math.max(4, (c.generated || 0) * 12));
+      return '<a class="tf-course" href="' + href + '">'
+        + '<div class="tf-course-top"><span class="chip">' + esc(c.major || '课程') + '</span>'
+        + '<span class="tiny muted">' + daysText(c.days_left) + '</span></div>'
+        + '<h3>' + esc(c.name) + '</h3>'
+        + '<div class="meta"><span>' + (c.materials || 0) + ' 份资料</span><span>' + (c.generated || 0) + ' 份已生成</span></div>'
+        + '<div class="spacer"></div>'
+        + '<div class="bar" style="height:4px"><i style="width:' + p + '%"></i></div>'
+        + '<div class="tf-course-foot"><span class="tf-mini">' + (c.generated ? '继续' : '待生成') + '</span>'
+        + '<span class="tf-mini" style="color:var(--brand)">打开 →</span></div></a>';
+    }).join('');
+
+    $('homeSub').textContent = courses.length + ' 门课程 · ' + (stats.materials || 0)
+      + ' 份资料 · 最近考试在 ' + (stats.nearest == null ? '—' : stats.nearest + ' 天后');
+  }
+
+  function load(){
+    Promise.all([
+      fetch('/api/overview').then(function(r){ return r.json(); }),
+      fetch('/api/mistakes').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      fetch('/api/profile').then(function(r){ return r.json(); }).catch(function(){ return {}; })
+    ]).then(function(res){
+      var d = res[0] || {}, ms = res[1] || [], p = res[2] || {};
+      if(p && p.name){
+        if($('railName')) $('railName').textContent = p.name;
+        if($('railAvatar')) $('railAvatar').textContent = String(p.name).slice(0,1);
+      }
+      $('greeting').textContent = greeting() + '，' + ((p && p.name) || '同学');
+      $('dateLine').textContent = dateLine();
+      render(d, ms);
+    }).catch(function(){
+      $('homeSub').textContent = '本地服务未启动，请重新打开 TermFinale。';
+      $('emptyHome').style.display = 'block';
+      $('homeBody').style.display = 'none';
     });
   }
-  var gs = document.getElementById('globalSearch');
-  if(gs){ gs.addEventListener('input', applyFilter); }
+
+  $('themeBtn').addEventListener('click', function(){
+    var cur = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = cur;
+    try { localStorage.setItem('tf-theme', cur); } catch(e) {}
+    this.innerHTML = '<svg class="icon sm"><use href="#' + (cur === 'dark' ? 'i-moon' : 'i-sun') + '"/></svg>';
+  });
+  if(document.documentElement.dataset.theme === 'light'){
+    $('themeBtn').innerHTML = '<svg class="icon sm"><use href="#i-sun"/></svg>';
+  }
+
+  $('globalSearch').addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase();
+    var cards = document.querySelectorAll('#courseGrid .tf-course');
+    Array.prototype.forEach.call(cards, function(el){
+      el.style.display = (!q || el.textContent.toLowerCase().indexOf(q) >= 0) ? '' : 'none';
+    });
+  });
+  $('globalSearch').addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && this.value.trim()){
+      location.href = 'courses.html?q=' + encodeURIComponent(this.value.trim());
+    }
+  });
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
 })();
 </script>
-  <script src="assets/i18n.js?v=1"></script>
 </body>
 </html>

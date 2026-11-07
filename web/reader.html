@@ -1,10 +1,12 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light" data-accent="graphite">
+<html lang="zh-CN" data-theme="dark" data-accent="graphite">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
 <title>阅读 · TermFinale</title>
 <link rel="stylesheet" href="assets/app.css?v=18">
+<link rel="stylesheet" href="assets/premium.css?v=1">
 <link rel="stylesheet" href="assets/katex/katex.inline.css">
 <script src="assets/katex/katex.min.js"></script>
 <script src="assets/katex/auto-render.min.js"></script>
@@ -211,8 +213,10 @@
 
   function buildToc(toc){
     var box = $('tocList'); box.innerHTML = '';
+    // extract/试卷没有 h2 时，用 h3 兜底，避免“本章暂无小节”
+    var want = toc.some(function(t){ return t.level === '2'; }) ? '2' : '3';
     toc.forEach(function(item){
-      if(item.level !== '2') return;
+      if(item.level !== want) return;
       var a = document.createElement('a');
       a.href = '#' + item.id;
       a.textContent = item.text.replace(/^(?:核心考点|核心考點|Core Concept)[:：]\s*/, '');

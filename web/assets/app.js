@@ -20,7 +20,7 @@
 
   /* 主题与强调色 */
   var html = document.documentElement;
-  html.dataset.theme = localStorage.getItem('tf-theme') || 'light';
+  html.dataset.theme = localStorage.getItem('tf-theme') || 'dark';
   html.dataset.accent = localStorage.getItem('tf-accent') || 'graphite';
 
   var params = new URLSearchParams(location.search);
@@ -295,11 +295,11 @@
 
   /* 统一侧栏：所有页面共用同一份导航，避免缺项/缺图标 */
   var TF_NAV = [
-    ["dashboard.html", "今日冲刺", '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>'],
-    ["courses.html", "我的课程", '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/>'],
-    ["practice.html", "练习与错题", '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>'],
-    ["review_plan.html", "复习计划", '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
-    ["materials_stats.html", "资料统计", '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>'],
+    ["dashboard.html", "今日", '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>'],
+    ["courses.html", "课程", '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/>'],
+    ["practice.html", "练习", '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>'],
+    ["review_plan.html", "计划", '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
+    ["materials_stats.html", "资料", '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>'],
     ["notes.html", "笔记", '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M8 8h8M8 12h6"/>'],
     ["settings.html", "设置", '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1Z"/>']
   ];
