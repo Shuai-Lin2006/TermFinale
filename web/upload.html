@@ -123,6 +123,7 @@
   function selectCourse(id){
     courseId = id;
     $('goGenerate').href = 'generate.html?course=' + id;
+    syncEditLink();
     loadMaterials();
   }
 

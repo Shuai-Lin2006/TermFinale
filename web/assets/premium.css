@@ -316,3 +316,10 @@ a{color:inherit}
   .mobile-tab{display:flex!important}
   .page{padding-bottom:96px}
 }
+
+/* 强调色：设置页的色板要真的生效（深色主题各一套） */
+[data-theme="dark"][data-accent="graphite"]{--brand:#7fe3c4;--brand-2:#a9f2db;--brand-soft:#0f2620;--brand-deep:#062018;--brand-ink:#062018}
+[data-theme="dark"][data-accent="indigo"]{--brand:#a9bcff;--brand-2:#c4d2ff;--brand-soft:#141a2c;--brand-deep:#0a1020;--brand-ink:#0a1020}
+[data-theme="dark"][data-accent="teal"]{--brand:#72dcc0;--brand-2:#9ef0d9;--brand-soft:#0d241f;--brand-deep:#061a15;--brand-ink:#061a15}
+[data-theme="dark"][data-accent="clay"]{--brand:#f0b08a;--brand-2:#ffc9a9;--brand-soft:#2a1c14;--brand-deep:#1d120c;--brand-ink:#1d120c}
+[data-theme="dark"][data-accent="plum"]{--brand:#e6a9db;--brand-2:#f3c2ea;--brand-soft:#271722;--brand-deep:#1b0f18;--brand-ink:#1b0f18}
