@@ -226,3 +226,9 @@ topics 全部落在白名单内
 
 - `compileall` 全通过；`pyflakes` 覆盖 main/launcher/desktop/server/services/core/models/tools 全净（清掉 parser 一个未使用变量）。
 - 测试 105 项全绿。
+
+## 上传页终版（02:00–02:10）
+
+- `upload.html` 重写：大拖拽区/格式 chips/上传队列/进度条/失败态/500MB 校验/已有资料列表/空课程态；文件名转义。
+- 截图：`/tmp/tf_verify/ui2/upload3.png`，固化 `docs/screenshots/upload.png`。
+- 测试仍 105 项全绿。

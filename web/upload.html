@@ -5,83 +5,72 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
 <title>上传资料 · TermFinale</title>
-<link rel="stylesheet" href="assets/app.css?v=18">
+<link rel="stylesheet" href="assets/app.css?v=23">
 <link rel="stylesheet" href="assets/premium.css?v=1">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
-  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
-  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
-  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol>
 </svg>
 
 <div class="app">
   <aside class="rail">
-    <div class="brand"><div class="brand-mark">TF</div>
-      <div><div class="brand-name">TermFinale</div><div class="brand-sub">期末冲刺工作台</div></div></div>
-    <nav class="nav">
-      <a class="nav-item" href="dashboard.html"><svg class="icon"><use href="#i-home"/></svg>今日冲刺</a>
-      <a class="nav-item" href="courses.html"><svg class="icon"><use href="#i-book"/></svg>我的课程</a>
-      <a class="nav-item" href="practice.html"><svg class="icon"><use href="#i-spark"/></svg>练习与错题</a>
-      <a class="nav-item" href="review_plan.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>复习计划</a>
-      <a class="nav-item" href="materials_stats.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>资料统计</a>
-      <a class="nav-item active"><svg class="icon"><use href="#i-layers"/></svg>上传资料</a>
-      <a class="nav-item" href="notes.html"><svg class="icon"><use href="#i-book"/></svg>笔记</a>
-      <a class="nav-item" href="settings.html"><svg class="icon"><use href="#i-gear"/></svg>设置</a>
-    </nav>
-    <div class="rail-foot"><div class="user"><div class="avatar">林</div>
-      <div><div style="font-size:13px;font-weight:600">林同学</div><div class="tiny muted">大二 · 环境工程</div></div></div></div>
+    <div class="brand"><span class="brand-mark">TF</span><div><div class="brand-name">TermFinale</div><div class="brand-sub">期末复习工作台</div></div></div>
+    <nav class="nav"></nav>
+    <div class="rail-foot"></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="tiny muted">课程</span>
-        <select class="select" id="courseSelect"></select>
-      </div>
+      <span class="eyebrow">COURSE</span>
+      <select class="select" id="courseSelect" style="min-width:190px"></select>
       <div class="spacer"></div>
       <span class="chip" id="apiState">连接中…</span>
-      <button class="btn ghost sm" id="themeBtn2"><svg class="icon sm"><use href="#i-moon"/></svg></button>
+      <a class="btn ghost sm" id="editCourse" href="courses.html">编辑课程</a>
+      <a class="btn primary sm" id="goGenerate" href="generate.html">去生成<svg class="icon sm"><use href="#i-arrow"/></svg></a>
     </header>
 
     <div class="page">
       <div class="page-head">
-        <div><h1 class="page-title">上传资料</h1>
-          <div class="page-sub" id="sub">资料按课程独立保存，不会跨课共用 · PDF / 扫描件 / PPTX / Word / 照片 / 音频</div></div>
-        <div class="spacer"></div>
-        <a class="btn" id="editCourse" href="courses.html" style="margin-right:8px">编辑课程</a>
-        <a class="btn" id="goGenerate" href="generate.html"><svg class="icon sm"><use href="#i-spark"/></svg>去生成</a>
+        <div>
+          <div class="eyebrow">UPLOAD</div>
+          <h1 class="page-title">上传资料</h1>
+          <div class="page-sub" id="sub">资料按课程独立保存，不会跨课共用。PDF / 扫描件 / PPTX / Word / 照片 / 音频。</div>
+        </div>
       </div>
 
-      <div class="grid-2">
-        <div>
-          <section class="card" style="padding:18px 20px">
-            <div class="drop" id="drop">
-              <svg class="icon"><use href="#i-upload"/></svg>
-              <b>拖文件到这里，或点击选择</b>
-              <span>支持多选；单个文件不超过 500MB</span>
-              <input type="file" id="fileInput" multiple hidden
-                     accept=".pdf,.pptx,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.mp3,.wav,.m4a,.aac,.flac,.ogg,.amr">
+      <div class="upload-grid">
+        <section class="card upload-card">
+          <div class="drop" id="drop">
+            <div class="drop-icon"><svg class="icon"><use href="#i-upload"/></svg></div>
+            <b>拖文件到这里，或点击选择</b>
+            <span>支持多选 · 单个文件不超过 500MB</span>
+            <div class="drop-formats">
+              <span class="chip">PDF</span><span class="chip">PPTX</span><span class="chip">DOCX</span>
+              <span class="chip">图片</span><span class="chip">音频</span>
             </div>
-            <div id="queue" style="margin-top:14px"></div>
-          </section>
-        </div>
+            <input type="file" id="fileInput" multiple hidden
+                   accept=".pdf,.pptx,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.mp3,.wav,.m4a,.aac,.flac,.ogg,.amr">
+          </div>
+          <div id="queue" class="upload-queue"></div>
+          <div class="tf-mini" style="margin-top:12px">扫描件/照片会先 OCR；解析结果会缓存，重复生成不重复花钱。</div>
+        </section>
 
         <aside>
-          <section class="card" style="padding:18px 20px;margin-bottom:14px">
-            <div class="section-head" style="margin:0 0 10px"><h2>已有资料</h2><div class="line"></div>
-              <span class="tiny muted" id="count">0 份</span></div>
+          <section class="card" style="padding:16px 18px;margin-bottom:14px">
+            <div class="tf-section-head" style="margin:0 0 10px">
+              <h2 style="font-size:15px">已有资料</h2>
+              <span class="tf-mini" id="count">0 份</span>
+            </div>
             <div id="materials"><div class="tiny muted">加载中…</div></div>
           </section>
           <section class="card" style="padding:16px 18px">
-            <div class="tiny muted" style="margin-bottom:6px">说明</div>
-            <p class="note" style="margin:0">扫描件、教材照片和音频需要额外转写，首次会慢一点；转写结果会缓存，之后再生成不会重复花钱。</p>
+            <div class="eyebrow" style="margin-bottom:8px">Notes</div>
+            <p class="note" style="margin:0">资料越多，讲义越全；只有一份也能生成。缺页会在阅读器里标出来，不会假装完整。</p>
           </section>
         </aside>
       </div>
@@ -90,67 +79,85 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=18"></script>
+<script src="assets/app.js?v=23"></script>
+<script src="assets/i18n.js?v=2"></script>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
   var toast = window.__toast || function(){};
   var courseId = null;
+  var MAX = 500 * 1024 * 1024;
 
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
   function syncEditLink(){
-    var el=document.getElementById('editCourse'); if(!el) return;
-    var sel=document.getElementById('courseSelect');
-    el.href='courses.html?edit='+encodeURIComponent(sel.value||'');
+    var el = $('editCourse'); if(!el) return;
+    el.href = 'courses.html?edit=' + encodeURIComponent($('courseSelect').value || '');
   }
   function loadCourses(){
-    return fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
+    fetch('/api/courses').then(function(r){ return r.json(); }).then(function(list){
       $('apiState').textContent = '已连接';
       var sel = $('courseSelect'); sel.innerHTML = '';
-      list.forEach(function(c){
+      (list || []).forEach(function(c){
         var o = document.createElement('option');
         o.value = c.id; o.textContent = c.name + ' · ' + c.days_left + ' 天后考试';
         sel.appendChild(o);
       });
+      if(!list || !list.length){
+        sel.innerHTML = '<option value="">还没有课程</option>';
+        $('materials').innerHTML = '<div class="tf-mini">先新建一门课，再上传资料。</div>';
+        $('goGenerate').style.display = 'none';
+        return;
+      }
       var want = new URLSearchParams(location.search).get('course');
       if(want) sel.value = want;
-      if(list.length) selectCourse(sel.value);
+      selectCourse(sel.value);
     }).catch(function(){
       $('apiState').textContent = '未连接';
-      $('materials').innerHTML = '<div class="tiny" style="color:var(--danger)">本地服务未启动</div>';
+      $('materials').innerHTML = '<div class="tf-mini" style="color:var(--danger)">本地服务未启动</div>';
     });
   }
-
   function selectCourse(id){
     courseId = id;
     $('goGenerate').href = 'generate.html?course=' + id;
+    $('goGenerate').style.display = '';
     syncEditLink();
     loadMaterials();
   }
-
   function loadMaterials(){
+    if(!courseId) return;
     fetch('/api/courses/' + courseId).then(function(r){ return r.json(); }).then(function(c){
       var box = $('materials');
-      $('count').textContent = (c.materials || []).length + ' 份';
-      if(!c.materials || !c.materials.length){ box.innerHTML = '<div class="tiny muted">还没有资料，先上传一份。</div>'; return; }
-      box.innerHTML = c.materials.map(function(m){
+      var mats = c.materials || [];
+      $('count').textContent = mats.length + ' 份';
+      if(!mats.length){
+        box.innerHTML = '<div class="tf-mini">还没有资料，先上传一份。</div>';
+        return;
+      }
+      box.innerHTML = mats.map(function(m){
         var ext = (m.filename.split('.').pop() || '').toUpperCase().slice(0, 4);
-        return '<div class="file-row"><span class="badge">' + ext + '</span>' +
-          '<span class="grow">' + m.filename + '</span>' +
-          '<span class="tiny muted">' + (m.size_kb || 0) + ' KB</span>' +
-          (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') +
-          '<button class="btn ghost sm" data-del="' + m.id + '" title="删除">' +
-          '<svg class="icon sm"><use href="#i-trash"/></svg></button></div>';
+        return '<div class="file-row">'
+          + '<span class="badge">' + esc(ext) + '</span>'
+          + '<span class="grow" title="' + esc(m.filename) + '">' + esc(m.filename) + '</span>'
+          + '<span class="tf-mini">' + (m.size_kb || 0) + ' KB</span>'
+          + '<button class="btn ghost sm" data-del="' + m.id + '" title="删除">'
+          + '<svg class="icon sm"><use href="#i-trash"/></svg></button></div>';
       }).join('');
       box.querySelectorAll('[data-del]').forEach(function(b){
         b.addEventListener('click', function(){
-          if(!confirm('删除这份资料？')) return;
-          fetch('/api/courses/' + courseId + '/materials/' + b.dataset.del, { method:'DELETE' })
-            .then(function(){ loadMaterials(); toast('已删除'); });
+          if(!confirm('删除这份资料？原文件不会从桌面删除。')) return;
+          fetch('/api/courses/' + courseId + '/materials/' + b.dataset.del, {method:'DELETE'})
+            .then(function(r){ if(!r.ok) throw new Error(); loadMaterials(); toast('已删除'); })
+            .catch(function(){ toast('删除失败，请重试'); });
         });
       });
+    }).catch(function(){
+      $('materials').innerHTML = '<div class="tf-mini" style="color:var(--danger)">资料加载失败</div>';
     });
   }
-
   function uploadOne(file, row, bar){
     return new Promise(function(resolve){
       var xhr = new XMLHttpRequest();
@@ -159,31 +166,45 @@
         if(e.lengthComputable) bar.style.width = Math.round(e.loaded / e.total * 100) + '%';
       };
       xhr.onload = function(){
-        if(xhr.status >= 200 && xhr.status < 300){ row.dataset.ok = '1'; bar.style.width = '100%'; }
-        else { row.style.color = 'var(--danger)'; row.textContent = file.name + ' · 上传失败'; }
+        if(xhr.status >= 200 && xhr.status < 300){
+          row.dataset.ok = '1';
+          row.querySelector('.up-state').textContent = '完成';
+          bar.style.width = '100%';
+        } else {
+          row.classList.add('up-error');
+          row.querySelector('.up-state').textContent = '失败';
+          row.title = '上传失败（HTTP ' + xhr.status + '）';
+        }
         resolve();
       };
-      xhr.onerror = function(){ row.style.color = 'var(--danger)'; row.textContent = file.name + ' · 网络错误'; resolve(); };
+      xhr.onerror = function(){
+        row.classList.add('up-error');
+        row.querySelector('.up-state').textContent = '网络错误';
+        resolve();
+      };
       var fd = new FormData(); fd.append('file', file);
       xhr.send(fd);
     });
   }
-
   function handleFiles(files){
     if(!courseId){ toast('先选择课程'); return; }
     var queue = $('queue');
     var tasks = [];
     Array.prototype.forEach.call(files, function(file){
+      if(file.size > MAX){
+        toast(file.name + ' 超过 500MB，已跳过');
+        return;
+      }
       var row = document.createElement('div');
       row.className = 'up-item';
-      row.innerHTML = '<span class="grow" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-        file.name + '</span><span class="track"><i></i></span>';
+      row.innerHTML = '<span class="up-name" title="' + esc(file.name) + '">' + esc(file.name) + '</span>'
+        + '<span class="up-state">上传中</span><span class="track"><i></i></span>';
       queue.appendChild(row);
       tasks.push(uploadOne(file, row, row.querySelector('i')));
     });
     Promise.all(tasks).then(function(){
       setTimeout(loadMaterials, 300);
-      toast('上传完成');
+      if(tasks.length) toast('上传完成');
     });
   }
 
@@ -201,6 +222,5 @@
   loadCourses();
 })();
 </script>
-  <script src="assets/i18n.js?v=1"></script>
 </body>
 </html>
