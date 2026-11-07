@@ -24,7 +24,7 @@ from core.exporter import export_to_html
 from core.quality.dedupe import dedupe_markdown
 from core.lang_convert import to_hant
 from core.generate import outline_store
-from core.generate.outline import Chapter, Outline, generate_outline
+from core.generate.outline import Chapter, Outline, fallback_outline, generate_outline
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
 from core.quality.qa import check_chapters
@@ -201,9 +201,18 @@ def build_course_info(course: dict) -> CourseInfo:
     )
 
 
-def chapter_blocks(chapter: Chapter, pages: list[str], per_call: int = PAGES_PER_CALL) -> list[tuple[str, list[str]]]:
-    """把一章的页面打包成若干次请求：(正文, 该批次的图片标签)。"""
+def chapter_blocks(chapter: Chapter, pages: list[str], per_call: int = PAGES_PER_CALL,
+                   sample: bool = False) -> list[tuple[str, list[str]]]:
+    """把一章的页面打包成若干次请求：(正文, 该批次的图片标签)。
+
+    sample=True 时用于 >150 页的“章节概览”：只取该章头/中/尾少量页，
+    不再逐页展开，避免 1001 页跑出几百次调用。
+    """
     texts = [pages[i] for i in chapter.pages if 0 <= i < len(pages)]
+    if sample and len(texts) > 4:
+        positions = sorted({0, len(texts) // 3, 2 * len(texts) // 3, len(texts) - 1})
+        texts = [texts[p] for p in positions]
+        per_call = len(texts)
     blocks: list[tuple[str, list[str]]] = []
     for start in range(0, len(texts), per_call):
         batch = texts[start:start + per_call]
@@ -256,7 +265,7 @@ def run_guide(
     stop_event = stop_event or threading.Event()
     started = time.time()
     constraints = constraints or default_constraints("guide", material_kind=study_mode)
-    constraint_block = render_prompt(constraints)
+    teacher_rules = None
     is_key = mode == "key"
     user_choice = "option_1_保命流" if is_key else "option_2_硬核流"
 
@@ -319,13 +328,35 @@ def run_guide(
     if not pages:
         raise RuntimeError("未从资料中解析到任何内容")
 
+    # >150 页走章节概览：均匀抽样 + 每章一次生成，不再逐页展开。
+    overview_mode = len(pages) > 150
+    if overview_mode:
+        logger.info("长文档概览模式：{} 页，按章节抽样生成", len(pages))
+
+    # 老师重点：用完整 source_text 解析（基团列表等歧义要去资料里找）
+    try:
+        from core.quality.teacher_note import parse_teacher_note
+        teacher_rules = parse_teacher_note(user_note, source_text)
+        constraints.apply_teacher_rules(teacher_rules)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("老师重点解析失败（继续但只按字面约束）: {}", str(exc)[:100])
+    constraint_block = render_prompt(constraints)
+    if teacher_rules is not None and teacher_rules.unresolved:
+        logger.warning("老师重点有未解析项: {}", teacher_rules.unresolved)
+
     if outline is None:
-        cache_key = outline_store.fingerprint(material_meta, lang)
+        cache_key = outline_store.fingerprint(
+            material_meta, lang,
+            extra=f"{len(pages)}|{'overview' if overview_mode else 'full'}")
         outline = outline_store.load(cache_key)
         if outline is None:
             on_progress(ProgressEvent("🧭 正在规划课程大纲...", 0.12))
             outline = generate_outline(pages, course, lang=lang,
                                        ai_call=ai_call or _default_outline_ai)
+            if overview_mode and len(outline.chapters) > 20:
+                # AI 给了过多章：退回按页区间的概览大纲，控制调用次数
+                outline = fallback_outline(
+                    pages, chapters=min(12, max(6, len(pages) // 80)))
             outline_store.save(cache_key, outline)
     if not outline.chapters:
         raise RuntimeError("无法规划章节结构")
@@ -351,7 +382,9 @@ def run_guide(
     for ci, chapter in enumerate(outline.chapters):
         chapter_labels[ci] = [page_labels[p] for p in chapter.pages if p < len(page_labels)]
         target_words = max(700, min(2800, int(chapter.est_words * (0.6 if is_key else 1.0))))
-        blocks = chapter_blocks(chapter, pages)
+        if overview_mode:
+            target_words = 900
+        blocks = chapter_blocks(chapter, pages, sample=overview_mode)
         for bi, (content, tags) in enumerate(blocks):
             context = {
                 "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
@@ -361,7 +394,8 @@ def run_guide(
                 "neighbors": _neighbors(outline, ci),
                 "target_words": max(400, target_words // max(1, len(blocks))),
                 "urgency": urgency_text,
-                "must_cover": (chapter_labels[ci] if bi == 0 else []),
+                "must_cover": (chapter_labels[ci][:8] if bi == 0 else []),
+                "overview": overview_mode,
                 "study_mode": study_mode,
                 "school": course.get("school", "一本"),
                 "self_difficulty": course.get("difficulty", 3),
@@ -542,6 +576,8 @@ def run_guide(
         "core_ratio": core_ratio,
         "outline_source": outline.source,
         "outline_cached": outline.source == "cached",
+        "overview_mode": overview_mode,
+        "pages_total": len(pages),
         "chapters": total,
         "chapters_done": len(chapter_mds),
         "empty_calls": empty_calls,
@@ -561,6 +597,7 @@ def run_guide(
         "qa_issues": qa.issues[:20],
         "qa_chapters": qa.metrics.get("chapters", []),
         "constraints": constraints.to_dict(),
+        "teacher_rules": teacher_rules.to_dict() if teacher_rules is not None else None,
         "constraint_attempts": block_violations.metrics.get("attempts", 1),
         "validation": final_report.to_dict(),
     }

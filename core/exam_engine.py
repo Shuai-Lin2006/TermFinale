@@ -7,12 +7,15 @@ load_env()
 client = OpenAI(api_key=get_key("DEEPSEEK_API_KEY", "sk-not-configured"), base_url="https://api.deepseek.com")
 
 
-def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
-    """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。"""
+def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0, max_chars: int | None = None):
+    """调用文本模型：网络异常重试 3 次；空输出（思考耗尽）自动加倍预算再试。
+
+    不再无条件截断到 10k：整本 1001 页曾被悄悄砍成前 1.2%。需要截断的调用方
+    必须显式传 max_chars，并在提示词里说明“这是节选”。
+    """
     max_retries = 2
-    # 输入过长时模型容易返回空；保留前 14000 字符，保证能出卷
-    if len(user_content or "") > 10000:
-        user_content = user_content[:10000]
+    if max_chars and len(user_content or "") > max_chars:
+        user_content = user_content[:max_chars]
     for attempt in range(max_retries):
         budget = max(max_tokens(), min_budget)
         for _ in range(2):
@@ -45,6 +48,32 @@ def call_ai_with_retry(sys_prompt, user_content, temp=0.1, min_budget=0):
     return ""
 
 
+
+
+def sample_context(text: str, max_chars: int = 14000, windows: int = 10) -> tuple[str, bool]:
+    """全书均匀节选；返回 (文本, 是否被节选)。
+
+    用于 analysis/exam 这类需要“看全书”的任务：直接塞整本会被模型丢页，
+    只截前 10k 又只看到开头。均匀取 10 个窗口，至少覆盖全书头/中/尾。
+    """
+    text = text or ""
+    if len(text) <= max_chars:
+        return text, False
+    windows = max(2, windows)
+    win = max(600, max_chars // windows)
+    n = len(text)
+    step = max(1, (n - win) // (windows - 1))
+    parts: list[str] = []
+    for i in range(windows):
+        start = min(n - win, i * step)
+        head = text.rfind("【《", max(0, start - 300), start + 1)
+        if head != -1:
+            start = head
+        parts.append(text[start:start + win].strip())
+    body = "\n\n【…全书均匀节选…】\n\n".join(parts)
+    note = (f"\n\n【资料范围】原文 {n} 字，本次只提供全书均匀节选（{len(body)} 字）。"
+            "请基于节选做概览；不要假装读过未提供的页。")
+    return body + note, True
 
 
 def _note_block(user_note: str) -> str:
@@ -85,6 +114,7 @@ def generate_logic_analysis(raw_text: str, mode: str, user_note: str = "",
                                   (retry_note or "").strip()) if x)
     if extra:
         sys_prompt = extra + "\n\n" + sys_prompt
+    raw_text, _ = sample_context(raw_text, 16000)
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.2)
 
 
@@ -167,6 +197,7 @@ graph TD
                                   (retry_note or "").strip()) if x)
     if extra:
         sys_prompt = extra + "\n\n" + sys_prompt
+    raw_text, _ = sample_context(raw_text, 16000)
     return call_ai_with_retry(sys_prompt, raw_text, temp=0.3)
 
 
@@ -311,8 +342,11 @@ def _generate_sections(raw_text: str, lang: str, sections=None, train_type: str 
 - 不要输出答案或解析。
 {extra_rules}"""
         # 轮换资料片段，避免所有题型都只看第一页
-        start = (i * 1200) % max(1, len(raw_text) - 1200) if len(raw_text) > 1200 else 0
-        chunk = raw_text[start:start + 2200]
+        # 按题型在全书中均匀取样，而不是所有题型都挤在开头
+        total = len(raw_text)
+        chunk_len = min(2400, max(900, total // max(1, len(parsed))))
+        start = int(i * max(0, total - chunk_len) / max(1, len(parsed) - 1)) if len(parsed) > 1 else 0
+        chunk = raw_text[start:start + chunk_len]
         md = call_ai_with_retry(sys_p, chunk, temp=0.7, min_budget=2048)
         if not md.strip():
             md = call_ai_with_retry(sys_p, chunk[:800], temp=0.6, min_budget=2048)
@@ -400,6 +434,7 @@ def generate_exam_paper(raw_text: str, train_type: str, num_sets: int, difficult
     11. 🚨 必须写全四个大题（选择/填空/计算/综合），任何一类都不能省略；只写题目，答案由后续步骤单独生成。
     """
     # 第一步：只出题（避免“题目+解析”超出单次输出上限）
+    raw_text, _ = sample_context(raw_text, 14000)
     questions = call_ai_with_retry(sys_prompt, raw_text, temp=0.7, min_budget=8192)
     if not questions.strip():
         logger.warning("主模型多次返回空，切换备用模型")

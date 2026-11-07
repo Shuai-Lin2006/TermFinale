@@ -74,9 +74,18 @@ def fallback_outline(pages: list[str], chapters: int | None = None) -> Outline:
 # AI 大纲
 # --------------------------------------------------------------------------- #
 def build_digest(pages: list[str], per_page: int = 180, max_chars: int = 14000) -> str:
+    # 长文档不能只看前 40 页：均匀抽样，让大纲能覆盖全书（1001 页也成立）。
+    n = len(pages)
+    if n == 0:
+        return ""
+    if n <= MAX_TOTAL_PAGES:
+        indices = list(range(n))
+    else:
+        step = n / MAX_TOTAL_PAGES
+        indices = sorted({min(n - 1, int(i * step)) for i in range(MAX_TOTAL_PAGES)})
     lines = []
-    for i, page in enumerate(pages[:MAX_TOTAL_PAGES]):
-        head = re.sub(r"\s+", " ", _page_head(page, per_page))
+    for i in indices:
+        head = re.sub(r"\s+", " ", _page_head(pages[i], per_page))
         lines.append(f"[{i}] {head}")
     digest = "\n".join(lines)
     return digest[:max_chars]
@@ -95,21 +104,21 @@ def _extract_json(text: str) -> dict | None:
         return None
 
 
-def _normalize(data: dict, n_pages: int) -> list[Chapter]:
+def _normalize(data: dict, n_pages: int, all_pages: list[str] | None = None) -> list[Chapter]:
     chapters: list[Chapter] = []
     for i, item in enumerate(data.get("chapters", [])):
         if not isinstance(item, dict):
             continue
-        pages = []
+        page_list = []
         for p in item.get("pages", []):
             try:
                 p = int(p)
             except (TypeError, ValueError):
                 continue
             if 0 <= p < n_pages:
-                pages.append(p)
-        pages = sorted(set(pages))
-        if not pages:
+                page_list.append(p)
+        page_list = sorted(set(page_list))
+        if not page_list:
             continue
         title = str(item.get("title", "")).strip() or f"第 {i + 1} 部分"
         must = [str(x).strip() for x in item.get("must_know", []) if str(x).strip()][:8]
@@ -121,24 +130,49 @@ def _normalize(data: dict, n_pages: int) -> list[Chapter]:
             est_words = max(400, min(4000, int(item.get("est_words", 1800))))
         except (TypeError, ValueError):
             est_words = 1800
-        chapters.append(Chapter(len(chapters), title[:60], pages[:MAX_PAGES_PER_CHAPTER],
+        chapters.append(Chapter(len(chapters), title[:60], page_list[:MAX_PAGES_PER_CHAPTER],
                                 must, importance, est_words))
         if len(chapters) >= MAX_CHAPTERS:
             break
 
-    # 未覆盖的页：就近并入，避免整页内容丢失
+    # 未覆盖的页：长文档按页区间重新均衡分章；短文档就近并入。
+    # 旧逻辑每 6 页造一个“补充：N–N 页”章，1001 页会生成 170 章、约 340 次调用。
     assigned = {p for c in chapters for p in c.pages}
     missing = [p for p in range(n_pages) if p not in assigned]
-    if chapters:
-        for p in missing:
-            nearest = min(chapters, key=lambda c: min(abs(p - q) for q in c.pages))
-            if len(nearest.pages) < MAX_PAGES_PER_CHAPTER:
-                nearest.pages = sorted(nearest.pages + [p])
-            else:
-                chapters.append(Chapter(len(chapters), f"补充：{p + 1}–{p + 1} 页", [p]))
-    elif missing:
-        chapters = fallback_outline([""] * n_pages).chapters
+    if not chapters:
+        return fallback_outline([""] * n_pages).chapters if missing else chapters
+    if missing and n_pages > MAX_TOTAL_PAGES:
+        return _rebalance_chapters(chapters, all_pages or [""] * n_pages, n_pages)
+    for p in missing:
+        nearest = min(chapters, key=lambda c: min(abs(p - q) for q in c.pages))
+        nearest.pages = sorted(set(nearest.pages + [p]))
+    for idx, c in enumerate(chapters):
+        c.index = idx
     return chapters
+
+
+def _rebalance_chapters(chapters: list[Chapter], pages: list[str], n_pages: int) -> list[Chapter]:
+    """把长文档切成连续、均衡的页区间；标题优先沿用落在该区间里的 AI 章。"""
+    count = max(1, min(MAX_CHAPTERS, len(chapters)))
+    size = max(1, -(-n_pages // count))
+    seeds = sorted(chapters, key=lambda c: min(c.pages) if c.pages else n_pages)
+    out: list[Chapter] = []
+    for i in range(count):
+        start = i * size
+        end = min(n_pages, start + size)
+        if start >= end:
+            break
+        seed = next((c for c in seeds if start <= (min(c.pages) if c.pages else n_pages) < end), None)
+        title = (seed.title if seed else "").strip()
+        if not title or title.startswith("补充") or title.startswith("第 "):
+            head = _page_head(pages[start], 60) if start < len(pages) else ""
+            title = head or f"第 {start + 1}–{end} 页"
+        out.append(Chapter(
+            index=len(out), title=title[:60], pages=list(range(start, end)),
+            must_know=list(seed.must_know) if seed else [],
+            importance=seed.importance if seed else 3,
+            est_words=seed.est_words if seed else 1800))
+    return out
 
 
 OUTLINE_SYSTEM = """你是大学期末复习资料的课程架构师。
@@ -191,7 +225,7 @@ def generate_outline(
         return fallback_outline(pages)
 
     required = min_chapters if min_chapters is not None else max(1, min(3, n // 4))
-    chapters = _normalize(data, n)
+    chapters = _normalize(data, n, pages)
     if len(chapters) < required:
         logger.warning("大纲章节数不足（{} < {}），退回启发式", len(chapters), required)
         return fallback_outline(pages)

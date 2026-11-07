@@ -28,8 +28,13 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from core import config, paths  # noqa: E402
-from core.database import Course, GeneratedFile, Material, Mistake, Note, Profile, get_db_session, init_db  # noqa: E402
-from core.parser import extract_text_from_file  # noqa: E402
+from core.database import (  # noqa: E402
+    Course, GeneratedFile, Material, Mistake, Note, Profile,
+    get_db_session, init_db, looks_like_test_course,
+)
+from core.logger import install_exception_hooks, setup_logging  # noqa: E402
+from sqlalchemy import or_  # noqa: E402
+from core.parser import PARSER_VERSION, extract_text_from_file  # noqa: E402
 from services import guide_service, review_service  # noqa: E402
 from core.quality.report import audit_markdown
 from core.quality.constraints import TaskConstraints, scope_pages  # noqa: E402
@@ -37,6 +42,8 @@ from core.quality.gate import ConstraintViolation  # noqa: E402
 from services.task import ProgressEvent  # noqa: E402
 
 WEB = ROOT / "web"
+setup_logging()
+install_exception_hooks()
 app = FastAPI(title="TermFinale API", version="0.3.0")
 init_db()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -74,20 +81,37 @@ class Job:
                 "result": self.result, "error": self.error}
 
 
+def _safe_days_left(course: Course) -> int:
+    """exam_date 是用户可编辑的字符串；一个坏值不能让整个课程列表 500。"""
+    try:
+        raw = getattr(course, "exam_date", "") or ""
+        if raw:
+            return max(0, (datetime.date.fromisoformat(str(raw)[:10]) - datetime.date.today()).days)
+    except (ValueError, TypeError):
+        pass
+    return int(getattr(course, "days_left", 0) or 0)
+
+
 def _course_dict(course: Course) -> dict:
     return {"id": course.id, "name": course.name, "major": course.major,
             "school": course.school_level, "credits": course.credits,
-            "days_left": (max(0, (datetime.date.fromisoformat(course.exam_date) - datetime.date.today()).days)
-                          if getattr(course, "exam_date", "") else course.days_left), "target_score": course.target_score,
+            "days_left": _safe_days_left(course), "target_score": course.target_score,
             "difficulty": getattr(course, "self_difficulty", None) or course.user_difficulty,
             "foundation": getattr(course, "foundation", None) or 3,
             "is_major": course.is_major,
+            "is_test": bool(getattr(course, "is_test", False)),
             "persona": course.persona or "温柔小姐姐"}
+
+
+def _not_test_filter():
+    """兼容老库的 NULL：未标记的课程按正式课程处理。"""
+    return or_(Course.is_test.is_(None), Course.is_test == False)  # noqa: E712
 
 
 
 
 import re as _re
+import html as _html
 import markdown as _markdown
 from urllib.parse import quote as _quote
 
@@ -98,16 +122,22 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
         name = m.group(1).strip()
         if not (paths.assets_dir() / name).is_file():
             return "\n\n"
+        caption = _html.escape(m.group(2).strip(), quote=True)
         return (f'\n\n<figure class="figure"><img src="/api/assets/{_quote(name)}"'
-                f' alt="{m.group(2).strip()}"><figcaption>{m.group(2).strip()}</figcaption></figure>\n\n')
+                f' alt="{caption}"><figcaption>{caption}</figcaption></figure>\n\n')
     md = _re.sub(r"\[\[\[IMAGE:\s*([^|\]]+?)\s*\|\s*图注:\s*(.*?)\]\]\]",
                  _fig, md)
     md = _re.sub(r"\[\[([^|\]]+?)\|([^\]]+?)\]\]",
-                 lambda m: f'<span class="kw" title="{m.group(2).strip()}">{m.group(1).strip()}</span>', md)
+                 lambda m: (f'<span class="kw" title="{_html.escape(m.group(2).strip(), quote=True)}">'
+                            f'{_html.escape(m.group(1).strip())}</span>'), md)
 
     # 选项 A/B/C/D 强制换行（Markdown 默认会把单换行合并成空格）
     md = _re.sub(r"(?m)^(.*?)\n(?=[A-D]\s*[.、．)])", r"\1  \n", md)
     md = _re.sub(r"(?m)^([A-D])\s*([.、．)])\s*(.+?)\s*$", r"\1\2 \3  ", md)
+
+    # 与 exporter 对齐：先把 \(...\) / \[...\] 归一成 $...$，否则 Markdown 会吃掉反斜杠
+    md = _re.sub(r"\\\[(.*?)\\\]", r"$$\1$$", md, flags=_re.S)
+    md = _re.sub(r"\\\((.*?)\\\)", r"$\1$", md, flags=_re.S)
 
     math: list[str] = []
     def stash(m):
@@ -116,7 +146,8 @@ def _render_markdown(md: str) -> tuple[str, list[dict]]:
     md = _re.sub(r"(\$\$.*?\$\$|\$[^$\n]+?\$)", stash, md, flags=_re.S)
     html = _markdown.markdown(md, extensions=["tables", "fenced_code", "sane_lists"])
     for i, tex in enumerate(math):
-        html = html.replace(f"@@MATH{i}@@", tex)
+        # 公式最后塞回，必须转义 & < >（同 exporter.py）
+        html = html.replace(f"@@MATH{i}@@", _html.escape(tex, quote=False))
 
     toc = []
     chapter_no = 0
@@ -154,11 +185,14 @@ def health():
 
 
 @app.get("/api/courses")
-def list_courses():
+def list_courses(include_test: bool = False):
     db = get_db_session()
     try:
+        q = db.query(Course)
+        if not include_test:
+            q = q.filter(_not_test_filter())
         out = []
-        for c in db.query(Course).order_by(Course.days_left.asc()).all():
+        for c in q.order_by(Course.days_left.asc()).all():
             out.append({**_course_dict(c),
                         "materials": len(c.materials),
                         "materials_ok": sum(1 for m in c.materials if Path(m.file_path).exists()),
@@ -251,13 +285,15 @@ def delete_material(course_id: int, material_id: int):
 
 
 @app.get("/api/overview")
-def overview():
-    courses = list_courses()
+def overview(include_test: bool = False):
+    courses = list_courses(include_test=include_test)
     db = get_db_session()
     try:
-        rows = (db.query(GeneratedFile, Course)
-                .join(Course, GeneratedFile.course_id == Course.id)
-                .order_by(GeneratedFile.id.desc()).limit(6).all())
+        q = (db.query(GeneratedFile, Course)
+             .join(Course, GeneratedFile.course_id == Course.id))
+        if not include_test:
+            q = q.filter(_not_test_filter())
+        rows = q.order_by(GeneratedFile.id.desc()).limit(6).all()
         recent = []
         for gen, course in rows:
             path = Path(gen.file_path)
@@ -275,26 +311,39 @@ def overview():
         db.close()
 
 
+def _normalize_exam_date(value) -> str:
+    if not value:
+        return ""
+    try:
+        return datetime.date.fromisoformat(str(value)[:10]).isoformat()
+    except ValueError:
+        raise HTTPException(400, "考试日期格式应为 YYYY-MM-DD")
+
+
 @app.post("/api/courses")
 def create_course(payload: dict):
     name = (payload.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "课程名不能为空")
+    major = (payload.get("major") or "未知")[:100]
     db = get_db_session()
     try:
+        days = max(1, int(payload.get("days_left") or 7))
+        exam_date = _normalize_exam_date(payload.get("exam_date")) or (
+            datetime.date.today() + datetime.timedelta(days=days)).isoformat()
         c = Course(
             name=name[:100],
-            major=(payload.get("major") or "未知")[:100],
+            major=major,
             school_level=payload.get("school_level") or "一本",
             credits=max(0.5, min(8.0, float(payload.get("credits") or 3))),
-            days_left=max(1, int(payload.get("days_left") or 7)),
-            exam_date=(payload.get("exam_date") or
-                       (datetime.date.today() + datetime.timedelta(days=max(1, int(payload.get("days_left") or 7)))).isoformat()),
+            days_left=days,
+            exam_date=exam_date,
             target_score=max(0, min(100, int(payload.get("target_score") or 80))),
             user_difficulty=max(1, min(5, int(payload.get("self_difficulty") or payload.get("user_difficulty") or 3))),
             self_difficulty=max(1, min(5, int(payload.get("self_difficulty") or payload.get("user_difficulty") or 3))),
             foundation=max(1, min(5, int(payload.get("foundation") or 3))),
             is_major=bool(payload.get("is_major", True)),
+            is_test=bool(payload.get("is_test")) or looks_like_test_course(name, major),
             persona=payload.get("persona") or "温柔小姐姐",
         )
         db.add(c); db.commit()
@@ -318,12 +367,15 @@ def update_course(course_id: int, payload: dict):
                 if field == "credits":
                     value = max(0.5, min(8.0, float(value)))
                 setattr(c, field, value)
-        if payload.get("days_left") not in (None, "") or payload.get("exam_date"):
+        if payload.get("exam_date"):
+            c.exam_date = _normalize_exam_date(payload["exam_date"])
+        elif payload.get("days_left") not in (None, ""):
             days = int(payload.get("days_left") or 7)
-            c.exam_date = payload.get("exam_date") or (
-                datetime.date.today() + datetime.timedelta(days=max(1, days))).isoformat()
+            c.exam_date = (datetime.date.today() + datetime.timedelta(days=max(1, days))).isoformat()
         if "is_major" in payload:
             c.is_major = bool(payload["is_major"])
+        if "is_test" in payload:
+            c.is_test = bool(payload["is_test"])
         if payload.get("persona"):
             c.persona = payload["persona"]
         db.commit()
@@ -374,10 +426,11 @@ def _selected_materials(course_id: int, ids: list[int] | None) -> list[Material]
 
 
 def _parse_material_cached(m, on_parse):
-    """同一文件只解析一次；mtime/size 变化才重新解析。"""
+    """同一文件只解析一次；mtime/size/解析器版本变化才重新解析。"""
     try:
         st = os.stat(m.file_path)
-        key = hashlib.md5(f"v3|{m.file_path}|{st.st_mtime}|{st.st_size}".encode()).hexdigest()
+        key = hashlib.md5(
+            f"{PARSER_VERSION}|{m.file_path}|{st.st_mtime}|{st.st_size}".encode()).hexdigest()
     except OSError:
         return extract_text_from_file(m.file_path, on_progress=on_parse)
     cache_dir = paths.data_dir() / "parse_cache"
@@ -610,8 +663,9 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
         if validation and not validation.get("ok", True):
             # 非严格模式：结果照常交付，但必须让用户看见没过的硬校验
             job.message = "完成（硬校验未通过）"
-        if task == "guide" and options.get("strict"):
-            cov = ((getattr(result, "metrics", {}) or {}).get("coverage") or {}).get("coverage", 1.0)
+        guide_metrics = getattr(result, "metrics", {}) or {}
+        if task == "guide" and options.get("strict") and not guide_metrics.get("overview_mode"):
+            cov = (guide_metrics.get("coverage") or {}).get("coverage", 1.0)
             issues = list(job.result["quality"].get("issues") or [])
             if cov < 0.8:
                 issues.append(f"页覆盖率 {round(cov * 100)}% 低于 80%")
@@ -815,10 +869,13 @@ def open_browser(payload: dict):
 
 
 @app.get("/api/materials/all")
-def all_materials():
+def all_materials(include_test: bool = False):
     db = get_db_session()
     try:
-        rows = db.query(Material, Course).join(Course, Material.course_id == Course.id).all()
+        q = db.query(Material, Course).join(Course, Material.course_id == Course.id)
+        if not include_test:
+            q = q.filter(_not_test_filter())
+        rows = q.all()
         out = []
         for m, c in rows:
             try:
@@ -835,7 +892,7 @@ def all_materials():
 
 
 @app.get("/api/mistakes")
-def list_mistakes(course_id: int | None = None):
+def list_mistakes(course_id: int | None = None, include_test: bool = False):
     import datetime
     today = datetime.date.today().isoformat()
     db = get_db_session()
@@ -843,6 +900,8 @@ def list_mistakes(course_id: int | None = None):
         q = db.query(Mistake, Course).join(Course, Mistake.course_id == Course.id)
         if course_id:
             q = q.filter(Mistake.course_id == course_id)
+        if not include_test:
+            q = q.filter(_not_test_filter())
         rows = q.order_by(Mistake.id.desc()).limit(300).all()
         out = []
         for m, c in rows:
@@ -975,13 +1034,15 @@ def exam_quiz(file_id: int):
 
 
 @app.get("/api/practice")
-def practice_data():
+def practice_data(include_test: bool = False):
     db = get_db_session()
     try:
-        rows = (db.query(GeneratedFile, Course)
-                .join(Course, GeneratedFile.course_id == Course.id)
-                .filter(GeneratedFile.file_type.in_(["exam", "训练试卷"]))
-                .order_by(GeneratedFile.id.desc()).limit(20).all())
+        q = (db.query(GeneratedFile, Course)
+             .join(Course, GeneratedFile.course_id == Course.id)
+             .filter(GeneratedFile.file_type.in_(["exam", "训练试卷"])))
+        if not include_test:
+            q = q.filter(_not_test_filter())
+        rows = q.order_by(GeneratedFile.id.desc()).limit(20).all()
         exams = [{"id": g.id, "course": c.name, "course_id": c.id,
                   "filename": Path(g.file_path).name,
                   "has_md": Path(g.file_path).with_suffix(".md").is_file(),
@@ -989,7 +1050,10 @@ def practice_data():
         note_count = db.query(Note).count()
         import datetime
         today = datetime.date.today().isoformat()
-        mistakes = db.query(Mistake).filter(Mistake.mastered == False).all()  # noqa: E712
+        mq = db.query(Mistake).join(Course, Mistake.course_id == Course.id).filter(Mistake.mastered == False)  # noqa: E712
+        if not include_test:
+            mq = mq.filter(_not_test_filter())
+        mistakes = mq.all()
         due = sum(1 for m in mistakes if (m.due_at or today) <= today)
         return {"exams": exams, "notes": note_count,
                 "mistakes": len(mistakes), "due": due}
@@ -1138,28 +1202,84 @@ def save_profile(payload: dict):
         db.close()
 
 
+def _backup_db(prefix: str = "manual") -> Path:
+    """用 sqlite backup API 落一份可独立打开的备份（WAL 也会合并进去）。"""
+    import sqlite3
+    backup_dir = paths.data_dir() / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    target = backup_dir / f"{prefix}_{time.strftime('%Y%m%d_%H%M%S')}.db"
+    src = sqlite3.connect(str(paths.db_path()))
+    try:
+        dst = sqlite3.connect(str(target))
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
+    finally:
+        src.close()
+    return target
+
+
+def _is_under(path, root: Path) -> bool:
+    try:
+        Path(path).resolve().relative_to(root.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+@app.post("/api/backup")
+def create_backup():
+    target = _backup_db("manual")
+    return {"ok": True, "path": str(target),
+            "size_kb": round(target.stat().st_size / 1024, 1)}
+
+
+@app.get("/api/backups")
+def list_backups():
+    backup_dir = paths.data_dir() / "backups"
+    items = []
+    if backup_dir.is_dir():
+        for p in sorted(backup_dir.glob("*.db"), key=lambda x: x.stat().st_mtime, reverse=True)[:20]:
+            items.append({"name": p.name, "path": str(p),
+                          "size_kb": round(p.stat().st_size / 1024, 1),
+                          "mtime": time.strftime("%Y-%m-%d %H:%M", time.localtime(p.stat().st_mtime))})
+    return items
+
+
 @app.post("/api/reset")
-def reset_all_data():
-    import os as _os
-    from pathlib import Path as _Path
+def reset_all_data(payload: dict | None = None):
+    if (payload or {}).get("confirm") != "DELETE-ALL":
+        raise HTTPException(400, "需要 confirm=DELETE-ALL 才允许清空")
+    backup = _backup_db("pre_reset")
+    uploads = paths.data_dir() / "uploads"
     db = get_db_session()
     try:
+        kept_external = 0
         for g in db.query(GeneratedFile).all():
-            for q in (_Path(g.file_path), _Path(g.file_path).with_suffix(".md"), _Path(g.file_path).with_suffix(".pdf")):
+            for q in (Path(g.file_path), Path(g.file_path).with_suffix(".md"),
+                      Path(g.file_path).with_suffix(".pdf")):
                 try:
-                    if q.is_file(): q.unlink()
+                    if q.is_file():
+                        q.unlink()
                 except OSError:
                     pass
         for m in db.query(Material).all():
+            # 只删我们托管的上传副本；用户桌面/Documents 里的原资料绝不删
+            if not _is_under(m.file_path, uploads):
+                kept_external += 1
+                continue
             try:
-                if _Path(m.file_path).is_file(): _Path(m.file_path).unlink()
+                p = Path(m.file_path)
+                if p.is_file():
+                    p.unlink()
             except OSError:
                 pass
         db.query(Mistake).delete(); db.query(Note).delete()
         db.query(GeneratedFile).delete(); db.query(Material).delete()
         db.query(Course).delete(); db.query(Profile).delete()
         db.commit()
-        return {"ok": True}
+        return {"ok": True, "backup": str(backup), "kept_external_materials": kept_external}
     finally:
         db.close()
 

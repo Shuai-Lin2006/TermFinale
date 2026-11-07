@@ -33,7 +33,7 @@ GENERIC_HEADINGS = {
     "示例", "练习", "习题", "考点", "答案", "解析",
 }
 
-_PAGE_HEADER_RE = re.compile(r"【[^】]*?第\s*(\d+)\s*页】")
+_PAGE_HEADER_RE = re.compile(r"》\s*第\s*(\d+)\s*页】")
 _PAGE_CITE_RE = re.compile(r"第\s*(\d+)\s*页")
 _P_CITE_RE = re.compile(r"[（(]\s*P\.?\s*(\d+)\s*[)）]|(?<![A-Za-z0-9])P\.\s*(\d+)")
 _IMAGE_TAG_RE = re.compile(r"\[\[\[IMAGE:.*?\]\]\]", re.S)
@@ -66,6 +66,13 @@ class TaskConstraints:
     material_kind: str = "exam"              # exam / lecture
     strict: bool = True                      # 违规是否直接判失败
     max_retries: int = 2
+    # 老师重点（由 teacher_note.parse_teacher_note 解析后注入）
+    teacher_note: str = ""
+    must_topics: list[str] = field(default_factory=list)
+    ban_topics: list[str] = field(default_factory=list)
+    only_topics: list[str] = field(default_factory=list)
+    literal_bans: list[str] = field(default_factory=list)
+    required_pages: list[int] = field(default_factory=list)
 
     # ---------------- 构造 ---------------- #
     @classmethod
@@ -94,7 +101,26 @@ class TaskConstraints:
             material_kind=str(merged.get("material_mode") or "exam"),
             strict=bool(merged.get("strict", True)),
             max_retries=max(0, min(5, int(merged.get("max_retries", 2) or 0))),
+            teacher_note=str(merged.get("teacher_note") or options.get("teacher_note") or ""),
         )
+
+    def apply_teacher_rules(self, rules) -> None:
+        """把解析后的老师规则并进约束；不覆盖用户已手填的同类项。"""
+        if rules is None:
+            return
+        for attr, target in (("must_topics", self.must_topics),
+                             ("ban_topics", self.ban_topics),
+                             ("literal_bans", self.literal_bans)):
+            for item in getattr(rules, attr, []) or []:
+                if item and item not in target:
+                    target.append(item)
+        if getattr(rules, "only_topics", None):
+            self.only_topics = list(dict.fromkeys(rules.only_topics))
+        for page in getattr(rules, "page_refs", []) or []:
+            if page not in self.required_pages:
+                self.required_pages.append(page)
+        if getattr(rules, "source", ""):
+            self.teacher_note = rules.source
 
     # ---------------- 查询 ---------------- #
     @property
@@ -134,6 +160,12 @@ class TaskConstraints:
             "material_kind": self.material_kind,
             "strict": self.strict,
             "max_retries": self.max_retries,
+            "teacher_note": self.teacher_note,
+            "must_topics": list(self.must_topics),
+            "ban_topics": list(self.ban_topics),
+            "only_topics": list(self.only_topics),
+            "literal_bans": list(self.literal_bans),
+            "required_pages": list(self.required_pages),
         }
 
 
@@ -236,9 +268,28 @@ def render_prompt(c: TaskConstraints) -> str:
             "范围外的内容一律不得出现，更不得凭记忆补写。")
 
     if c.exclude_terms:
-        lines.append("【排除项硬约束】以下内容严禁出现（包括同义改写、举例与【延伸】）："
+        lines.append("【排除项硬约束】以下内容不得作为考点、标题或题目出现"
+                     "（正文顺带提及不要展开，也不要放进【延伸】）："
                      + "、".join(c.exclude_terms)
                      + "。资料本身没有这些内容时，更不得补写。")
+
+    # 老师重点：只考白名单 / 必考 / 不考 / 字面禁用 / 点名页码
+    if c.only_topics:
+        lines.append("【老师只考】本次只允许以下考点：" + "、".join(c.only_topics)
+                     + "。白名单之外的知识点不得作为考点、章节标题或题目出现；"
+                       "正文顺带提及不要展开、不要举例。")
+    if c.must_topics:
+        lines.append("【老师必考】必须覆盖并在考点/标题/题目中明确写出："
+                     + "、".join(c.must_topics) + "。漏掉即不合格。")
+    if c.ban_topics:
+        lines.append("【老师不考】以下内容不得作为考点、章节标题或题目出现："
+                     + "、".join(c.ban_topics) + "。")
+    if c.literal_bans:
+        lines.append("【老师禁用符号/词】正文与题目中不得出现：" + "、".join(c.literal_bans) + "。")
+    if c.required_pages:
+        lines.append("【老师点名页码】必须覆盖并引用：" +
+                     "、".join(f"第 {n} 页" for n in c.required_pages)
+                     + "。找不到对应内容时也必须在该页位置说明“该页仅含图示/无新增考点”。")
 
     if c.task == "guide":
         lines.append(
@@ -400,10 +451,15 @@ def validate_output(
     for issue in syntax_issues(text):
         report.add(issue)
 
-    # 1. 排除项 ---------------------------------------------------------- #
-    hits = contains_terms(text, constraints.exclude_terms)
+    # 1. 排除项：token 级字面 + 中文考点级 ------------------------------- #
+    body = _strip_citations_images(text)
+    literal_terms = [t for t in constraints.exclude_terms if _looks_like_token(t)]
+    topic_bans = [t for t in constraints.exclude_terms if not _looks_like_token(t)]
+    hits = contains_terms(body, literal_terms + constraints.literal_bans)
     if hits:
-        report.add("出现排除项：" + "、".join(f"{term}（{count} 处）" for term, count in hits[:5]))
+        report.add("出现老师禁用符号/词：" +
+                   "、".join(f"{term}（{count} 处）" for term, count in hits[:5]))
+    _check_teacher_rules(report, text, constraints, stage, extra_bans=topic_bans)
 
     # 2. 页码 ------------------------------------------------------------ #
     src = source_pages(source_text)
@@ -480,9 +536,82 @@ def contains_terms(text: str, terms: list[str]) -> list[tuple[str, int]]:
     return hits
 
 
+def _looks_like_token(term: str) -> bool:
+    """化学基团/缩写按字面校验；中文知识点按考点级校验。"""
+    term = (term or "").strip()
+    if not term:
+        return False
+    if term[0] in "-+":
+        return True
+    return term.isascii() and len(term) <= 16
+
+
+def _strip_citations_images(text: str) -> str:
+    """字面 token 检查前去掉引用、图片标签、页码，避免误杀。"""
+    text = _IMAGE_TAG_RE.sub("", text or "")
+    text = re.sub(r"\[出处：[^\]]*\]", "", text)
+    text = re.sub(r"[（(]\s*P\.?\s*\d+\s*[)）]", "", text)
+    text = re.sub(r"第\s*\d+\s*页", "", text)
+    return text
+
+
+def _strip_topic_disclaimer(topic: str) -> str:
+    """考点标题里带“不考具体命名”这类免责说明时，不把它当成命中禁用项。"""
+    topic = re.sub(r"[（(][^）)]*(?:不考|不要求|无需|跳过|不涉及)[^）)]*[）)]", "", topic or "")
+    topic = re.sub(r"(?:不考|不要求|无需|跳过|不涉及).*$", "", topic)
+    return topic.strip()
+
+
+def _topic_terms_for_task(text: str, task: str) -> list[str]:
+    from core.quality.teacher_note import topic_matches  # noqa: F401  (保持依赖显式)
+    if task == "guide":
+        return guide_topic_terms(text)
+    if task == "extract":
+        return extract_topic_terms(text)
+    if task == "exam":
+        return exam_topic_terms(text)
+    return []
+
+
+def _check_teacher_rules(report: ValidationReport, text: str, c: TaskConstraints,
+                         stage: str, extra_bans: list[str] | None = None) -> None:
+    """考点级复核：只考白名单 / 不考 / 必考 / 点名页码。
+
+    正文顺带提及不判硬违规：判的是考点、标题、题目标签。
+    """
+    from core.quality.teacher_note import topic_matches
+    topics = [t for t in (_strip_topic_disclaimer(x) for x in _topic_terms_for_task(text, c.task)) if t]
+    if topics:
+        report.metrics["topics"] = topics[:20]
+
+    bans = list(c.ban_topics) + list(extra_bans or [])
+    if c.only_topics and topics:
+        bad = [t for t in topics
+               if not any(topic_matches(t, allowed) for allowed in c.only_topics)]
+        if bad:
+            report.add("考点不在老师只考范围：" + "、".join(bad[:6]))
+    if bans and topics:
+        bad = [t for t in topics if any(topic_matches(t, b) for b in bans)]
+        if bad:
+            report.add("命中老师不考内容：" + "、".join(bad[:6]))
+
+    if stage != "final":
+        return
+    if c.must_topics:
+        missing = [m for m in c.must_topics
+                   if not any(topic_matches(t, m) for t in topics)]
+        if missing:
+            report.add("老师必考内容缺失：" + "、".join(missing[:6]))
+    if c.required_pages and c.task in ("guide", "extract"):
+        cited = cited_pages(text)
+        missing_pages = [p for p in c.required_pages if p not in cited]
+        if missing_pages:
+            report.add("老师点名页码未覆盖：" +
+                       "、".join(f"第{p}页" for p in missing_pages[:8]))
+
+
 def _check_guide(report: ValidationReport, text: str, c: TaskConstraints,
                  source_text: str, cited: set[int], stage: str) -> None:
-    # 知识点是否有资料依据（软信号：只提示，不判失败）
     if source_text:
         terms = guide_topic_terms(text)
         unsupported = unsupported_terms(terms, source_text)
@@ -543,7 +672,8 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
     from core.generate.exam_builder import blueprint_from_sections, validate_paper
 
     blueprint = blueprint_from_sections(c.sections) if c.sections else None
-    paper = validate_paper(text, blueprint, strict_counts=True)
+    paper = validate_paper(text, blueprint, strict_counts=True,
+                           require_answers=(c.answer_mode != "forbidden"))
     for issue in paper.issues:
         if issue.startswith("[error]"):
             report.add("试卷结构：" + issue[7:].strip())
@@ -563,7 +693,7 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
     if stage != "final":
         return
 
-    # 只允许约束里的题型
+    # 只允许约束里的题型；额外标题（考试说明等）只提示，不误杀
     if c.sections:
         allowed = {s["name"] for s in c.sections}
         extra = []
@@ -572,10 +702,27 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
                        for name in allowed):
                 extra.append(title)
         if extra:
-            report.add("出现未允许的题型：" + "、".join(extra[:4]))
+            type_words = ("选择题", "填空题", "判断题", "名词解释", "简答题", "计算题",
+                          "推断题", "综合题", "证明题", "翻译题", "写作题", "阅读理解",
+                          "完形填空", "编程题", "案例分析题", "论述题")
+            extra_types = [t for t in extra if any(w in t for w in type_words)]
+            if extra_types:
+                report.add("出现未允许的题型：" + "、".join(extra_types[:4]))
+            else:
+                report.warn("试卷含额外标题（按说明处理）：" + "、".join(extra[:4]))
 
     if "【考点：" not in text and "【考点:" not in text:
         report.warn("题目缺少【考点：xxx】标注")
+
+    # 答案自洽：题号重复/缺失（只看答案分区）
+    _body, answers = _split_answer(text)
+    if answers:
+        nums = [int(n) for n in re.findall(r"(?m)^\s*(\d{1,3})\s*[.、．)）]", answers)]
+        if nums:
+            dups = sorted({n for n in nums if nums.count(n) > 1})
+            if dups:
+                report.warn("答案题号重复：" + "、".join(str(n) for n in dups[:6]))
+            report.metrics["answer_numbers"] = len(nums)
 
 
 def _check_analysis(report: ValidationReport, text: str, stage: str) -> None:
@@ -630,8 +777,8 @@ def _section_titles(text: str) -> list[str]:
 
 
 def _split_answer(text: str) -> tuple[str, str]:
-    """把试卷拆成（题目部分, 答案部分）。"""
-    m = re.search(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)\s*$", text or "")
+    """把试卷拆成（题目部分, 答案部分）。标题可带“（详解）”等后缀。"""
+    m = re.search(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)[^\n]*$", text or "")
     if not m:
         return text or "", ""
     return text[:m.start()], text[m.start():]

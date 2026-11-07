@@ -110,7 +110,7 @@ class ExtractServiceTest(unittest.TestCase):
                                                extract_type="points", constraints=c)
         self.assertIsNotNone(result)
         self.assertFalse(result.metrics["validation"]["ok"])
-        self.assertTrue(any("排除项" in w for w in result.warnings))
+        self.assertTrue(any("积分" in w for w in result.warnings), result.warnings)
 
 
 def _paper(questions: int = 2) -> str:
@@ -180,8 +180,8 @@ class GuideServiceTest(unittest.TestCase):
             calls.append({"raw": raw_text, **kwargs})
             body = kwargs.get("chapter", {}).get("title", "章节")
             if len(calls) <= bad_times:
-                return (f"## 核心考点：{body}\n\n### 1.1 高阶导数\n\n"
-                        "这里还顺带讲了积分的做法（P.2）。\n")
+                return (f"## 核心考点：{body}\n\n### 1.1 积分中值定理\n\n"
+                        "这里讲了积分的做法（P.2）。\n")
             return (f"## 核心考点：{body}\n\n### 1.1 高阶导数\n\n"
                     "只讲高阶导数（P.2）。\n")
         return _gen
@@ -219,3 +219,39 @@ class GuideServiceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class CoverageLedgerTest(unittest.TestCase):
+    """覆盖率分母必须是资料页数，不是“块有没有产出”。"""
+
+    def test_extract_coverage_is_page_based(self):
+        import threading, time
+        text = "\n\n".join(f"【《覆盖测试》第 {i} 页】\n第 {i} 页内容" for i in range(1, 11))
+
+        def fake_extract(chunk, extract_type, with_answer, user_note="", constraint_block=""):
+            m = __import__("re").search(r"第\s*(\d+)\s*页", chunk)
+            page = int(m.group(1)) if m else 1
+            if page <= 6:
+                return f"### 考点：第{page}页考点\n- **是什么**：测试。\n- [出处：《覆盖测试》第{page}页]\n"
+            return "【本段无题目】\n"
+
+        c = TaskConstraints(task="extract", extract_type="points", max_retries=0)
+        with patch.object(review_service, "generate_extraction", fake_extract):
+            merged, coverage, report = review_service._run_extract(
+                text, "points", True, lambda _e: None, threading.Event(), time.time(),
+                constraints=c)
+        self.assertEqual(coverage["pages"], 10)
+        self.assertEqual(coverage["pages_cited"], 6)
+        self.assertEqual(coverage["pages_missing"], [7, 8, 9, 10])
+        self.assertAlmostEqual(coverage["coverage"], 0.6, places=3)
+        self.assertTrue(coverage["has_page_headers"])
+
+
+class SplitPagesTest(unittest.TestCase):
+    def test_material_prefix_not_ghost_page(self):
+        text = ("【重点资料·权重3：x.pptx】\n【《x.pptx》第 1 页】\nA\n\n"
+                "【《x.pptx》第 2 页】\nB")
+        pages = review_service.split_pages(text)
+        self.assertEqual(len(pages), 2)
+        self.assertIn("《x.pptx》第 1 页", pages[0])
+        self.assertIn("重点资料", pages[0])

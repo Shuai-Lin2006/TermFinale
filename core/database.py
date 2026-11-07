@@ -27,6 +27,16 @@ def _sqlite_pragmas(dbapi_conn, _record):
 
 Base = declarative_base()
 
+_TEST_PREFIXES = ("BATCH", "TEST", "FINAL", "EXAMTEST")
+_TEST_MAJORS = ("批量测试", "测试", "终极测试")
+
+
+def looks_like_test_course(name: str, major: str = "") -> bool:
+    """按命名/专业判断是否是测试课程；只用于新建时打标记，不用于删除。"""
+    name = (name or "").strip().upper()
+    major = (major or "").strip()
+    return name.startswith(_TEST_PREFIXES) or major in _TEST_MAJORS
+
 
 class Course(Base):
     __tablename__ = 'courses'
@@ -43,6 +53,8 @@ class Course(Base):
     foundation = Column(Integer, default=3)
     is_major = Column(Boolean, nullable=False)
     persona = Column(String(50), default="温柔小姐姐")
+    # 测试/演示课程与正式课程隔离：默认不在首页/统计/练习里出现，数据保留不删。
+    is_test = Column(Boolean, default=False, nullable=False)
 
     materials = relationship("Material", back_populates="course", cascade="all, delete-orphan")
     generated_files = relationship("GeneratedFile", back_populates="course", cascade="all, delete-orphan")
@@ -140,11 +152,20 @@ def init_db():
                     conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN foundation INTEGER DEFAULT 3")
                 if "exam_date" not in course_cols:
                     conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN exam_date VARCHAR(20) DEFAULT ''")
+                if "is_test" not in course_cols:
+                    conn.exec_driver_sql("ALTER TABLE courses ADD COLUMN is_test INTEGER DEFAULT 0")
+                    # 只在首次加列时回填一次，之后尊重用户/创建流程的设置
+                    conn.exec_driver_sql("UPDATE courses SET is_test = 0 WHERE is_test IS NULL")
+                    conn.exec_driver_sql(
+                        "UPDATE courses SET is_test = 1 WHERE ("
+                        "name LIKE 'BATCH%' OR name LIKE 'TEST%' OR name LIKE 'FINAL%' "
+                        "OR name LIKE 'EXAMTEST%' OR major IN ('批量测试','测试','终极测试'))")
                 if "weight" not in cols:
                     conn.exec_driver_sql("ALTER TABLE materials ADD COLUMN weight INTEGER DEFAULT 3")
-                    conn.commit()
-        except Exception:
-            pass
+                # 迁移必须显式提交：SQLAlchemy 2.x 的 connect() 默认不会替我们 commit。
+                conn.commit()
+        except Exception as exc:
+            logger.warning("数据库迁移失败（继续启动，但可能缺列）: {}", exc)
         logger.success("数据库初始化成功！")
     except Exception as e:
         logger.error(f"数据库初始化失败: {e}")

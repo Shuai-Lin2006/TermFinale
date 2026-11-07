@@ -42,16 +42,37 @@ from services.task import (
 )
 
 EXTRACT_CHUNK = 2000
-PAGE_SPLIT = re.compile(r"(?=【《[^》]+》第\s*\d+\s*页】)")
+# 文件名里可能含【】；不能用 [^》]+ 之外再排除 】，否则整页头匹配不到。
+PAGE_SPLIT = re.compile(r"(?=【《.+?》第\s*\d+\s*页】)")
 
 
 # --------------------------------------------------------------------------- #
 # 切块与去重（纯函数，可单测）
 # --------------------------------------------------------------------------- #
 def split_pages(text: str) -> list[str]:
-    """按解析器写入的页头切页；没有页头时整段当一页。"""
+    """按解析器写入的页头切页；没有页头时整段当一页。
+
+    资料前缀（【重点资料·权重3：…】）会出现在第一个页头之前，旧实现把它当成
+    独立一块，制造“幽灵页”（171 页报 172、85 页报 78）。这里把无页头的片段
+    合并到相邻页。
+    """
     parts = [p for p in PAGE_SPLIT.split(text or "") if p.strip()]
-    return parts or ([text] if text and text.strip() else [])
+    if not parts:
+        return [text] if text and text.strip() else []
+    merged: list[str] = []
+    pending = ""
+    for part in parts:
+        if not re.search(r"第\s*\d+\s*页】", part):
+            pending += part + "\n\n"
+            continue
+        merged.append(pending + part)
+        pending = ""
+    if pending:
+        if merged:
+            merged[-1] = merged[-1] + "\n\n" + pending
+        else:
+            merged.append(pending)
+    return merged
 
 
 def pack_pages(pages: list[str], limit: int = EXTRACT_CHUNK, overlap: int = 300) -> list[str]:
@@ -238,18 +259,30 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
             logger.warning("缺页块补跑失败 chunk={} err={}", _i, str(_e)[:80])
     ok_chunks = sum(1 for r in results if r and r.strip())
     merged, removed = dedupe_markdown("\n\n".join(results))
-    _cited = set(re.findall(r"第\s*(\d+)\s*页", merged))
+    # 真实页覆盖率：分母是资料页数（含占位页），分子是输出里真正引用到的页。
+    # 旧实现用 ok_chunks/chunks，171 页只引用 106 页也会报 100%。
+    _src_pages: set[int] = set()
+    for _p in pages:
+        _src_pages |= {int(n) for n in re.findall(r"第\s*(\d+)\s*页】", _p)}
+    _cited = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", merged)}
+    _covered = _src_pages & _cited
+    _missing = sorted(_src_pages - _cited)
     coverage = {
-        "pages": len(pages),
-        "pages_cited": len(_cited),
+        "pages": len(_src_pages) if _src_pages else len(pages),
+        "pages_cited": len(_covered),
+        "pages_missing": _missing[:80],
+        "pages_missing_count": len(_missing),
         "chunks": len(chunks),
         "chunks_ok": ok_chunks,
         "attempts": sum(int(getattr(r, "metrics", {}).get("attempts", 1)) for r in reports.values()),
         "duplicates_removed": removed,
-        "coverage": round(ok_chunks / len(chunks), 3) if chunks else 0.0,
+        "coverage": (round(len(_covered) / len(_src_pages), 3) if _src_pages
+                     else (round(ok_chunks / len(chunks), 3) if chunks else 0.0)),
+        "has_page_headers": bool(_src_pages),
     }
     report = aggregate_reports("extract", reports)
-    logger.info("提取完成：{} 页 / {} 块 / 去重 {} 块", len(pages), len(chunks), removed)
+    logger.info("提取完成：{} 页 / {} 引用 / {} 块 / 去重 {} 块",
+                coverage["pages"], coverage["pages_cited"], len(chunks), removed)
     return merged, coverage, report
 
 
@@ -315,6 +348,13 @@ def run_review(
         material_kind=material_mode, sections=sections)
     if task_type == "extract":
         constraints.extract_type = extract_type or constraints.extract_type or "points"
+    teacher_rules = None
+    try:
+        from core.quality.teacher_note import parse_teacher_note
+        teacher_rules = parse_teacher_note(user_note, text)
+        constraints.apply_teacher_rules(teacher_rules)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("老师重点解析失败（继续但只按字面约束）: {}", str(exc)[:100])
     constraint_block = render_prompt(constraints)
     validation = None
 
@@ -446,6 +486,7 @@ def run_review(
         "elapsed_s": round(time.time() - started, 1),
         "lang": lang,
         "constraints": constraints.to_dict(),
+        "teacher_rules": teacher_rules.to_dict() if teacher_rules is not None else None,
         "validation": validation.to_dict() if validation is not None else None,
         **extra_metrics,
     }

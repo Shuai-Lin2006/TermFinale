@@ -62,4 +62,4 @@ def analyze_image_with_ai(image_path: str) -> str:
     except Exception as e:
         # 🚨 这里打印出真正的报错原因，比如 Key 错误、模型不存在、欠费等
         logger.error(f"视觉模型识别失败，完整报错: {e}")
-        return "原题配图"
+        return ""

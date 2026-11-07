@@ -87,10 +87,10 @@ class GuideValidationTest(unittest.TestCase):
 
     def test_exclude_term_is_hard(self):
         c = TaskConstraints(task="guide", exclude_terms=["积分"])
-        md = "## 核心考点：高阶导数\n\n顺带讲讲积分的做法。"
+        md = "## 核心考点：高阶导数\n\n### 1.1 积分中值定理\n\n正文。"
         report = validate_output(md, c, source_text=SOURCE)
         self.assertFalse(report.ok)
-        self.assertTrue(any("排除项" in i for i in report.issues))
+        self.assertTrue(any("不考" in i for i in report.issues), report.issues)
 
     def test_invented_page_is_hard(self):
         md = "## 核心考点：高阶导数\n\n出处（P.9）。"
@@ -331,3 +331,44 @@ class StrictPaperTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class BracketedFilenameTest(unittest.TestCase):
+    """文件名含【】时，页码校验不能整体失明。"""
+
+    def test_source_pages_with_brackets(self):
+        text = "【《有机化学【蜂考系统课】.pdf》第 5 页】\n内容"
+        self.assertEqual(source_pages(text), {5})
+
+    def test_scope_with_brackets(self):
+        pages = ["【《有机化学【蜂考系统课】.pdf》第 5 页】\nA",
+                 "【《有机化学【蜂考系统课】.pdf》第 6 页】\nB"]
+        self.assertEqual(scope_pages(pages, TaskConstraints(page_start=6, page_end=6)),
+                         [pages[1]])
+
+
+class ExamToleranceTest(unittest.TestCase):
+    def _c(self, mode="required"):
+        return TaskConstraints(task="exam", answer_mode=mode, sections=[
+            {"name": "单项选择题", "count": 6, "points": 5},
+            {"name": "填空题", "count": 3, "points": 10},
+            {"name": "计算题", "count": 2, "points": 20},
+        ])
+
+    def test_answer_forbidden_passes(self):
+        body = _exam_paper().split("# 答案与解析")[0]
+        report = validate_output(body, self._c("forbidden"), source_text=SOURCE, stage="final")
+        self.assertTrue(report.ok, report.issues)
+
+    def test_answer_heading_with_suffix(self):
+        paper = _exam_paper().replace("# 答案与解析", "# 答案与解析（详解）")
+        report = validate_output(paper, self._c("required"), source_text=SOURCE, stage="final")
+        self.assertTrue(report.ok, report.issues)
+
+    def test_extra_heading_only_warns(self):
+        paper = _exam_paper().replace(
+            "## 单项选择题（6 题，每题 5 分，共 30 分）",
+            "## 考试说明\n\n本卷共 100 分。\n\n## 单项选择题（6 题，每题 5 分，共 30 分）")
+        report = validate_output(paper, self._c("required"), source_text=SOURCE, stage="final")
+        self.assertTrue(report.ok, report.issues)
+        self.assertTrue(any("额外标题" in w for w in report.warnings), report.warnings)

@@ -3,6 +3,7 @@ import re
 import os
 import json
 import base64
+import html as _html
 
 
 
@@ -166,7 +167,10 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     for i, mb in enumerate(mermaid_blocks):
         html_content = html_content.replace(f"@@MERMAIDBLOCK{i}@@", mb)
     for i, math in enumerate(math_blocks):
-        html_content = html_content.replace(f"@@MATHBLOCK{i}@@", math)
+        # 公式是最后塞回 HTML 的，必须转义 & < >：否则 $v_2<v_1$ 会被浏览器
+        # 当成标签/实体，KaTeX 直接跳过，用户看到裸 LaTeX。
+        html_content = html_content.replace(f"@@MATHBLOCK{i}@@",
+                                            _html.escape(math, quote=False))
 
     for i, height in enumerate(blank_blocks):
         div = f'<div class="blank-space" style="height:{height}px"></div>'

@@ -93,6 +93,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【篇幅要求】约 {target_words} 字（中文字符计），明显不足或大幅超出都算不合格。
     【紧迫度】{chapter.get('urgency', '未评估')}
     【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
+    【章节概览模式】{('这是 150 页以上资料的全书概览：只讲本章主线、必考点与范围边界，不要逐页展开；明确标注“概览”，不要假装逐页精讲。' if chapter.get('overview') else '')}
     【课堂理解模式】{('这是课堂讲义，不是考试重点。不要强行输出考点、例题、分值、易错点；按理解讲清楚，例子只用于说明。' if chapter.get('study_mode') == 'lecture' else '')}
     【院校层级】{chapter.get('school', '普通本科')} 期末常规难度；结合用户基础与目标分调整深浅，不出偏题、怪题、超纲题，也不要低到送分。
     【内容难度】课程自设难度 {chapter.get('self_difficulty', 3)}/5，学生基础 {chapter.get('foundation', 3)}/5。难度 1~2 多铺垫、多例子；3 按常规期末；4~5 加强推导与综合，但必须限制在资料范围内，禁止偏题怪题和超纲内容。

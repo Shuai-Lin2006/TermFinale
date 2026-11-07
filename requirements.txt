@@ -17,6 +17,7 @@ SQLAlchemy==2.1.6
 
 fastapi
 uvicorn
+python-multipart==0.0.20
 
 dashscope
 pywebview

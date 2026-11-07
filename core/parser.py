@@ -17,6 +17,9 @@ from core.parsing import figures as figure_lib
 IMG_DIR = str(paths.assets_dir())
 paths.ensure_dirs()
 
+# 解析行为变更时递增：解析缓存 key 会带上它，旧缓存自动失效。
+PARSER_VERSION = "2026-11-07.1"
+
 FIG_DPI = 180
 OCR_DPI = 120
 _OCR_CACHE_FILE = paths.debug_dir() / "ocr_cache.json"
@@ -48,8 +51,32 @@ def _save_ocr_cache() -> None:
 
 
 
+def _find_soffice() -> str | None:
+    """Finder 启动 App 时 PATH 往往不含 Homebrew，必须显式找 LibreOffice。"""
+    import shutil
+    candidates = [
+        shutil.which("soffice"), shutil.which("libreoffice"),
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+        "/opt/homebrew/bin/soffice", "/usr/local/bin/soffice",
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _sort_pages_by_number(all_pages: list) -> list:
+    def _key(block: str) -> int:
+        m = re.search(r"第\s*(\d+)\s*页", block or "")
+        return int(m.group(1)) if m else 10 ** 9
+    return sorted(all_pages, key=_key)
+
+
 def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, total: int) -> list:
-    """对 PPT 中没有文字的页：整本转 PDF，逐页渲染后 OCR 回填。"""
+    """对 PPT 中没有文字的页：整本转 PDF，逐页渲染后 OCR 回填。
+
+    回填后必须保证 1..total 每页都有条目（哪怕只是占位），否则覆盖率分母会失真。
+    """
     present = set()
     for block in all_pages:
         m = re.search(r"第\s*(\d+)\s*页", block)
@@ -60,27 +87,56 @@ def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, tot
             present.add(int(m.group(1)))
     missing = [n for n in range(1, total + 1) if n not in present]
     if not missing:
-        return all_pages
+        return _sort_pages_by_number(all_pages)
+
+    soffice = _find_soffice()
+    if not soffice:
+        logger.warning("未找到 LibreOffice，PPT 图片页无法 OCR：{}", file_name)
+        for n in missing:
+            all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 未执行：未安装 LibreOffice]")
+        return _sort_pages_by_number(all_pages)
+
     try:
         import subprocess, tempfile, fitz
         outdir = tempfile.mkdtemp(prefix="pptocr_")
-        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", outdir, file_path],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=240)
+        proc = subprocess.run(
+            [soffice, "--headless", "--convert-to", "pdf", "--outdir", outdir, file_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=240)
         pdfs = [os.path.join(outdir, x) for x in os.listdir(outdir) if x.lower().endswith(".pdf")]
-        if not pdfs:
-            return all_pages
+        if proc.returncode != 0 or not pdfs:
+            logger.warning("PPT 转 PDF 失败 rc={} pdfs={} file={}", proc.returncode, len(pdfs), file_name)
+            for n in missing:
+                all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 失败：PPT 转 PDF 未成功]")
+            return _sort_pages_by_number(all_pages)
         doc = fitz.open(pdfs[0])
-        for n in missing:
-            if n > len(doc):
-                continue
-            txt = _ocr_page(doc[n - 1])
-            txt = _clean_ocr_text(txt) if txt else ""
-            if txt.strip():
-                all_pages.append(f"【《{file_name}》第 {n} 页】\n{txt.strip()}")
-        doc.close()
+        filled = failed = 0
+        try:
+            for n in missing:
+                if n > len(doc):
+                    continue
+                txt = ""
+                for _attempt in (1, 2):
+                    try:
+                        txt = _clean_ocr_text(_ocr_page(doc[n - 1]) or "")
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning("PPT 第 {} 页 OCR 异常（第 {} 次）: {}", n, _attempt, str(exc)[:80])
+                        txt = ""
+                    if txt.strip():
+                        break
+                if txt.strip():
+                    all_pages.append(f"【《{file_name}》第 {n} 页】\n{txt.strip()}")
+                    filled += 1
+                else:
+                    all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 未识别出文字]")
+                    failed += 1
+        finally:
+            doc.close()
+        logger.info("PPT 图片页回填：{} 页成功 / {} 页失败（共缺 {} 页）", filled, failed, len(missing))
     except Exception as e:
         logger.warning("PPT 图片页 OCR 回填失败: {}", str(e)[:100])
-    return all_pages
+        for n in missing:
+            all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 失败：{str(e)[:60]}]")
+    return _sort_pages_by_number(all_pages)
 
 
 def _clean_slide_ocr(text: str) -> str:
@@ -226,8 +282,9 @@ def resolve_captions(figs: list, on_progress=None) -> dict:
             result[fig.filename] = f"第 {fig.page} 页配图"
             continue
         digest = _file_digest(os.path.join(IMG_DIR, fig.filename))
-        if digest and digest in cache:
-            result[fig.filename] = cache[digest] or None
+        # 空/失败结果绝不命中缓存：旧版本曾把 "" 永久写进去，图就再也回不来了
+        if digest and cache.get(digest):
+            result[fig.filename] = cache[digest]
         else:
             pending.append((fig, digest))
 
@@ -251,8 +308,8 @@ def resolve_captions(figs: list, on_progress=None) -> dict:
                     logger.error("图注识别失败: {}", exc)
                     continue
                 result[fig.filename] = caption
-                if digest:
-                    cache[digest] = caption or ""
+                if digest and caption:
+                    cache[digest] = caption
                 if on_progress:
                     on_progress(index, total, "caption")
         _save_caption_cache()
@@ -406,9 +463,11 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                 # 每页最多保留 2 张最大的图，避免把 logo/装饰图当正文配图
                 candidates.sort(key=lambda x: x[0], reverse=True)
                 slide_title = next((ln.strip() for ln in slide_text.splitlines() if ln.strip()), "")
-                for _area, blob, ext in candidates[:2]:
+                # 注意：变量名不能叫 ext——它会覆盖外层文件扩展名，导致后面的
+                # `if ext == 'pptx'` 永远为假，整本 OCR 回填从不执行（85 页缺 8 页的根因）。
+                for _area, blob, img_ext in candidates[:2]:
                     try:
-                        img_filename = f"slide{index + 1}_{len(os.listdir(IMG_DIR)) + 1}.{ext}"
+                        img_filename = f"slide{index + 1}_{len(os.listdir(IMG_DIR)) + 1}.{img_ext}"
                         cap = f"{slide_title}（第 {index + 1} 页）" if slide_title else f"第 {index + 1} 页图示"
                         img_tag = process_image(blob, img_filename, with_caption=False, caption_text=cap)
                         if img_tag:
@@ -418,8 +477,8 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                 if not slide_text.strip() and candidates:
                     try:
                         import tempfile
-                        _blob = candidates[0][1]; _ext = candidates[0][2]
-                        _tmp = tempfile.NamedTemporaryFile(delete=False, suffix="." + _ext)
+                        _blob = candidates[0][1]; _img_ext = candidates[0][2]
+                        _tmp = tempfile.NamedTemporaryFile(delete=False, suffix="." + _img_ext)
                         _tmp.write(_blob); _tmp.close()
                         _ocr = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
                         try: os.unlink(_tmp.name)
@@ -449,7 +508,9 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                     ocr_map = _ocr_pages(doc, on_progress)
                     figs_by_page, captions = {}, {}
                 else:
-                    figs_by_page = figure_lib.extract_figures(doc, IMG_DIR, dpi=FIG_DPI)
+                    _fig_prefix = hashlib.md5(file_path.encode("utf-8", "ignore")).hexdigest()[:8]
+                    figs_by_page = figure_lib.extract_figures(
+                        doc, IMG_DIR, dpi=FIG_DPI, prefix=_fig_prefix)
                     all_figs = [f for group in figs_by_page.values() for f in group]
                     captions = resolve_captions(all_figs, on_progress)
 
@@ -458,6 +519,8 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                         body = ocr_map.get(page_num + 1, "").strip()
                         if body:
                             all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{body}")
+                        else:
+                            all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n[本页 OCR 未识别出文字]")
                         continue
 
                     page = doc[page_num]
@@ -474,10 +537,29 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                     items.sort(key=lambda item: (item[0], item[1]))
                     page_text = "\n".join(item[2] for item in items)
 
-                    if page_text.strip():
-                        cleaned = "\n".join(clean_text_lines(page_text))
-                        if cleaned.strip():
-                            all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{cleaned}")
+                    # 混合扫描件：这一页没有文字层，但有图/矢量内容 → 单页 OCR。
+                    plain = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", page_text, flags=re.S).strip()
+                    if not plain and (page.get_images() or page.get_drawings()):
+                        ocr_txt = ""
+                        for _attempt in (1, 2):
+                            try:
+                                ocr_txt = _clean_ocr_text(_ocr_page(page) or "")
+                            except Exception as exc:  # noqa: BLE001
+                                logger.warning("PDF 第 {} 页 OCR 异常（第 {} 次）: {}",
+                                               page_num + 1, _attempt, str(exc)[:80])
+                                ocr_txt = ""
+                            if ocr_txt.strip():
+                                break
+                        if ocr_txt.strip():
+                            page_text = ocr_txt + ("\n" + page_text if page_text.strip() else "")
+                        else:
+                            page_text += "\n[本页 OCR 未识别出文字]"
+
+                    cleaned = "\n".join(clean_text_lines(page_text))
+                    if cleaned.strip():
+                        all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n{cleaned}")
+                    else:
+                        all_pages.append(f"【《{file_name}》第 {page_num + 1} 页】\n[本页无可提取文字]")
             finally:
                 doc.close()
 

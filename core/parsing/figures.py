@@ -219,6 +219,7 @@ def extract_figures(
     dpi: int = 220,
     max_figures: int = 120,
     pages: list[int] | None = None,
+    prefix: str = "",
 ) -> dict[int, list[Figure]]:
     """返回 {页码(1-based): [Figure, ...]}。渲染结果写入 out_dir。"""
     out = Path(out_dir)
@@ -298,7 +299,9 @@ def extract_figures(
                 logger.warning("图形数量超过上限 {}，停止提取", max_figures)
                 break
 
-            filename = f"fig_p{pno + 1:02d}_{len(figs) + 1}.png"
+            # 加资料前缀：不同 PDF 第 1 页的图不再互相覆盖（串图根因）
+            stem = f"fig_{prefix}_p{pno + 1:02d}" if prefix else f"fig_p{pno + 1:02d}"
+            filename = f"{stem}_{len(figs) + 1}.png"
             img.save(out / filename)
             seen.append(digest)
             figs.append(Figure(

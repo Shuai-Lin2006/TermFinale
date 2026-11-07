@@ -19,14 +19,16 @@ from core import paths
 from core.generate.outline import Chapter, Outline
 
 
-def fingerprint(materials: list[dict], lang: str) -> str:
-    """资料指纹：路径 + 大小 + 修改时间，避免内容变了还复用旧大纲。"""
+def fingerprint(materials: list[dict], lang: str, extra: str = "") -> str:
+    """资料指纹：路径 + 大小 + 修改时间 + 范围/模式，避免内容或约束变了还复用旧大纲。"""
     digest = hashlib.sha1()
     for item in sorted(materials, key=lambda m: str(m.get("path", ""))):
         digest.update(str(item.get("path", "")).encode("utf-8", "ignore"))
         digest.update(str(item.get("size", "")).encode())
         digest.update(str(item.get("mtime", "")).encode())
     digest.update(str(lang).encode())
+    if extra:
+        digest.update(str(extra).encode("utf-8", "ignore"))
     return digest.hexdigest()[:16]
 
 

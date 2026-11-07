@@ -159,11 +159,12 @@ def _check_syntax(markdown: str) -> list[str]:
 # 验卷
 # --------------------------------------------------------------------------- #
 def validate_paper(markdown: str, blueprint: Blueprint | None = None,
-                   strict_counts: bool = False) -> PaperReport:
+                   strict_counts: bool = False, require_answers: bool = True) -> PaperReport:
     """验卷。
 
     strict_counts=True 时，题数与蓝图不一致按 error 处理（用户明确设定了结构，
     不能只是"提示一下"就交付）。默认仍按 warn，保持旧调用行为。
+    require_answers=False 用于“只要题目、不要答案”的任务。
     """
     report = PaperReport()
     markdown = markdown or ""
@@ -171,7 +172,8 @@ def validate_paper(markdown: str, blueprint: Blueprint | None = None,
     for issue in _check_syntax(markdown):
         report.add("error", issue)
 
-    if not re.search(r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown):
+    if require_answers and not re.search(
+            r"(?m)^#{1,3}\s*(?:答案|参考答案|答案与解析|答案及解析)", markdown):
         report.add("error", "缺少「答案与解析」分区")
 
     sections = _split_sections(markdown)
