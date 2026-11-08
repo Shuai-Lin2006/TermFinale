@@ -143,3 +143,13 @@ class WeakAndBareTest(unittest.TestCase):
         ok = validate_output("## 核心考点：导数\n\n### 隐函数\n\n从零讲起（P.1）。", c,
                              source_text=MATH_SOURCE, stage="final")
         self.assertTrue(ok.ok, ok.issues)
+
+
+class BodyBanTest(unittest.TestCase):
+    def test_ban_topic_in_body_hard_fails(self):
+        c = TaskConstraints(task="guide", ban_topics=["参数方程"])
+        md = ("## 核心考点：导数\n\n### 1.1 隐函数求导\n\n正文（P.1）。\n\n"
+              "### 1.2 参数方程\n\n这里讲参数方程的做法。\n")
+        r = validate_output(md, c, source_text=MATH_SOURCE, stage="final")
+        self.assertFalse(r.ok)
+        self.assertTrue(any("正文仍出现老师不考内容" in i for i in r.issues), r.issues)

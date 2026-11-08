@@ -600,6 +600,12 @@ def _check_teacher_rules(report: ValidationReport, text: str, c: TaskConstraints
         bad = [t for t in topics if any(topic_matches(t, b) for b in bans)]
         if bad:
             report.add("命中老师不考内容：" + "、".join(bad[:6]))
+    # 老师说不考的内容不能只在“考点层”消失、正文还在讲。
+    _body = _strip_citations_images(text)
+    _body_hits = [b for b in c.ban_topics if len(re.sub(r"\s+", "", b)) >= 2
+                  and b in _body]
+    if _body_hits:
+        report.add("正文仍出现老师不考内容：" + "、".join(_body_hits[:6]))
 
     if stage != "final":
         return

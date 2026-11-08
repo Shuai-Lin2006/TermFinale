@@ -35,3 +35,7 @@ class PageLedgerTest(unittest.TestCase):
         s = ledger_summary(led)
         self.assertNotIn("detail", s)
         self.assertEqual(s["pages"], 1)
+
+    def test_p_citation_counts_as_cited(self):
+        led = build_page_ledger(["【《x》第 1 页】\n正文正文正文正文正文正文"], "见 P.1", total=1)
+        self.assertEqual(led["cited"], 1)

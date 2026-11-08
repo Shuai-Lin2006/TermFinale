@@ -35,6 +35,8 @@ def build_page_ledger(pages: Iterable[str], markdown: str, total: int | None = N
     if total is None:
         total = len(pages)
     cited = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", markdown or "")}
+    # 讲义正文常用 P.12 / （P.12）引用，必须与“第N页”同一口径
+    cited |= {int(m.group(1)) for m in re.finditer(r"P\.?\s*(\d+)", markdown or "")}
     detail = []
     for i, block in enumerate(pages, 1):
         n = _page_no(block, i)
