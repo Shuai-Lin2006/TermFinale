@@ -610,8 +610,10 @@ def _check_teacher_rules(report: ValidationReport, text: str, c: TaskConstraints
     if stage != "final":
         return
     if c.must_topics:
+        _body_norm = re.sub(r"\s+", "", text or "")
         missing = [m for m in c.must_topics
-                   if not any(topic_matches(t, m) for t in topics)]
+                   if not any(topic_matches(t, m) for t in topics)
+                   and re.sub(r"\s+", "", m) not in _body_norm]
         if missing:
             report.add("老师必考内容缺失：" + "、".join(missing[:6]))
     if c.required_pages and c.task in ("guide", "extract"):

@@ -153,3 +153,11 @@ class BodyBanTest(unittest.TestCase):
         r = validate_output(md, c, source_text=MATH_SOURCE, stage="final")
         self.assertFalse(r.ok)
         self.assertTrue(any("正文仍出现老师不考内容" in i for i in r.issues), r.issues)
+
+class MustBodyTest(unittest.TestCase):
+    def test_must_topic_in_body_passes(self):
+        c = TaskConstraints(task="guide", must_topics=["隐函数求导"])
+        md = ("## 核心考点：导数与微分\n\n### 1.1 求导\n\n"
+              "隐函数求导：方程两边对 x 求导（P.1）。")
+        r = validate_output(md, c, source_text=MATH_SOURCE, stage="final")
+        self.assertTrue(r.ok, r.issues)

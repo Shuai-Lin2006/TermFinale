@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-11-08T13:46:58+08:00",
+  "pages": 35,
+  "chapters": 7,
+  "chars": 9368,
+  "elapsed_seconds": 119.0,
+  "validation_ok": true,
+  "evidence_rate": 0.96,
+  "evidence_total": 25,
+  "evidence_supported": 24,
+  "ban_param_equation_mentions": 0,
+  "implicit_mentions": 28,
+  "coverage": {
+    "pages_cited": 27,
+    "coverage": 0.771,
+    "uncited_pages": [1, 6, 7, 11, 22, 24, 26, 27]
+  },
+  "note": "整份首次通过内容校验；≤150 页精准全量要求的 100% 页覆盖尚未达到。"
+}

@@ -37,3 +37,8 @@ class CardGuideTest(unittest.TestCase):
         md = generate_card_chapter(raw, chapter={"title": "图"}, ai_call=fake_ai)
         self.assertIn("（P.3）", md)
         self.assertIn("图示", md)
+
+    def test_fallback_skips_prompt_wrapper(self):
+        raw = "【本章资料】\n【《高数》第 9 页】\n这是第九页真正的正文内容，足够长。"
+        md = generate_card_chapter(raw, chapter={"title": "测试"}, ai_call=fake_ai)
+        self.assertNotIn("【本章资料】", md)

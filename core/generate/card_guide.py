@@ -12,7 +12,7 @@ from core.exam_engine import call_ai_with_retry
 from core.generate.evidence_pack import Evidence, build_pack
 
 PAGE_SPLIT = re.compile(r"(?=【《.+?》第\s*\d+\s*页】)")
-_MAT_PREFIX = re.compile(r"【[^】]*(?:重点资料|辅助资料|权重)[^】]*】\s*")
+_MAT_PREFIX = re.compile(r"【[^】]*(?:重点资料|辅助资料|本章资料|权重)[^】]*】\s*")
 BATCH = 6
 
 
@@ -75,16 +75,18 @@ def _explain_batch(batch: list[Evidence], title: str, weak: str, bans: list[str]
     return out
 
 
-def _fallback_cards(pages: list[str]) -> list[Evidence]:
+def _fallback_cards(pages: list[str], page_hints: list[int] | None = None) -> list[Evidence]:
     """无可用证据句时，用该页最长正文/图注兜底；不编内容，只保留来源。"""
     out = []
     for i, page in enumerate(pages, 1):
         m = re.search(r"》\s*第\s*(\d+)\s*页】", page or "")
-        n = int(m.group(1)) if m else i
+        n = int(m.group(1)) if m else (page_hints[i - 1] if page_hints and i - 1 < len(page_hints) else i)
         clean = _MAT_PREFIX.sub("", page or "")
         clean = re.sub(r"^【《[^》]+》[^】]*】", "", clean).strip()
         lines = [re.sub(r"\s+", " ", x).strip() for x in clean.splitlines() if x.strip()]
+        lines = [re.sub(r"第\s*\d+\s*页", "", x).strip() for x in lines]
         lines = [x for x in lines if "[[[IMAGE:" not in x and len(x) >= 6]
+        lines = [x for x in lines if not re.fullmatch(r"【[^】]{0,20}】", x)]
         if lines:
             quote = max(lines, key=len)[:140]
             out.append(Evidence(f"E{len(out) + 1}", n, quote))
@@ -107,8 +109,11 @@ def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
     bans = list((chapter or {}).get("ban_topics") or [])
     if bans:
         cards = [e for e in cards if not any(b in e.quote for b in bans)]
+    for e in cards:
+        # 卡片页码由程序渲染；引文里残留的“第N页”会被误判为引用
+        e.quote = re.sub(r"第\s*\d+\s*页", "", e.quote).strip()
     if not cards:
-        cards = _fallback_cards(pages)
+        cards = _fallback_cards(pages, (chapter or {}).get("chapter_pages"))
     if not cards:
         return ""
     title = str((chapter or {}).get("title") or "本章")
