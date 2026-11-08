@@ -105,7 +105,8 @@ def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
                           ai_call=None) -> str:
     raw_text = _MAT_PREFIX.sub("", raw_text or "")
     pages = [p for p in PAGE_SPLIT.split(raw_text) if p.strip()]
-    cards = build_pack(pages, max_per_page=4)
+    _cpp = int((chapter or {}).get("cards_per_page") or 4)
+    cards = build_pack(pages, max_per_page=max(1, min(4, _cpp)))
     bans = list((chapter or {}).get("ban_topics") or [])
     if bans:
         cards = [e for e in cards if not any(b in e.quote for b in bans)]

@@ -424,10 +424,13 @@ def run_guide(
     if not pages:
         raise RuntimeError("未从资料中解析到任何内容")
 
-    # >150 页走章节概览：均匀抽样 + 每章一次生成，不再逐页展开。
-    overview_mode = len(pages) > 150
+    # 最终标准：>1000 才概览；150–1000 必须大幅覆盖（不能再每章抽 4 页）。
+    overview_mode = len(pages) > 1000
+    broad_mode = 150 < len(pages) <= 1000
     if overview_mode:
         logger.info("长文档概览模式：{} 页，按章节抽样生成", len(pages))
+    elif broad_mode:
+        logger.info("长文档大幅覆盖模式：{} 页，逐页取卡 + 页索引", len(pages))
 
     # 老师重点：用完整 source_text 解析（基团列表等歧义要去资料里找）
     try:
@@ -502,7 +505,8 @@ def run_guide(
         _weights = [int(x) for x in re.findall(r"权重\s*(\d)", _chapter_text[:1200])]
         _avg_w = (sum(_weights) / len(_weights)) if _weights else 3.0
         target_words = int(target_words * (0.8 + 0.4 * _avg_w / 5.0))
-        blocks = chapter_blocks(chapter, pages, sample=overview_mode)
+        _per_call = 8 if broad_mode else PAGES_PER_CALL
+        blocks = chapter_blocks(chapter, pages, per_call=_per_call, sample=overview_mode)
         for bi, (content, tags) in enumerate(blocks):
             context = {
                 "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
@@ -516,6 +520,7 @@ def run_guide(
                 "weak_topics": _weak_hit,
                 "ban_topics": list(constraints.ban_topics),
                 "chapter_pages": list(chapter_labels.get(ci) or []),
+                "cards_per_page": 2 if broad_mode else 4,
                 "avg_weight": round(_avg_w, 1),
                 "overview": overview_mode,
                 "study_mode": study_mode,
@@ -652,7 +657,7 @@ def run_guide(
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
     # ≤150 页精准全量：未引用页补来源索引
-    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
         final_markdown, _index_added = append_missing_page_index(
             final_markdown, pages, constraints.ban_topics)
         if _index_added:
@@ -660,7 +665,7 @@ def run_guide(
     # 逐段溯源修复：只在原文页 2-gram 覆盖足够时补（P.N），匹配不到不编。
     final_markdown, _ev_repaired = repair_citations(final_markdown, pages)
     # 修复引用后可能又把某页改没：再补一次页索引，确保 ≤150 页 100% 覆盖
-    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
         final_markdown, _index2 = append_missing_page_index(
             final_markdown, pages, constraints.ban_topics)
         if _index2:
@@ -677,10 +682,12 @@ def run_guide(
     final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
     _cov0 = _guide_coverage(final_markdown, source_text, overview_mode, pages)
     final_report.metrics["coverage"] = _cov0
-    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
         _led = _cov0.get("ledger") or {}
-        if int(_led.get("cited") or 0) < len(pages):
-            final_report.add(f"≤150 页精准全量未达标：仅 {_led.get('cited')}/{len(pages)} 页有引用")
+        _cited = int(_led.get("cited") or 0)
+        _need = len(pages) if len(pages) <= 150 else int(len(pages) * 0.85)
+        if _cited < _need:
+            final_report.add(f"大幅覆盖未达标：仅 {_cited}/{len(pages)} 页有引用（需 ≥{_need}）")
     if not final_report.ok:
         logger.warning("讲义最终校验未通过：{}", "；".join(final_report.issues[:5]))
         if constraints.strict:
