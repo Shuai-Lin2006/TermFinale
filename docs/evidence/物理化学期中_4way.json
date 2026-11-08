@@ -1,0 +1,253 @@
+{
+  "exam": "物理化学期中",
+  "mode": "four_way_self_consistency_not_ground_truth",
+  "questions": 27,
+  "agree": 25,
+  "conflict": 2,
+  "missing": 0,
+  "items": [
+    {
+      "key": "判断题#1",
+      "a": "正确",
+      "b": "正确",
+      "c": "正确",
+      "status": "agree",
+      "d": "正确",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#10",
+      "a": "正确",
+      "b": "正确",
+      "c": "正确",
+      "status": "agree",
+      "d": "正确",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#2",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#3",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#4",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#5",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#6",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#7",
+      "a": "正确",
+      "b": "正确",
+      "c": "正确",
+      "status": "agree",
+      "d": "正确",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#8",
+      "a": "错误",
+      "b": "错误",
+      "c": "错误",
+      "status": "agree",
+      "d": "错误",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "判断题#9",
+      "a": "正确",
+      "b": "正确",
+      "c": "错误",
+      "status": "agree",
+      "d": "正确",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "简答题#1",
+      "a": "pV=nRT",
+      "b": "pV=nRT",
+      "c": "pV=nRT",
+      "status": "agree",
+      "d": "pV=nRT",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "简答题#2",
+      "a": "ΔU=Q+W",
+      "b": "ΔU=Q+W",
+      "c": "ΔU=Q+W",
+      "status": "agree",
+      "d": "ΔU=Q+W",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "简答题#3",
+      "a": "状态函数的值只由系统的状态决定；状态函数的变化量只与始态和终态有关，与途径无关。",
+      "b": "状态函数的值只取决于系统的状态；状态函数的变化值只取决于始态和终态，与途径无关。",
+      "c": "状态函数的值只取决于系统的状态；状态函数的变化值只取决于始态和终态，与途径无关。",
+      "status": "agree",
+      "d": "状态函数的值只取决于系统的状态，与到达该状态的途径无关；状态函数具有全微分性质，其微小变化可表示为全微分。",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "简答题#4",
+      "a": "理想气体向真空自由膨胀时温度不变，内能不变。",
+      "b": "理想气体向真空自由膨胀时温度不变，内能不变。",
+      "c": "理想气体向真空自由膨胀时温度不变，内能不变。",
+      "status": "agree",
+      "d": "理想气体向真空自由膨胀时，温度不变，内能不变。",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "简答题#5",
+      "a": "pV^γ=常数；TV^(γ-1)=常数；T^γ p^(1-γ)=常数",
+      "b": "pV^γ=常数；TV^(γ-1)=常数；T^γ p^(1-γ)=常数",
+      "c": "pV^γ=常数；TV^(γ-1)=常数；T^γ p^(1-γ)=常数",
+      "status": "agree",
+      "d": "pV^γ=常数；TV^(γ-1)=常数；T^γ p^(1-γ)=常数",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "计算题#1",
+      "a": "使用掉氧气的质量约为 1.31×10^3 g（约 1.31 kg）",
+      "b": "约 1.31 kg",
+      "c": "约 1.31×10^3 g（1.31 kg）",
+      "status": "conflict",
+      "d": "使用掉氧气的质量约为 1.31 kg（约 1309 g）",
+      "four_way_status": "conflict"
+    },
+    {
+      "key": "计算题#2",
+      "a": "(1) ΔU=0；ΔH=0；Q=W=1.573 kJ（Q=1.573 kJ，W=-1.573 kJ）。(2) ΔU=-1.42 kJ；ΔH=-1.99 kJ；Q=0；W=1.42 kJ",
+      "b": "(1) ΔU=0；ΔH=0；Q=1573 J；W=-1573 J。(2) ΔU=-908 J；ΔH=-1271 J；Q=0；W=-908 J。",
+      "c": "(1) ΔU=0；ΔH=0；Q=W=1573 J（约1.57 kJ）。(2) ΔU=W=-903 J（约-0.903 kJ）；ΔH=-1264 J（约-1.26 kJ）；Q=0。",
+      "status": "conflict",
+      "d": "(1) ΔU=0；ΔH=0；Q=W=1573 J（约 1.57 kJ）。(2) ΔU=-2270 J（约 -2.27 kJ）；ΔH=-3178 J（约 -3.18 kJ）；Q=0；W=2270 J（约 2.27 kJ）。",
+      "four_way_status": "conflict"
+    },
+    {
+      "key": "选择题#1",
+      "a": "C",
+      "b": "C",
+      "c": "C",
+      "status": "agree",
+      "d": "C",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#10",
+      "a": "A",
+      "b": "A",
+      "c": "A",
+      "status": "agree",
+      "d": "A",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#2",
+      "a": "D",
+      "b": "D",
+      "c": "D",
+      "status": "agree",
+      "d": "D",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#3",
+      "a": "C",
+      "b": "C",
+      "c": "C",
+      "status": "agree",
+      "d": "C",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#4",
+      "a": "B",
+      "b": "B",
+      "c": "B",
+      "status": "agree",
+      "d": "B",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#5",
+      "a": "A",
+      "b": "A",
+      "c": "A",
+      "status": "agree",
+      "d": "A",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#6",
+      "a": "C",
+      "b": "C",
+      "c": "D",
+      "status": "agree",
+      "d": "C",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#7",
+      "a": "D",
+      "b": "D",
+      "c": "D",
+      "status": "agree",
+      "d": "D",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#8",
+      "a": "C",
+      "b": "C",
+      "c": "C",
+      "status": "agree",
+      "d": "C",
+      "four_way_status": "agree"
+    },
+    {
+      "key": "选择题#9",
+      "a": "C",
+      "b": "C",
+      "c": "C",
+      "status": "agree",
+      "d": "C",
+      "four_way_status": "agree"
+    }
+  ]
+}
