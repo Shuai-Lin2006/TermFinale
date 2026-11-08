@@ -50,7 +50,7 @@ TermFinale：Mac/Windows 桌面期末复习软件，Electron + FastAPI + SQLite�
 
 ## 2026-11-08 当前状态（覆盖以上历史记录）
 
-> 新会话以 `docs/STATUS_NOW.md` 为准；本节只列本轮真实结果。
+> 新会话以 `docs/ULTIMATE_FORM.md` + `docs/STATUS_NOW.md` 为准；本节只列本轮真实结果。完整形态不是四个生成按钮，阅读器/学习闭环/UI/发布同样是终极形态的一部分。
 
 - 四类任务的任务级约束与 `validate_output` 已进代码：讲义 key/full、提取 points/nouns/questions、试卷 original/variant/predict/mock/reference、逻辑分析结构；≤150 页覆盖 ≥98%、页码区间覆盖、改数/变式出处、自然改写不被 2-gram 硬杀。175 项测试通过。
 - 最新环烃“师生版”：16 页/8.6 千字；覆盖率 100%、硬违规 0、警告 8（缺例题/小结、自然改写证据率 0%）。**不是 SPEC 合格交付**。
