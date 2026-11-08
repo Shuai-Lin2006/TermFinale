@@ -678,6 +678,10 @@ def run_guide(
     final_markdown, _img_guaranteed = reinject_missing_images(final_markdown, _all_tags)
     if _img_guaranteed:
         logger.info("最终保底回注必需配图 {} 张", _img_guaranteed)
+    # 最终白名单：讲义里有、源资料没有的孤儿图必须删除
+    final_markdown, _orphan_clean = sanitize_images(final_markdown, source_text)
+    if _orphan_clean.get("images_unknown"):
+        logger.warning("最终删除孤儿图 {} 张", _orphan_clean["images_unknown"])
     # ≤150 页精准全量：未引用页补来源索引
     if (len(pages) <= 1000 or long_broad_mode) and not constraints.has_scope:
         final_markdown, _index_added = append_missing_page_index(
