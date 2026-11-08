@@ -1,0 +1,11 @@
+{
+  "exam":"高等数学期中（客观题）",
+  "official_objective_total":8,
+  "match":5,
+  "disputed":[
+    {"section":"判断题","no":1,"official":"√","model":"×","math_note":"界点不一定是聚点，官方√正确；模型错。"},
+    {"section":"判断题","no":2,"official":"×","model":"正确","math_note":"闭区域上连续函数通常可积；官方×可疑，需确认题目是否漏了条件。"},
+    {"section":"选择题","no":1,"official":"B","model":"A","math_note":"f=x²y/(x²+y²) 在原点连续且偏导存在；模型A更像正确，官方B可疑。"}
+  ],
+  "conclusion":"官方答案 Word 存在错误，不能作为无条件真值；3题需人工确认。"
+}

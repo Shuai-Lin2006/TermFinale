@@ -1,0 +1,64 @@
+{
+  "total": 8,
+  "match": 5,
+  "mismatch": 3,
+  "manual": 0,
+  "items": [
+    {
+      "section": "判断题",
+      "no": 1,
+      "expected": "√",
+      "got": "错误",
+      "status": "mismatch"
+    },
+    {
+      "section": "判断题",
+      "no": 2,
+      "expected": "×",
+      "got": "正确",
+      "status": "mismatch"
+    },
+    {
+      "section": "判断题",
+      "no": 3,
+      "expected": "×",
+      "got": "错误",
+      "status": "match"
+    },
+    {
+      "section": "判断题",
+      "no": 4,
+      "expected": "×",
+      "got": "错误",
+      "status": "match"
+    },
+    {
+      "section": "判断题",
+      "no": 5,
+      "expected": "√",
+      "got": "正确",
+      "status": "match"
+    },
+    {
+      "section": "选择题",
+      "no": 1,
+      "expected": "B",
+      "got": "A",
+      "status": "mismatch"
+    },
+    {
+      "section": "选择题",
+      "no": 2,
+      "expected": "A",
+      "got": "A",
+      "status": "match"
+    },
+    {
+      "section": "选择题",
+      "no": 3,
+      "expected": "B",
+      "got": "B",
+      "status": "match"
+    }
+  ]
+}
