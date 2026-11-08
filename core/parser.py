@@ -305,6 +305,13 @@ def resolve_captions(figs: list, on_progress=None) -> dict:
         else:
             pending.append((fig, digest))
 
+    # 长文档性能保护：图注识别最多 N 张，其余用页码图注，避免 1001 页逐图烧视觉调用
+    _cap = int(os.getenv("TERMFINALE_MAX_CAPTIONS", "0") or 0)
+    if _cap and len(pending) > _cap:
+        for fig, _ in pending[_cap:]:
+            result[fig.filename] = f"第 {fig.page} 页配图"
+        logger.info("图注识别上限 {}，跳过 {} 张（长文档性能保护）", _cap, len(pending) - _cap)
+        pending = pending[:_cap]
     total = len(pending)
     if on_progress and total:
         on_progress(0, total, "caption")
@@ -537,6 +544,8 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                     all_figs = [f for group in figs_by_page.values() for f in group]
                     captions = resolve_captions(all_figs, on_progress)
 
+                _ocr_fallbacks = 0
+                _max_ocr = int(os.getenv("TERMFINALE_MAX_OCR_PAGES", "0") or 0)
                 for page_num in range(len(doc)):
                     if ocr_map:
                         body = ocr_map.get(page_num + 1, "").strip()
@@ -563,7 +572,7 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                     # 混合扫描件：这一页没有文字层，但有图/矢量内容 → 单页 OCR。
                     plain = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", page_text, flags=re.S).strip()
                     # 有文字层但文本层是公式乱码/单字母串：同样单页 OCR 回退。
-                    if plain and is_low_quality_page(plain):
+                    if plain and is_low_quality_page(plain) and (not _max_ocr or _ocr_fallbacks < _max_ocr):
                         ocr_txt = ""
                         try:
                             ocr_txt = _clean_ocr_text(_ocr_page(page) or "")
@@ -572,6 +581,7 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                         if ocr_txt.strip() and len(ocr_txt) >= max(20, int(len(plain) * 0.45)):
                             logger.info("PDF 第 {} 页文本层乱码，已用 OCR 替换（{}→{} 字）",
                                         page_num + 1, len(plain), len(ocr_txt))
+                            _ocr_fallbacks += 1
                             # 只保留图片标签；旧文本层是乱码，不能再进正文/证据库
                             _imgs = "\n".join(re.findall(r"\[\[\[IMAGE:.*?\]\]\]", page_text, re.S))
                             page_text = ocr_txt + ("\n" + _imgs if _imgs else "")
