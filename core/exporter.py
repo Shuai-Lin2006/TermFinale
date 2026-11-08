@@ -137,10 +137,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 
         headers = []
         if lang == "English":
-            headers = re.findall(r'^##\s+(Chapter \d+:.*)', processed_md, flags=re.MULTILINE)
+            headers = re.findall(r'^##\s+(.+)$', processed_md, flags=re.MULTILINE)
             toc_title = "Table of Contents"
         else:
-            headers = re.findall(r'^##\s+(第 \d+ 章：.*)', processed_md, flags=re.MULTILINE)
+            headers = re.findall(r'^##\s+(.+)$', processed_md, flags=re.MULTILINE)
+            headers = [h for h in headers if '考点' not in h]
             toc_title = "目录"
 
         toc_html = f"<div class='toc-box'><h2>📑 {toc_title}</h2><ul>"
@@ -181,6 +182,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         parts = raw.split("|")
         filename = parts[0].strip()
         caption = parts[1].replace("图注:", "").strip() if len(parts) > 1 else ""
+        caption = re.sub(r"（第\s*\d+\s*页）", "", caption).strip()
         caption = re.split(r"\[\[\[|#{2,}", caption)[0].strip()
         path = os.path.join(img_dir, filename)
 
@@ -188,7 +190,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         if os.path.exists(path):
             with open(path, "rb") as f: b64 = base64.b64encode(f.read()).decode('utf-8')
             ext = filename.split('.')[-1]
-            html_img = f'<div class="img-container"><img src="data:image/{ext};base64,{b64}" class="img-responsive"><div class="img-caption">📖 {caption}</div></div>'
+            html_img = f'<figure class="img-figure"><img src="data:image/{ext};base64,{b64}" class="img-responsive" alt="{caption}"><figcaption>{caption}</figcaption></figure>'
 
         html_content = html_content.replace(f"<p>@@IMAGEBLOCK{i}@@</p>", html_img)
         html_content = html_content.replace(f"@@IMAGEBLOCK{i}@@", html_img)
@@ -207,7 +209,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         h2_counter += 1
         return res
 
-    html_content = re.sub(r'<h2>(第 \d+ 章：.*?|Chapter \d+:.*?)</h2>', add_h2_id, html_content)
+    html_content = re.sub(r'<h2>(.*?)</h2>', add_h2_id, html_content)
 
     html_content = re.sub(r'<blockquote>\s*<p>(📌 出处.*?|📌 Source.*?)</p>\s*</blockquote>',
                           r'<div class="meta-info">\1</div>', html_content, flags=re.DOTALL)
@@ -215,26 +217,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     html_content = re.sub(r'\[出处：(.*?)\]', r'<span class="meta-info">[出处：\1]</span>', html_content)
 
     custom_info = ""
-    if course:
-        import time as _time
-        unit_score = "pts" if lang == "English" else "分"
-        unit_day = "days" if lang == "English" else "天"
-        chapter_count = html_content.count('class="chapter-title"')
-        custom_info = f"""
-        <div class="doc-stats">
-            <div><span>本次目标</span><b>{course.target_score} {unit_score}</b></div>
-            <div><span>剩余天数</span><b>{course.days_left} {unit_day}</b></div>
-            <div><span>讲解人设</span><b>{persona}</b></div>
-            <div><span>章节</span><b>{chapter_count} 章</b></div>
-            <div><span>生成</span><b>{_time.strftime('%m-%d %H:%M')}</b></div>
-        </div>
-        """
 
     course_name = course.name if course else ""
     target_score = getattr(course, "target_score", None) if course else None
     cover_title = course_name or doc_type
-    cover_desc = ("TermFinale 精品讲义"
-                  + (f" · 目标 {target_score} 分" if target_score else ""))
+    cover_desc = "" if doc_type in ("全量讲义", "讲义") else doc_type
 
     # 试卷专用卷头：姓名/学号/时间/满分 + 密封线
     exam_header = ""
@@ -268,8 +255,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     nav_reading = "Reading..." if lang == "English" else "正在阅读..."
     modal_title = "Explanation" if lang == "English" else "名词解释"
 
-    cover_html = (f'<div class="cover"><div class="designer">TermFinale · 开发者 Lan</div>'
-                  f'<h1>{cover_title}</h1><p>{cover_desc}</p>{custom_info}</div>')
+    cover_html = f'<div class="cover"><h1>{cover_title}</h1><p>{cover_desc}</p></div>' 
     if exam_header:
         cover_html = ""
 
@@ -381,6 +367,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     }}
 </script>
 <style>
+    sup.src {{ font-size: 7px; color: #b3b3b3; margin-left: 2px; vertical-align: super; font-family: ui-monospace,Menlo,monospace; float: right; }}
     body {{ font-family: -apple-system, "PingFang SC", sans-serif; background-color: #f4f6f9; color: #2c3e50; line-height: 1.9; margin: 0; padding: 40px 20px; }}
     .container {{ max-width: 850px; margin: 0 auto; background: #ffffff; padding: 50px 60px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }}
     h3 {{ font-size: 18px; color: #1a1a1a; background: #F0F8FF; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #007AFF; margin-top: 30px; margin-bottom: 15px; }}
@@ -390,7 +377,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     p {{ margin-bottom: 16px; line-height: 1.8; white-space: pre-wrap; }}
     .img-container {{ text-align: center; margin: 20px auto; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee; max-width: 95%; }}
     .img-responsive {{ max-width: 92%; height: auto; max-height: 360px; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }}
-    .img-caption {{ color: #666; font-size: 14px; margin-top: 10px; font-weight: 500; }}
+    .img-caption {{ color: #666; font-size: 13px; margin-top: 7px; line-height: 1.5; }}
+    .img-figure {{ margin: 16px auto; text-align: center; page-break-inside: avoid; max-width: 95%; }}
+    .img-figure img {{ max-width: 100%; max-height: 520px; width: auto; height: auto; border-radius: 6px; }}
+    .img-figure figcaption {{ color: #666; font-size: 13px; margin-top: 7px; line-height: 1.5; }}
+    .source-line {{ font-size: 10px; color: #999; text-align: right; margin: 10px 0 18px; }}
 
     /* 🚨 防止白屏：如果渲染失败，至少有个虚线框提示 */
     .mermaid-container {{ width: 100%; overflow-x: auto; background: #fff; padding: 20px; border-radius: 8px; border: 1px dashed #007AFF; margin: 30px 0; min-height: 150px; display: flex; justify-content: center; align-items: center; }}

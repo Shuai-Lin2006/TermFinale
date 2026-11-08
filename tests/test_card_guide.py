@@ -17,8 +17,8 @@ def fake_ai(sys_p, user, **kwargs):
 class CardGuideTest(unittest.TestCase):
     def test_render_quotes_from_source(self):
         md = generate_card_chapter(RAW, chapter={"title": "隐函数", "ban_topics": []}, ai_call=fake_ai)
-        self.assertIn("> 原文：", md)
-        self.assertIn("（P.1）", md)
+        self.assertIn("隐函数求导", md)
+        self.assertIn('class="src">P.1', md)
         self.assertIn("把 y 看成 x 的函数", md)
 
     def test_fake_quote_cannot_appear(self):
@@ -29,14 +29,14 @@ class CardGuideTest(unittest.TestCase):
         raw = ("【重点资料·权重3：高数.pdf】\n【《高数.pdf》第 2 页】\n"
                "参数方程求导：dy/dx=(dy/dt)/(dx/dt)。这是第二页内容。")
         md = generate_card_chapter(raw, chapter={"title": "参数"}, ai_call=fake_ai)
-        self.assertIn("（P.2）", md)
-        self.assertNotIn("（P.1）", md)
+        self.assertIn('class="src">P.2', md)
+        self.assertNotIn('class="src">P.1', md)
 
     def test_fallback_image_page(self):
         raw = "【《高数》第 3 页】\n[[[IMAGE: f.png | 图注: 电路图（第 3 页）]]]"
         md = generate_card_chapter(raw, chapter={"title": "图"}, ai_call=fake_ai)
-        self.assertIn("（P.3）", md)
-        self.assertIn("图示", md)
+        self.assertIn('class="src">P.3', md)
+        self.assertIn("f.png", md)
 
     def test_fallback_skips_prompt_wrapper(self):
         raw = "【本章资料】\n【《高数》第 9 页】\n这是第九页真正的正文内容，足够长。"
@@ -56,7 +56,7 @@ class CardGuideTest(unittest.TestCase):
     def test_blank_page_creates_placeholder(self):
         raw = "【《高数》第 5 页】\n"
         md = generate_card_chapter(raw, chapter={"title": "空页"}, ai_call=fake_ai)
-        self.assertIn("（P.5）", md)
+        self.assertIn('class="src">P.5', md)
         self.assertIn("保留原页", md)
 
     def test_explain_strips_source_page_ref(self):

@@ -61,15 +61,16 @@ def _parse_json(text: str) -> dict:
 
 
 def _explain_batch(batch: list[Evidence], title: str, weak: str, bans: list[str],
-                   ai_call=None) -> dict[str, str]:
+                   ai_call=None) -> tuple[str, dict[str, str]]:
     lines = "\n".join(f"[{e.eid}｜P.{e.page}] {e.quote}" for e in batch)
     sys_p = f"""你是大学期末讲义编辑。下面每张卡是资料里的原句，你只能解释这些原句。
 要求：
-1. 每张卡写 60–180 字通俗讲解，面向基础一般的大学生；
-2. 不得新增资料没有的事实、数字、定理编号、例题数据；
-3. 不得出现老师禁用的内容；不要写“如图”除非原句有图；
-4. 只输出 JSON：{{"cards":[{{"eid":"E1","explain":"..."}}]}}
-{('5. 学生薄弱点必须多讲：' + weak) if weak else ''}
+1. 直接写教材正文，60–180 字，客观、精炼，面向基础一般的大学生；
+2. 不要出现“这一页/这里/这句/这段/这张卡/这条说明/你可以/我们/先知道/理解这一点/图示内容”等元话语；不要复述资料页；定义就直接给定义，分类就直接给分类；
+3. 不得新增资料没有的事实、数字、定理编号、例题数据；不得出现老师禁用内容；
+4. 给这组卡起一个具体的小节标题（如“脂环烃的命名”，不要写“原文要点/第几组”）；
+5. 只输出 JSON：{{"section":"小节标题","cards":[{{"eid":"E1","explain":"..."}}]}}
+{('6. 学生薄弱点必须多讲：' + weak) if weak else ''}
 """
     user = f"章节：{title}\n\n证据卡：\n{lines}"
     try:
@@ -77,6 +78,7 @@ def _explain_batch(batch: list[Evidence], title: str, weak: str, bans: list[str]
     except Exception:
         raw = ""
     data = _parse_json(raw)
+    section = str(data.get("section") or "").strip()[:40]
     out = {}
     for item in data.get("cards") or []:
         eid = str(item.get("eid") or "").strip()
@@ -89,14 +91,17 @@ def _explain_batch(batch: list[Evidence], title: str, weak: str, bans: list[str]
             raw2 = (ai_call or call_ai_with_retry)(
                 sys_p + "\n上一轮不是有效 JSON；请只输出 JSON。", user,
                 temp=0.1, min_budget=1800)
-            for item in (_parse_json(raw2).get("cards") or []):
+            data2 = _parse_json(raw2)
+            if not section:
+                section = str(data2.get("section") or "").strip()[:40]
+            for item in (data2.get("cards") or []):
                 eid = str(item.get("eid") or "").strip()
                 exp = _clean_explain(item.get("explain") or "", bans)
                 if eid and exp:
                     out[eid] = exp
         except Exception:
             pass
-    return out
+    return section, out
 
 
 def _fallback_cards(pages: list[str], page_hints: list[int] | None = None, bans: list[str] | None = None) -> list[Evidence]:
@@ -127,6 +132,40 @@ def _fallback_cards(pages: list[str], page_hints: list[int] | None = None, bans:
     return out
 
 
+def _clean_quote(q: str) -> str:
+    q = str(q or "")
+    q = re.sub(r"\d{2}/\d{2}/\d{2}", "", q)
+    q = re.sub(r"【图示】|原文[:：]?", "", q)
+    q = re.sub(r"[（(]\s*[)）]", "", q)
+    q = re.sub(r"第\s*\d+\s*页", "", q)
+    q = re.sub(r"[（(]\s*P?\.?\s*\d+\s*[)）]", "", q)
+    q = re.sub(r"\s+", " ", q).strip(" ，,。.;；")
+    return q
+
+
+_IMG_TAG = re.compile(r"\[\[\[IMAGE:[^\n]*?\]\]\]")
+
+
+def _page_images(pages: list[str]) -> dict[int, list[str]]:
+    out: dict[int, list[str]] = {}
+    for i, page in enumerate(pages, 1):
+        text = page or ""
+        m = re.search(r"》\s*第\s*(\d+)\s*页】", text)
+        n = int(m.group(1)) if m else i
+        tags = _IMG_TAG.findall(text)
+        if not tags:
+            continue
+        dm = re.search(r"【图示内容】\s*([^\n【]+)", text)
+        desc = re.sub(r"\s+", " ", dm.group(1)).strip()[:90] if dm else ""
+        fixed = []
+        for tag in tags:
+            if desc:
+                tag = re.sub(r"\|\s*图注:\s*.*?（第\s*\d+\s*页）", f"| 图注: {desc}（第 {n} 页）", tag)
+            fixed.append(tag)
+        out[n] = fixed
+    return out
+
+
 def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
                           user_choice: str = "", weight_prompt: str = "", lang: str = "中文",
                           chapter: dict | None = None, user_note: str = "",
@@ -149,15 +188,23 @@ def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
         return ""
     title = str((chapter or {}).get("title") or "本章")
     weak = "、".join((chapter or {}).get("weak_topics") or [])
-    out = [f"## 核心考点：{title}"]
-    # 章节内按顺序分批；每批 5 张卡
+    out = [f"## {title}"]
+    page_imgs = _page_images(pages)
+    used_pages: set[int] = set()
     _batch = int((chapter or {}).get("card_batch") or BATCH)
     for start in range(0, len(cards), _batch):
         batch = cards[start:start + _batch]
-        explanations = _explain_batch(batch, title, weak, bans, ai_call=ai_call)
-        out.append(f"### 原文要点 {start + 1}–{start + len(batch)}")
+        section, explanations = _explain_batch(batch, title, weak, bans, ai_call=ai_call)
+        out.append(f"### {section or title}")
         for e in batch:
-            out.append(f"> 原文：{e.quote}（P.{e.page}）")
-            exp = explanations.get(e.eid) or "原文直接给出了这一要点，先把原句读懂，再回到资料上下文确认。"
-            out.append(f"**讲解**：{exp}")
+            quote = _clean_quote(e.quote)
+            if not quote:
+                continue
+            # 教材式段落：原句自然并入讲解，段尾只留很小的来源标记
+            exp = explanations.get(e.eid) or "这句是资料里的直接结论，先记住原句，再结合上下文理解。"
+            joined = quote + ("" if quote.endswith(("。", "！", "？", ".", "；", ";")) else "。") + " " + exp
+            out.append(joined + f'<sup class="src">P.{e.page}</sup>')
+            if e.page not in used_pages and page_imgs.get(e.page):
+                out.extend(page_imgs[e.page])
+                used_pages.add(e.page)
     return "\n\n".join(out).strip()

@@ -107,7 +107,7 @@ def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
     out = markdown
     count = 0
     for page, group in sorted(by_page.items()):
-        block = (f"#### 📷 配图（P.{page}）\n\n" if page else "#### 📷 配图\n\n") + "\n\n".join(group)
+        block = "\n\n".join(group)
         # 插到引用该页的段落之后；找不到再放章末
         pat = re.compile(rf"(?m)^.*(?:P\.?{page}|第\s*{page}\s*页).*$")
         m = pat.search(out)
@@ -729,6 +729,8 @@ def run_guide(
         warnings.extend(final_report.issues)
     warnings.extend(final_report.warnings)
 
+    # 页码索引只服务内部账本，不展示给读者
+    final_markdown = re.sub(r"\n\n---\n\n## 资料页码索引.*?(?=\n\n---\n\n## 🎓|\Z)", "", final_markdown, flags=re.S)
     final_markdown += "\n\n---\n\n" + OUTROS[outro_lang].get(persona, OUTROS[outro_lang]["温柔小姐姐"])
 
     if lang in ("繁體中文", "繁体中文", "zh-Hant"):

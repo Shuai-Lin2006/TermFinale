@@ -56,3 +56,10 @@ class IndexSectionTest(unittest.TestCase):
         r = audit_evidence(md, PAGES)
         self.assertEqual(r.total, 1)
         self.assertEqual(r.supported, 1)
+
+class MergedParagraphTest(unittest.TestCase):
+    def test_quote_plus_explanation_supported(self):
+        md = ("方程两边对 x 求导，再解出 y'。这一句讲解是为了帮助学生理解隐函数求导的核心步骤。"
+              "（P.1）")
+        r = audit_evidence(md, PAGES)
+        self.assertEqual(r.supported, 1)
