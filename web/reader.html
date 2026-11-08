@@ -6,7 +6,7 @@
 <script src="assets/appearance-boot.js?v=2"></script>
 <title>阅读 · TermFinale</title>
 <link rel="stylesheet" href="assets/app.css?v=18">
-<link rel="stylesheet" href="assets/premium.css?v=3">
+<link rel="stylesheet" href="assets/premium.css?v=4">
 <link rel="stylesheet" href="assets/katex/katex.inline.css">
 <script src="assets/katex/katex.min.js"></script>
 <script src="assets/katex/auto-render.min.js"></script>
@@ -67,6 +67,9 @@
     <div id="searchBar" style="display:none;margin:10px 0 0;gap:8px;align-items:center">
       <input id="searchInput" placeholder="搜索正文，回车跳转，Shift+回车向上"
         style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;background:var(--paper);color:var(--ink)">
+      <span id="searchCount" class="tiny muted"></span>
+      <button class="btn ghost sm" id="searchPrev" title="上一处">↑</button>
+      <button class="btn ghost sm" id="searchNext" title="下一处">↓</button>
       <button class="btn sm" id="searchClose">关闭</button>
     </div>
     <div id="content"></div>
@@ -299,43 +302,71 @@
     bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
     if(bar.style.display === 'flex') $('searchInput').focus();
   });
-  $('searchClose').addEventListener('click', function(){ $('searchBar').style.display = 'none'; });
+  $('searchClose').addEventListener('click', function(){
+    $('searchBar').style.display = 'none'; clearHits(); lastQuery=''; lastHits=[]; lastIndex=-1; paintCount();
+  });
   function clearHits(){
     document.querySelectorAll('#content mark.tf-hit').forEach(function(m){
       var t=document.createTextNode(m.textContent); m.parentNode.replaceChild(t,m);
     });
     document.getElementById('content').normalize();
   }
+  var lastQuery = '', lastHits = [], lastIndex = -1;
+  function paintCount(){
+    var el = document.getElementById('searchCount');
+    if(!el) return;
+    el.textContent = lastHits.length ? ((lastIndex + 1) + ' / ' + lastHits.length) : '0 处';
+  }
+  function focusHit(back){
+    if(!lastHits.length) return;
+    if(lastIndex >= 0) lastHits[lastIndex].classList.remove('tf-current');
+    lastIndex = back ? (lastIndex - 1 + lastHits.length) % lastHits.length
+                     : (lastIndex + 1) % lastHits.length;
+    var mark = lastHits[lastIndex];
+    mark.classList.add('tf-current');
+    mark.scrollIntoView({behavior:'smooth', block:'center'});
+    paintCount();
+  }
   function doSearch(q, back){
-    clearHits(); if(!q) return 0;
-    var root=document.getElementById('content');
-    var walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    var nodes=[], n;
-    while(n=walker.nextNode()){ if(n.nodeValue && n.nodeValue.indexOf(q)>=0) nodes.push(n); }
-    var first=null, count=0;
-    nodes.forEach(function(node){
-      var parts=node.nodeValue.split(q);
-      if(parts.length<2) return;
-      var frag=document.createDocumentFragment();
-      parts.forEach(function(part,i){
-        frag.appendChild(document.createTextNode(part));
-        if(i<parts.length-1){
-          var mark=document.createElement('mark'); mark.className='tf-hit'; mark.textContent=q;
-          frag.appendChild(mark); if(!first) first=mark; count++;
-        }
+    if(q !== lastQuery){
+      clearHits();
+      lastQuery = q; lastHits = []; lastIndex = -1;
+      if(!q){ paintCount(); return 0; }
+      var root=document.getElementById('content');
+      var walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var nodes=[], n;
+      while(n=walker.nextNode()){ if(n.nodeValue && n.nodeValue.indexOf(q)>=0) nodes.push(n); }
+      nodes.forEach(function(node){
+        var parts=node.nodeValue.split(q);
+        if(parts.length<2) return;
+        var frag=document.createDocumentFragment();
+        parts.forEach(function(part,i){
+          frag.appendChild(document.createTextNode(part));
+          if(i<parts.length-1){
+            var mark=document.createElement('mark'); mark.className='tf-hit'; mark.textContent=q;
+            frag.appendChild(mark); lastHits.push(mark);
+          }
+        });
+        node.parentNode.replaceChild(frag,node);
       });
-      node.parentNode.replaceChild(frag,node);
-    });
-    if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
-    return count;
+    }
+    if(lastHits.length) focusHit(back);
+    else paintCount();
+    return lastHits.length;
+  }
+  function runSearch(back){
+    var q=$('searchInput').value.trim();
+    if(!q){ toast('先输入要搜索的内容'); return; }
+    var c=doSearch(q, back);
+    if(!c) toast('没有找到「' + q + '」');
   }
   $('searchInput').addEventListener('keydown', function(e){
     if(e.key !== 'Enter') return;
     e.preventDefault();
-    var q=this.value.trim(); if(!q) return;
-    var c=doSearch(q, e.shiftKey);
-    if(!c) toast('没有找到「' + q + '」'); else toast('找到 ' + c + ' 处');
+    runSearch(e.shiftKey);
   });
+  $('searchNext').addEventListener('click', function(){ runSearch(false); });
+  $('searchPrev').addEventListener('click', function(){ runSearch(true); });
 
   $('pdfBtn').addEventListener('click', function(){
     if(!cid){ toast('请从课程进入阅读器'); return; }

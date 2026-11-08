@@ -565,3 +565,6 @@ a{color:inherit}
 .tf-ai-form{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid var(--line-2)}
 .tf-ai-form textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:12px;padding:8px 10px}
 @media(max-width:900px){.tf-ai-fab{right:14px;bottom:76px}.tf-ai-drawer{width:100vw}}
+
+mark.tf-hit{background:color-mix(in srgb,var(--brand) 22%,transparent);color:inherit;border-radius:2px;padding:0 1px}
+mark.tf-hit.tf-current{background:color-mix(in srgb,var(--brand) 55%,transparent);outline:2px solid var(--brand)}

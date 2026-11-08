@@ -117,7 +117,10 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeDrawer(); toolbar && toolbar.classList.remove('show'); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault(); document.getElementById('searchBox')?.focus?.(); toast('搜索（演示）');
+      e.preventDefault();
+      var sBtn = document.getElementById('searchBtn');
+      if (sBtn) { sBtn.click(); var si = document.getElementById('searchInput'); if (si) si.focus(); }
+      else toast('当前页面没有搜索');
     }
   });
 
