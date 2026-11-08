@@ -1,0 +1,38 @@
+{
+  "pages": 1001,
+  "chars": 167753,
+  "elapsed": 787.3,
+  "validation_ok": true,
+  "coverage": {
+    "pages": 1001,
+    "pages_cited": 1001,
+    "coverage": 1.0,
+    "coverage_mode": "broad",
+    "coverage_note": "长文档大幅覆盖：65% 页面取卡 + 页索引，不是逐页精准",
+    "ledger": {
+      "pages": 1001,
+      "accounted": 1001,
+      "cited": 1001,
+      "missing_entries": [],
+      "uncited": [],
+      "placeholder": [],
+      "image_only": [],
+      "short": [],
+      "status_counts": {
+        "cited": 1001,
+        "uncited": 0,
+        "short": 0,
+        "image_only": 0,
+        "placeholder": 0
+      }
+    }
+  },
+  "evidence": {
+    "rate": 0.983,
+    "total": 524,
+    "supported": 515,
+    "unsupported": 9,
+    "no_citation": 0
+  },
+  "chapters": 9
+}

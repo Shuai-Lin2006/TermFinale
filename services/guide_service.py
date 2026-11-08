@@ -235,6 +235,10 @@ def append_missing_page_index(markdown: str, pages: list[str], bans: list[str] |
 
 def _guide_coverage(final_md: str, source_text: str, overview_mode: bool, pages: list[str], long_broad: bool = False) -> dict:
     cov = _coverage_metrics(final_md, source_text, overview_mode)
+    if long_broad:
+        cov["coverage_mode"] = "broad"
+        cov["coverage_note"] = "长文档大幅覆盖：65% 页面取卡 + 页索引，不是逐页精准"
+        cov.pop("sampled_pages", None)
     cov["ledger"] = ledger_summary(build_page_ledger(pages, final_md, total=len(pages)))
     return cov
 
@@ -516,7 +520,7 @@ def run_guide(
         target_words = int(target_words * (0.8 + 0.4 * _avg_w / 5.0))
         _per_call = 10 if long_broad_mode else (8 if broad_mode else PAGES_PER_CALL)
         blocks = chapter_blocks(chapter, pages, per_call=_per_call, sample=overview_mode,
-                                sample_ratio=0.60 if long_broad_mode else None)
+                                sample_ratio=0.65 if long_broad_mode else None)
         for bi, (content, tags) in enumerate(blocks):
             context = {
                 "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
@@ -668,7 +672,7 @@ def run_guide(
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
     # ≤150 页精准全量：未引用页补来源索引
-    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
+    if (len(pages) <= 1000 or long_broad_mode) and not constraints.has_scope:
         final_markdown, _index_added = append_missing_page_index(
             final_markdown, pages, constraints.ban_topics)
         if _index_added:
@@ -676,7 +680,7 @@ def run_guide(
     # 逐段溯源修复：只在原文页 2-gram 覆盖足够时补（P.N），匹配不到不编。
     final_markdown, _ev_repaired = repair_citations(final_markdown, pages)
     # 修复引用后可能又把某页改没：再补一次页索引，确保 ≤150 页 100% 覆盖
-    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
+    if (len(pages) <= 1000 or long_broad_mode) and not constraints.has_scope:
         final_markdown, _index2 = append_missing_page_index(
             final_markdown, pages, constraints.ban_topics)
         if _index2:
@@ -691,7 +695,7 @@ def run_guide(
                                    stage="final")
     final_report.metrics["evidence_repaired"] = _ev_repaired
     final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
-    _cov0 = _guide_coverage(final_markdown, source_text, overview_mode, pages)
+    _cov0 = _guide_coverage(final_markdown, source_text, overview_mode, pages, long_broad_mode)
     final_report.metrics["coverage"] = _cov0
     if not constraints.has_scope:
         _led = _cov0.get("ledger") or {}
