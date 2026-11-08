@@ -36,6 +36,7 @@ GENERIC_HEADINGS = {
 _PAGE_HEADER_RE = re.compile(r"》\s*第\s*(\d+)\s*页】")
 _PAGE_CITE_RE = re.compile(r"第\s*(\d+)\s*页")
 _P_CITE_RE = re.compile(r"[（(]\s*P\.?\s*(\d+)\s*[)）]|(?<![A-Za-z0-9])P\.\s*(\d+)")
+_PAGE_RANGE_RE = re.compile(r"(?:第\s*)?(\d+)\s*[–—\-~至]\s*(?:第\s*)?(\d+)\s*页|P\.?\s*(\d+)\s*[–—\-~]\s*P?\.?\s*(\d+)")
 _IMAGE_TAG_RE = re.compile(r"\[\[\[IMAGE:.*?\]\]\]", re.S)
 _MATH_RE = re.compile(r"\$\$.*?\$\$|\$[^$\n]*\$", re.S)
 
@@ -103,7 +104,8 @@ class TaskConstraints:
             sections=sections,
             material_kind=str(merged.get("material_mode") or "exam"),
             guide_mode=str(merged.get("mode") or merged.get("guide_mode") or "full"),
-            exam_mode=str(merged.get("exam_mode") or merged.get("mode") or "mock"),
+            exam_mode=str(merged.get("exam_mode") or options.get("train_type")
+                          or merged.get("mode") or "mock"),
             strict=bool(merged.get("strict", True)),
             max_retries=max(0, min(5, int(merged.get("max_retries", 2) or 0))),
             teacher_note=str(merged.get("teacher_note") or options.get("teacher_note") or ""),
@@ -375,6 +377,12 @@ def cited_pages(text: str) -> set[int]:
         value = m.group(1) or m.group(2)
         if value:
             pages.add(int(value))
+    for m in _PAGE_RANGE_RE.finditer(body):
+        vals = [g for g in m.groups() if g]
+        if len(vals) >= 2:
+            a, b = int(vals[0]), int(vals[1])
+            if 1 <= a <= b <= 10000:
+                pages.update(range(a, b + 1))
     return pages
 
 
@@ -701,7 +709,11 @@ def _check_guide(report: ValidationReport, text: str, c: TaskConstraints,
                                       "unsupported": _ev.unsupported,
                                       "no_citation": _ev.no_citation}
         if _ev.total and _ev.rate < 0.80:
-            report.add(f"逐句证据不足：{_ev.rate:.0%} 段有依据（{_ev.unsupported} 低依据 / {_ev.no_citation} 无页码）")
+            # 卡片引用模式必须逐句可核；自然教材是改写，不能用 2-gram 硬杀
+            if "> 原文" in text or "**讲解**" in text:
+                report.add(f"逐句证据不足：{_ev.rate:.0%} 段有依据（{_ev.unsupported} 低依据 / {_ev.no_citation} 无页码）")
+            else:
+                report.warn(f"自然改写模式：逐句 2-gram 证据率 {_ev.rate:.0%}，需语义/人工复核")
         elif _ev.total and _ev.rate < 0.95:
             report.warn(f"逐句证据率 {_ev.rate:.0%}，建议提升到 95%")
     if c.material_kind == "lecture" and "【考点" in text:
@@ -1020,6 +1032,7 @@ def _has_page_cite(text: str) -> bool:
 # 资料依据（软信号）
 # --------------------------------------------------------------------------- #
 def guide_topic_terms(text: str) -> list[str]:
+    text = _IMAGE_TAG_RE.sub("", text or "")
     terms = _KEYWORD_RE.findall(text)
     for m in re.finditer(r"(?m)^#{3,4}\s+(.+)$", text):
         heading = re.sub(r"^\d+(?:\.\d+)*\s*", "", m.group(1)).strip()

@@ -35,3 +35,16 @@ class SpecGenerationTest(unittest.TestCase):
         self.assertTrue(any("定义" in x or "出处" in x for x in r.issues))
 
 if __name__ == "__main__": unittest.main()
+
+class CoverageRangeTest(unittest.TestCase):
+    def test_range_counts_all_pages(self):
+        from core.quality.constraints import cited_pages
+        pages = cited_pages("来源：P.1–P.10")
+        self.assertEqual(pages, set(range(1, 11)))
+
+class NaturalGuideEvidenceTest(unittest.TestCase):
+    def test_natural_prose_is_warning_not_hard(self):
+        c = TaskConstraints(task="guide", guide_mode="full")
+        text = "## 第一章\n\n自然改写的教材正文，只保留知识点，没有逐字引用。"
+        r = validate_output(text, c, source_text="【《资料》第 1 页】\n原句")
+        self.assertTrue(r.ok, r.issues)
