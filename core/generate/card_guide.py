@@ -26,6 +26,29 @@ def _clean_explain(text: str, bans: list[str]) -> str:
     return t[:500]
 
 
+def _math_ok(q: str) -> bool:
+    """残缺公式不进卡：未闭合 $ / \begin...\end / \(...\) 会在 KaTeX 报错。"""
+    q = q or ""
+    if q.count("$") % 2 != 0:
+        return False
+    if q.count("\\(") != q.count("\\)"):
+        return False
+    if q.count("{") != q.count("}"):
+        return False
+    if q.count("\\left") != q.count("\\right"):
+        return False
+    # 截断的长公式极易缺环境/括号，宁可不进卡
+    if "\\" in q and len(q) > 120:
+        return False
+    for env in re.findall(r"\\begin\{([^}]+)\}", q):
+        if f"\\end{{{env}}}" not in q:
+            return False
+    for env in re.findall(r"\\end\{([^}]+)\}", q):
+        if f"\\begin{{{env}}}" not in q:
+            return False
+    return True
+
+
 def _parse_json(text: str) -> dict:
     m = re.search(r"\{.*\}", text or "", re.S)
     if not m:
@@ -75,7 +98,7 @@ def _explain_batch(batch: list[Evidence], title: str, weak: str, bans: list[str]
     return out
 
 
-def _fallback_cards(pages: list[str], page_hints: list[int] | None = None) -> list[Evidence]:
+def _fallback_cards(pages: list[str], page_hints: list[int] | None = None, bans: list[str] | None = None) -> list[Evidence]:
     """无可用证据句时，用该页最长正文/图注兜底；不编内容，只保留来源。"""
     out = []
     for i, page in enumerate(pages, 1):
@@ -87,6 +110,8 @@ def _fallback_cards(pages: list[str], page_hints: list[int] | None = None) -> li
         lines = [re.sub(r"第\s*\d+\s*页", "", x).strip() for x in lines]
         lines = [x for x in lines if "[[[IMAGE:" not in x and len(x) >= 6]
         lines = [x for x in lines if not re.fullmatch(r"【[^】]{0,20}】", x)]
+        lines = [x for x in lines if not any(b and b in x for b in (bans or []))]
+        lines = [x for x in lines if _math_ok(x)]
         if lines:
             quote = max(lines, key=len)[:140]
             out.append(Evidence(f"E{len(out) + 1}", n, quote))
@@ -113,8 +138,9 @@ def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
     for e in cards:
         # 卡片页码由程序渲染；引文里残留的“第N页”会被误判为引用
         e.quote = re.sub(r"第\s*\d+\s*页", "", e.quote).strip()
+    cards = [e for e in cards if _math_ok(e.quote)]
     if not cards:
-        cards = _fallback_cards(pages, (chapter or {}).get("chapter_pages"))
+        cards = _fallback_cards(pages, (chapter or {}).get("chapter_pages"), bans)
     if not cards:
         return ""
     title = str((chapter or {}).get("title") or "本章")

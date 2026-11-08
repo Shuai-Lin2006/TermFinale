@@ -1,7 +1,7 @@
 {
   "pages": 1001,
-  "chars": 167753,
-  "elapsed": 787.3,
+  "chars": 168350,
+  "elapsed": 809.6,
   "validation_ok": true,
   "coverage": {
     "pages": 1001,
@@ -28,11 +28,13 @@
     }
   },
   "evidence": {
-    "rate": 0.983,
-    "total": 524,
-    "supported": 515,
-    "unsupported": 9,
+    "rate": 0.986,
+    "total": 515,
+    "supported": 508,
+    "unsupported": 7,
     "no_citation": 0
   },
-  "chapters": 9
+  "chapters": 9,
+  "katex_errors_after_fallback": 0,
+  "pdf_pages": 334
 }

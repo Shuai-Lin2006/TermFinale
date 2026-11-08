@@ -278,6 +278,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 <head>
 <meta charset="utf-8">
 <title>{course.name if course else '文档'} - {doc_type}</title>
+<style>.math-fallback{{font-family:ui-monospace,Menlo,monospace;color:var(--ink-2);background:var(--paper-2);border-radius:4px;padding:0 3px}}</style>
 {_katex_assets()}
 <script async src="https://cdn.bootcdn.net/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
@@ -285,6 +286,15 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
         if (window.renderMathInElement) {{
             renderMathInElement(document.body, {{ delimiters: [{{left: '$$', right: '$$', display: true}}, {{left: '$', right: '$', display: false}}], throwOnError: false }});
         }}
+        // 残缺公式兜底：不把 KaTeX 红错交给用户/PDF
+        setTimeout(function() {{
+            document.querySelectorAll('.katex-error').forEach(function(el) {{
+                var span = document.createElement('span');
+                span.className = 'math-fallback';
+                span.textContent = el.textContent || '';
+                el.replaceWith(span);
+            }});
+        }}, 0);
         if (window.mermaid) {{
             mermaid.initialize({{ startOnLoad: true, theme: 'default', flowchart: {{ useMaxWidth: false }} }});
         }} else {{

@@ -45,5 +45,7 @@
     "unsupported": 5,
     "no_citation": 0
   },
-  "chapters": 8
+  "chapters": 8,
+  "katex_errors": 0,
+  "pdf_pages": 99
 }

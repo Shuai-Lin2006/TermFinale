@@ -42,3 +42,13 @@ class CardGuideTest(unittest.TestCase):
         raw = "【本章资料】\n【《高数》第 9 页】\n这是第九页真正的正文内容，足够长。"
         md = generate_card_chapter(raw, chapter={"title": "测试"}, ai_call=fake_ai)
         self.assertNotIn("【本章资料】", md)
+
+    def test_fallback_filtered_by_ban(self):
+        raw = "【《高数》第 1 页】\n参数方程求导的完整步骤和说明。"
+        md = generate_card_chapter(raw, chapter={"title": "x", "ban_topics": ["参数方程"]}, ai_call=fake_ai)
+        self.assertNotIn("参数方程", md)
+
+    def test_broken_math_card_dropped(self):
+        raw = "【《高数》第 1 页】\n\\begin{aligned} x+1"
+        md = generate_card_chapter(raw, chapter={"title": "x"}, ai_call=fake_ai)
+        self.assertNotIn("\\begin", md)
