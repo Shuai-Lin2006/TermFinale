@@ -423,6 +423,8 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
     _cited = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", merged)}
     _covered = _src_pages & _cited
     _missing = sorted(_src_pages - _cited)
+    from core.quality.page_ledger import build_page_ledger, ledger_summary
+    _ledger = build_page_ledger(pages, merged, total=len(_src_pages) or len(pages))
     coverage = {
         "pages": len(_src_pages) if _src_pages else len(pages),
         "pages_cited": len(_covered),
@@ -437,6 +439,7 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         "coverage": (round(len(_covered) / len(_src_pages), 3) if _src_pages
                      else (round(ok_chunks / len(chunks), 3) if chunks else 0.0)),
         "has_page_headers": bool(_src_pages),
+        "ledger": ledger_summary(_ledger),
     }
     report = aggregate_reports("extract", reports)
     logger.info("提取完成：{} 页 / {} 引用 / {} 块 / 去重 {} 块",

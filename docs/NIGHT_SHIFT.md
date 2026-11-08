@@ -280,3 +280,10 @@ topics 全部落在白名单内
 - 仍有 26 页正文 <40 字，属于电路图/公式页；页面有 IMAGE 标签，但需要逐页账本展示，不能只说“85/85 页”。
 - PDF 导出原实现打印动态 reader，PDF 里出现“正在加载”和 `var blob` 脚本；改为直接打印最新单文件 HTML。实测 4 页、2269 字、无脚本残留。
 - 测试 115 项全绿；release_gate 5/5。
+
+## 逐页账本 + 1001 全量启动（08:00–08:10）
+
+- 新增 `core/quality/page_ledger.py`：每页记录 chars/images/placeholder/cited/status（cited/uncited/short/image_only/placeholder）。
+- 接入 review/guide 的 coverage.ledger；生成页显示“账本 X/Y · 图片页 N · 占位 N”。
+- 启动 1001 页**全量**提取（不是概览），临时库/临时输出，进度 `/tmp/tf_verify/extract1001_full.log`。
+- 测试 118 项全绿。

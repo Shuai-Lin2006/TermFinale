@@ -28,6 +28,7 @@ from core.generate.outline import Chapter, Outline, clean_outline_titles, fallba
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
 from core.quality.qa import check_chapters
+from core.quality.page_ledger import build_page_ledger, ledger_summary
 from core.quality.constraints import (
     TaskConstraints,
     default_constraints,
@@ -169,6 +170,12 @@ def sanitize_images(markdown: str, source_text: str) -> tuple[str, dict]:
         out.append(line)
     return "\n".join(out), {"images_source": len(valid), "images_used": len(used),
                             "images_unknown": unknown, "images_duplicate": dup}
+
+
+def _guide_coverage(final_md: str, source_text: str, overview_mode: bool, pages: list[str]) -> dict:
+    cov = _coverage_metrics(final_md, source_text, overview_mode)
+    cov["ledger"] = ledger_summary(build_page_ledger(pages, final_md, total=len(pages)))
+    return cov
 
 
 def _coverage_metrics(final_md: str, source_text: str, overview_mode: bool) -> dict:
@@ -612,7 +619,7 @@ def run_guide(
         "images_duplicate": img_totals["duplicate"],
         "images_low_relevance": _sem_drop,
         "page_limit": max_pages,
-        "coverage": _coverage_metrics(final_markdown, source_text, overview_mode),
+        "coverage": _guide_coverage(final_markdown, source_text, overview_mode, pages),
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
         "qa_ok": qa.ok,
