@@ -413,3 +413,12 @@ class ReinjectImagesTest(unittest.TestCase):
         out, n = guide_service.reinject_missing_images(md, tags)
         self.assertEqual(n, 3)
         self.assertIn("a.png", out); self.assertIn("c.png", out)
+
+class IndexFormulaTest(unittest.TestCase):
+    def test_page_index_skips_broken_formula(self):
+        from services.guide_service import append_missing_page_index
+        pages = ["【《x》第 1 页】\n\\begin{aligned} x+1"]
+        md, n = append_missing_page_index("# 讲义\n", pages)
+        self.assertEqual(n, 1)
+        self.assertNotIn("\\begin", md)
+        self.assertIn("对照原资料", md)

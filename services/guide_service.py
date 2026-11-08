@@ -212,10 +212,12 @@ def append_missing_page_index(markdown: str, pages: list[str], bans: list[str] |
         lines = [re.sub(r"第\s*\d+\s*页", "", x).strip() for x in lines]
         lines = [x for x in lines if len(x) >= 6 and not re.fullmatch(r"【[^】]{0,20}】", x)
                  and not any(b in x for b in bans)]
+        # 索引不放残缺公式：截断的 $...$ / \begin{aligned} 会在 KaTeX 里报错
+        lines = [x for x in lines if not re.search(r"[\$\\]|\\begin|\\end", x)]
         quote = max(lines, key=len)[:140] if lines else ""
         if not quote:
             imgs = re.findall(r"\[\[\[IMAGE:\s*[^|\]]+\|\s*图注:\s*(.*?)（第\s*\d+\s*页）\]\]\]", block, re.S)
-            quote = ("【图示】" + imgs[0].strip()) if imgs else "【本页无可用文字，保留原页】"
+            quote = ("【图示】" + imgs[0].strip()) if imgs else "【本页含公式/图示，请对照原资料】"
         parts.append(f"### 第 {n} 页\n\n> 原文：{quote}（P.{n}）\n\n**讲解**：该页已纳入覆盖索引；原文不足时请对照原资料。")
     if not parts:
         return markdown, 0
