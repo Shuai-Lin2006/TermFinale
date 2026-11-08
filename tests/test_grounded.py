@@ -29,3 +29,15 @@ class GroundedTest(unittest.TestCase):
         out, kept, dropped = validate_quotes(md, pack)
         self.assertEqual(kept, 0)
         self.assertEqual(dropped, 1)
+
+    def test_empty_section_removed(self):
+        from core.generate.grounded import _remove_empty_sections
+        md = "## 核心考点：导数\n\n### 空小节\n\n### 有内容\n\n> 原文：隐函数求导（P.1）\n**讲解**：讲。\n"
+        out = _remove_empty_sections(md)
+        self.assertNotIn("空小节", out)
+        self.assertIn("有内容", out)
+
+    def test_unique_quote_count(self):
+        from core.generate.grounded import _unique_quotes
+        md = ("> 原文：甲（P.1）\n> 原文：甲（P.1）\n> 原文：乙（P.2）\n")
+        self.assertEqual(_unique_quotes(md), 2)

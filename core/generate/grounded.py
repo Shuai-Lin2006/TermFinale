@@ -55,6 +55,28 @@ def validate_quotes(markdown: str, pack) -> tuple[str, int, int]:
     return "\n".join(out), kept, dropped
 
 
+def _unique_quotes(md: str) -> int:
+    return len({re.sub(r"\s+", "", m.group(1)) for m in QUOTE_LINE.finditer(md or "")})
+
+
+def _remove_empty_sections(md: str) -> str:
+    lines = (md or "").splitlines()
+    out = []
+    i = 0
+    while i < len(lines):
+        if lines[i].lstrip().startswith("#"):
+            j = i + 1
+            body = []
+            while j < len(lines) and not lines[j].lstrip().startswith("#"):
+                body.append(lines[j]); j += 1
+            if any(x.strip() and not x.strip().startswith("---") for x in body):
+                out.append(lines[i]); out.extend(body)
+            i = j
+        else:
+            out.append(lines[i]); i += 1
+    return "\n".join(out)
+
+
 def generate_grounded_chapter(raw_text: str, course, persona: str = "老师", user_choice: str = "",
                               weight_prompt: str = "", lang: str = "中文", chapter: dict | None = None,
                               user_note: str = "", constraint_block: str = "", retry_note: str = "") -> str:
@@ -82,7 +104,7 @@ def generate_grounded_chapter(raw_text: str, course, persona: str = "老师", us
 2. 每个小节至少一条原文；讲解要围绕原文，不能写资料没有的结论；
 3. 目标篇幅约 {target} 字；{('学生薄弱点必须加讲：' + weak) if weak else ''}
 4. 不要输出结语/客套/方法说明/“扫描残缺/无法还原/复习建议”等元话语；只写学科内容。
-5. 每个小节至少 2 条原文；全文尽量覆盖证据库里 8 条以上不同证据。
+5. 每个小节至少 2 条原文；全文至少覆盖证据库里 8 条不同证据；证据不足就减少小节，不要写空小节、复习建议或方法说明。
 {constraint_block}
 {retry_note}
 """
@@ -96,6 +118,9 @@ def generate_grounded_chapter(raw_text: str, course, persona: str = "老师", us
         retry = call_ai_with_retry(sys_p, user + f"\n\n上一轮有 {dropped} 条引文不是证据库原句，全部作废；请重新写，引文必须逐字来自证据库。",
                                    temp=0.1, min_budget=4096)
         clean, kept, dropped = validate_quotes(retry, pack)
+    # 去掉空小节/元话语小节（模型常写“复习建议/扫描残缺说明”凑篇幅）
+    clean = re.sub(r"(?ms)^###\s*(?:复习建议|学习建议|使用证据句的注意事项|注意事项)\s*$.*?(?=^###|^##|\Z)", "", clean)
+    clean = re.sub(r"(?m)^.*(?:扫描残缺|无法还原|上一轮|证据句库使用).*$\n?", "", clean)
     if bans:
         blocks = re.split(r"(\n\s*\n)", clean)
         kept_blocks = []

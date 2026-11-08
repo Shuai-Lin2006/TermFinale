@@ -33,3 +33,9 @@ class PackTest(unittest.TestCase):
         pack = build_pack(pages)
         self.assertTrue(pack)
         self.assertFalse(any("重点资料" in e.quote for e in pack))
+
+    def test_image_caption_and_footer(self):
+        pages = ["【《高数》第 1 页】\n[[[IMAGE: fig.png | 图注: 隐函数切线示意图（第 1 页）]]]\n(2)初等函数的导数还是初等函数. 16\\26"]
+        pack = build_pack(pages)
+        self.assertTrue(any("【图示】" in e.quote for e in pack))
+        self.assertFalse(any(e.quote.rstrip().endswith("16\\26") for e in pack))

@@ -572,7 +572,9 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                         if ocr_txt.strip() and len(ocr_txt) >= max(20, int(len(plain) * 0.45)):
                             logger.info("PDF 第 {} 页文本层乱码，已用 OCR 替换（{}→{} 字）",
                                         page_num + 1, len(plain), len(ocr_txt))
-                            page_text = ocr_txt + ("\n" + page_text if page_text.strip() else "")
+                            # 只保留图片标签；旧文本层是乱码，不能再进正文/证据库
+                            _imgs = "\n".join(re.findall(r"\[\[\[IMAGE:.*?\]\]\]", page_text, re.S))
+                            page_text = ocr_txt + ("\n" + _imgs if _imgs else "")
                     if not plain and (page.get_images() or page.get_drawings()):
                         ocr_txt = ""
                         for _attempt in (1, 2):
