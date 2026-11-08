@@ -27,3 +27,9 @@ class PackTest(unittest.TestCase):
         self.assertIn("隐函数求导", out)
         self.assertNotIn("量子力学", out)
         self.assertEqual(dropped, 1)
+
+    def test_material_prefix_not_evidence(self):
+        pages = ["【重点资料·权重3：高数.pdf】\n【《高数.pdf》第 1 页】\n隐函数求导：方程两边对 x 求导。"]
+        pack = build_pack(pages)
+        self.assertTrue(pack)
+        self.assertFalse(any("重点资料" in e.quote for e in pack))

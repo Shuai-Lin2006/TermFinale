@@ -408,7 +408,11 @@ def run_guide(
     on_progress(ProgressEvent(f"🧭 已规划 {total} 章，开始逐章生成...", 0.15))
     logger.info("讲义大纲来源={} 章节={}", outline.source, total)
 
-    generator = guide_generator or generate_super_guide
+    if guide_generator:
+        generator = guide_generator
+    else:
+        from core.generate.grounded import generate_grounded_chapter
+        generator = generate_grounded_chapter
     info = build_course_info(course)
     evaluation = info.evaluate()
     urgency_text = (f"紧迫度 {evaluation['final_priority_weight']:.0f}/100（{evaluation['status']}），"
