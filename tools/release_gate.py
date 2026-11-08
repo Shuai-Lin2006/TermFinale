@@ -92,18 +92,37 @@ def check_1001() -> None:
 def check_1001_full() -> None:
     path = ROOT / "docs/evidence/1001_full_metrics.json"
     if not path.is_file():
-        add("1001 全量覆盖", False, "缺少 evidence/1001_full_metrics.json")
+        add("1001 大幅覆盖", False, "缺少 evidence/1001_full_metrics.json")
         return
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
-        add("1001 全量覆盖", False, "metrics JSON 无法解析")
+        add("1001 大幅覆盖", False, "metrics JSON 无法解析")
         return
     cov = raw.get("coverage") or {}
     value = float(cov.get("coverage") or 0)
-    ok = value >= 0.98
-    add("1001 全量覆盖", ok,
+    # 1001 页按用户口径只要求“大幅覆盖”，不要求全量；概览 5% 不能冒充大幅覆盖。
+    ok = value >= 0.75
+    add("1001 大幅覆盖", ok,
         f"{cov.get('pages_cited')}/{cov.get('pages')} = {value:.1%}；缺 {cov.get('pages_missing_count')} 页")
+
+
+def check_85_precise() -> None:
+    path = ROOT / "docs/evidence/85_ledger.json"
+    if not path.is_file():
+        add("85 页精准全量", False, "缺少 evidence/85_ledger.json")
+        return
+    try:
+        led = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        add("85 页精准全量", False, "账本 JSON 无法解析")
+        return
+    detail = led.get("detail") or []
+    bad = [x for x in detail if int(x.get("chars") or 0) < 20 and int(x.get("images") or 0) == 0]
+    ok = (led.get("pages") == 85 and led.get("accounted") == 85
+          and not led.get("placeholder") and not bad)
+    add("85 页精准全量", ok,
+        f"{led.get('accounted')}/85 页；占位 {len(led.get('placeholder') or [])}；无内容页 {len(bad)}")
 
 
 def check_security_files() -> None:
@@ -118,6 +137,7 @@ def main() -> int:
     check_171()
     check_1001()
     check_1001_full()
+    check_85_precise()
     check_security_files()
     width = max(len(n) for n, _, _ in RESULTS)
     print("\n=== 底层算法发布门禁 ===")

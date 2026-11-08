@@ -1,0 +1,785 @@
+{
+  "pages": 85,
+  "accounted": 85,
+  "cited": 0,
+  "missing_entries": [],
+  "uncited": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85
+  ],
+  "placeholder": [],
+  "image_only": [],
+  "short": [],
+  "status_counts": {
+    "cited": 0,
+    "uncited": 85,
+    "short": 0,
+    "image_only": 0,
+    "placeholder": 0
+  },
+  "detail": [
+    {
+      "page": 1,
+      "chars": 33,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 2,
+      "chars": 124,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 3,
+      "chars": 148,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 4,
+      "chars": 195,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 5,
+      "chars": 124,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 6,
+      "chars": 87,
+      "images": 2,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 7,
+      "chars": 156,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 8,
+      "chars": 92,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 9,
+      "chars": 226,
+      "images": 1,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 10,
+      "chars": 136,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 11,
+      "chars": 204,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 12,
+      "chars": 124,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 13,
+      "chars": 109,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 14,
+      "chars": 66,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 15,
+      "chars": 153,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 16,
+      "chars": 61,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 17,
+      "chars": 183,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 18,
+      "chars": 62,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 19,
+      "chars": 128,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 20,
+      "chars": 258,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 21,
+      "chars": 114,
+      "images": 2,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 22,
+      "chars": 76,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 23,
+      "chars": 66,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 24,
+      "chars": 103,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 25,
+      "chars": 60,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 26,
+      "chars": 30,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 27,
+      "chars": 211,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 28,
+      "chars": 124,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 29,
+      "chars": 162,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 30,
+      "chars": 143,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 31,
+      "chars": 106,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 32,
+      "chars": 52,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 33,
+      "chars": 71,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 34,
+      "chars": 23,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 35,
+      "chars": 58,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 36,
+      "chars": 144,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 37,
+      "chars": 114,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 38,
+      "chars": 38,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 39,
+      "chars": 76,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 40,
+      "chars": 100,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 41,
+      "chars": 51,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 42,
+      "chars": 108,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 43,
+      "chars": 102,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 44,
+      "chars": 41,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 45,
+      "chars": 57,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 46,
+      "chars": 31,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 47,
+      "chars": 105,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 48,
+      "chars": 91,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 49,
+      "chars": 211,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 50,
+      "chars": 139,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 51,
+      "chars": 55,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 52,
+      "chars": 74,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 53,
+      "chars": 40,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 54,
+      "chars": 32,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 55,
+      "chars": 66,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 56,
+      "chars": 90,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 57,
+      "chars": 30,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 58,
+      "chars": 229,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 59,
+      "chars": 212,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 60,
+      "chars": 91,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 61,
+      "chars": 216,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 62,
+      "chars": 139,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 63,
+      "chars": 74,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 64,
+      "chars": 119,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 65,
+      "chars": 120,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 66,
+      "chars": 110,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 67,
+      "chars": 38,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 68,
+      "chars": 38,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 69,
+      "chars": 63,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 70,
+      "chars": 40,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 71,
+      "chars": 36,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 72,
+      "chars": 340,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 73,
+      "chars": 66,
+      "images": 1,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 74,
+      "chars": 69,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 75,
+      "chars": 70,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 76,
+      "chars": 36,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 77,
+      "chars": 37,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 78,
+      "chars": 203,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 79,
+      "chars": 40,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 80,
+      "chars": 32,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 81,
+      "chars": 66,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 82,
+      "chars": 90,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 83,
+      "chars": 30,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 84,
+      "chars": 229,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    },
+    {
+      "page": 85,
+      "chars": 58,
+      "images": 0,
+      "placeholder": false,
+      "cited": false,
+      "status": "uncited"
+    }
+  ]
+}

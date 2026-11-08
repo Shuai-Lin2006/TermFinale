@@ -338,7 +338,8 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
                          + "、".join(f"第{n}页" for n in _miss[:20]))
             try:
                 _md2, _rep2 = generate_until_valid(
-                    _gen(_feedback), constraints, source_text=chunk,
+                    lambda _fb: _gen((_feedback + "\n" + (_fb or "")).strip()),
+                    constraints, source_text=chunk,
                     allowed_pages=allowed or None, stage="chunk", raise_on_fail=False)
                 if len(missing_page_numbers(_md2, chunk)) < len(_miss):
                     md, report = _md2, _rep2
