@@ -135,7 +135,10 @@ def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, tot
                         pix = doc[n - 1].get_pixmap(dpi=140)
                         _tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                         _tmp.write(pix.tobytes("png")); _tmp.close()
-                        desc = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
+                        if _DISABLE_VISION:
+                            desc = f"第 {n} 页图示"
+                        else:
+                            desc = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
                         try: os.unlink(_tmp.name)
                         except OSError: pass
                     except Exception as _e:  # noqa: BLE001
