@@ -54,15 +54,16 @@
       "pair_total": 15,
       "pair_ok": 15,
       "pair_rate": 1.0,
-      "orphan": 1,
-      "note": "讲义有15个图标签，源图14，存在1张孤儿图"
+      "orphan": 0,
+      "note": "孤儿实为重复标签，清洗后 orphan=0, duplicate=1",
+      "duplicate_removed": 1
     }
   ],
   "aggregate": {
     "pair_total": 61,
     "pair_ok": 61,
     "pair_rate": 1.0,
-    "orphan": 1,
-    "note": "61张已采用图全部配对，但162页讲义有1张孤儿图；源文件大量装饰/重复图未计入。"
+    "orphan": 0,
+    "note": "61张已采用图全部配对；162页重复标签1已删；仍需更多图密集样本到100+。"
   }
 }
