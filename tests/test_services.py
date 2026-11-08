@@ -323,3 +323,16 @@ class ScopeFilterTest(unittest.TestCase):
         self.assertIn("高阶导数的间接法", out)
         self.assertNotIn("复合函数", out)
         self.assertNotIn("反函数", out)
+
+
+class ChunkPageCoverageTest(unittest.TestCase):
+    def test_missing_pages_detected(self):
+        chunk = ("【《x》第 1 页】\n内容一\n\n【《x》第 2 页】\n内容二\n\n"
+                 "【《x》第 3 页】\n内容三")
+        md = "### 考点：A\n（第1页）\n### 考点：B\n（第2页）"
+        self.assertEqual(review_service.missing_page_numbers(md, chunk), [3])
+
+    def test_all_pages_covered(self):
+        chunk = "【《x》第 1 页】\n内容一\n\n【《x》第 2 页】\n内容二"
+        md = "（第1页）\n（第2页）"
+        self.assertEqual(review_service.missing_page_numbers(md, chunk), [])

@@ -114,6 +114,13 @@ def split_text_safely(text: str, size: int = EXTRACT_CHUNK) -> list[str]:
     return [c for c in chunks if c.strip()]
 
 
+def missing_page_numbers(markdown: str, chunk: str) -> list[int]:
+    """块输出漏了哪些页；块级覆盖门禁用。"""
+    need = source_pages(chunk)
+    got = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", markdown or "")}
+    return sorted(need - got)
+
+
 def _fingerprint(text: str) -> str:
     cleaned = re.sub(r"[\s*#\-—:：，,。.、()（）\[\]【】<>《》\"']", "", text)
     return cleaned[:48]
@@ -277,7 +284,10 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         logger.info("提取范围 {}：{} 页 → {} 页", constraints.scope_label(), before, len(pages))
         if not pages:
             raise RuntimeError(f"所选页码范围（{constraints.scope_label()}）内没有解析到任何内容")
-    chunks = (pages if len(pages) <= 150 else pack_pages(pages)) if pages else []
+    # 长文档用更大的块：2000 字符把 1001 页切成 500+ 次调用，发布版不可接受。
+    # 短文档保持细粒度，保证逐页校验质量。
+    _limit = 6000 if len(pages) > 300 else EXTRACT_CHUNK
+    chunks = (pages if len(pages) <= 150 else pack_pages(pages, limit=_limit)) if pages else []
     if not chunks:
         return "", {"coverage": 0}, None
     results: list[str] = [""] * len(chunks)
@@ -320,6 +330,24 @@ def _run_extract(text: str, extract_type: str | None, with_answer: bool,
         md, report = generate_until_valid(
             _gen, constraints, source_text=chunk,
             allowed_pages=allowed or None, stage="chunk", raise_on_fail=False)
+        # 块级逐页覆盖：模型经常只写“重要页”，把整块后半段丢掉。
+        # 这里最多再补一次，明确列出漏掉的页；仍漏则交给最终账本报缺页，不伪装。
+        _miss = missing_page_numbers(md, chunk)
+        if _miss:
+            _feedback = ("上一轮漏掉了这些页，必须每页至少一条并保留页码："
+                         + "、".join(f"第{n}页" for n in _miss[:20]))
+            try:
+                _md2, _rep2 = generate_until_valid(
+                    _gen(_feedback), constraints, source_text=chunk,
+                    allowed_pages=allowed or None, stage="chunk", raise_on_fail=False)
+                if len(missing_page_numbers(_md2, chunk)) < len(_miss):
+                    md, report = _md2, _rep2
+                    _miss = missing_page_numbers(md, chunk)
+                    logger.info("块级补页 chunk={} 剩余缺页={}", i, _miss[:8])
+            except Exception as _e:  # noqa: BLE001
+                logger.warning("块级补页失败 chunk={} err={}", i, str(_e)[:80])
+        if _miss:
+            report.warn(f"块内仍有 {len(_miss)} 页未被引用")
         if not md.strip():
             # 空块是覆盖率问题（图片页/无考点页），交给最终覆盖率报出来，
             # 不按硬违规整篇判失败；重试已在本函数内完成。

@@ -89,6 +89,23 @@ def check_1001() -> None:
         f"{metrics.get('elapsed_s')}s / mode={cov.get('coverage_mode')}")
 
 
+def check_1001_full() -> None:
+    path = ROOT / "docs/evidence/1001_full_metrics.json"
+    if not path.is_file():
+        add("1001 全量覆盖", False, "缺少 evidence/1001_full_metrics.json")
+        return
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        add("1001 全量覆盖", False, "metrics JSON 无法解析")
+        return
+    cov = raw.get("coverage") or {}
+    value = float(cov.get("coverage") or 0)
+    ok = value >= 0.98
+    add("1001 全量覆盖", ok,
+        f"{cov.get('pages_cited')}/{cov.get('pages')} = {value:.1%}；缺 {cov.get('pages_missing_count')} 页")
+
+
 def check_security_files() -> None:
     token = Path.home() / "Library/Application Support/TermFinale/.session_token"
     ok = token.is_file() and (token.stat().st_mode & 0o777) == 0o600
@@ -100,6 +117,7 @@ def main() -> int:
     check_exam()
     check_171()
     check_1001()
+    check_1001_full()
     check_security_files()
     width = max(len(n) for n, _, _ in RESULTS)
     print("\n=== 底层算法发布门禁 ===")
