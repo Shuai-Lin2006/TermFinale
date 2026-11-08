@@ -1,0 +1,41 @@
+{
+  "pages": 85,
+  "chars": 25508,
+  "elapsed": 259.8,
+  "validation_ok": true,
+  "evidence": {
+    "rate": 1.0,
+    "total": 89,
+    "supported": 89,
+    "unsupported": 0,
+    "no_citation": 0
+  },
+  "coverage": {
+    "pages": 85,
+    "pages_cited": 85,
+    "coverage": 1.0,
+    "ledger": {
+      "pages": 85,
+      "accounted": 85,
+      "cited": 85,
+      "missing_entries": [],
+      "uncited": [],
+      "placeholder": [],
+      "image_only": [],
+      "short": [],
+      "status_counts": {
+        "cited": 85,
+        "uncited": 0,
+        "short": 0,
+        "image_only": 0,
+        "placeholder": 0
+      }
+    }
+  },
+  "images_source": 6,
+  "images_used": 6,
+  "image_pair_total": 5,
+  "image_pair_ok": 5,
+  "image_pair_rate": 1.0,
+  "image_issues": []
+}
