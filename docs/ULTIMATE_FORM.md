@@ -1,7 +1,7 @@
 # TermFinale 终极形态（完整版，防止缩水）
 
 > 这不是“四个生成按钮”，而是一个本地优先的期末复习工作台。
-> 当前进度见 `docs/STATUS_NOW.md`；标准见 `SPEC_GUIDE.md`、`SPEC_GENERATION.md`。
+> 当前进度见 `docs/STATUS_NOW.md`；逐项功能/状态见 `docs/FEATURE_MATRIX.md`；标准见 `SPEC_GUIDE.md`、`SPEC_GENERATION.md`。
 
 ## 0. 一句话
 

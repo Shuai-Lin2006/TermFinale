@@ -152,7 +152,8 @@ Mac/Windows 本地优先的期末复习工作台：
 3. `SPEC_GUIDE.md`
 4. `SPEC_GENERATION.md`
 5. `docs/ULTIMATE_FORM.md`
-6. `docs/STATUS_NOW.md`
-7. `docs/DESIGN_BRIEF_LOCKED.md`
+6. `docs/FEATURE_MATRIX.md`
+7. `docs/STATUS_NOW.md`
+8. `docs/DESIGN_BRIEF_LOCKED.md`
 
 工作顺序：只读基线审计 → 环烃 1 章样章（用户确认）→ 全章 → 提取/试卷/逻辑分析各一套 → 35/85/171/1001 → UI/学习闭环 → 发布。不要先开新功能，不要重置数据。

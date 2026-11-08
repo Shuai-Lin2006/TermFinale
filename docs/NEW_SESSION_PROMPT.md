@@ -7,8 +7,9 @@
 3. `SPEC_GUIDE.md`
 4. `SPEC_GENERATION.md`
 5. `docs/ULTIMATE_FORM.md`
-6. `docs/STATUS_NOW.md`
-7. `docs/DESIGN_BRIEF_LOCKED.md`
+6. `docs/FEATURE_MATRIX.md`
+7. `docs/STATUS_NOW.md`
+8. `docs/DESIGN_BRIEF_LOCKED.md`
 
 读完先复述：终极目标、硬边界、当前失败、下一步、数据规矩。确认后再改代码；不要重置数据。
 
