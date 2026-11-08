@@ -233,7 +233,7 @@ def append_missing_page_index(markdown: str, pages: list[str], bans: list[str] |
     return markdown.rstrip() + block + "\n", len(parts)
 
 
-def _guide_coverage(final_md: str, source_text: str, overview_mode: bool, pages: list[str]) -> dict:
+def _guide_coverage(final_md: str, source_text: str, overview_mode: bool, pages: list[str], long_broad: bool = False) -> dict:
     cov = _coverage_metrics(final_md, source_text, overview_mode)
     cov["ledger"] = ledger_summary(build_page_ledger(pages, final_md, total=len(pages)))
     return cov
@@ -291,14 +291,22 @@ def build_course_info(course: dict) -> CourseInfo:
 
 
 def chapter_blocks(chapter: Chapter, pages: list[str], per_call: int = PAGES_PER_CALL,
-                   sample: bool = False) -> list[tuple[str, list[str]]]:
+                   sample: bool = False, sample_ratio: float | None = None) -> list[tuple[str, list[str]]]:
     """把一章的页面打包成若干次请求：(正文, 该批次的图片标签)。
 
     sample=True 时用于 >150 页的“章节概览”：只取该章头/中/尾少量页，
     不再逐页展开，避免 1001 页跑出几百次调用。
     """
     texts = [pages[i] for i in chapter.pages if 0 <= i < len(pages)]
-    if sample and len(texts) > 4:
+    if sample and sample_ratio is not None and len(texts) > 1:
+        # >1000 页：按比例均匀抽样，不只看 4 页
+        n = max(1, min(len(texts), int(round(len(texts) * sample_ratio))))
+        if n == 1:
+            positions = [0]
+        else:
+            positions = sorted({round(i * (len(texts) - 1) / (n - 1)) for i in range(n)})
+        texts = [texts[p] for p in positions]
+    elif sample and len(texts) > 4:
         positions = sorted({0, len(texts) // 3, 2 * len(texts) // 3, len(texts) - 1})
         texts = [texts[p] for p in positions]
         per_call = len(texts)
@@ -426,6 +434,7 @@ def run_guide(
 
     # 最终标准：>1000 才概览；150–1000 必须大幅覆盖（不能再每章抽 4 页）。
     overview_mode = len(pages) > 1000
+    long_broad_mode = len(pages) > 1000
     broad_mode = 150 < len(pages) <= 1000
     if overview_mode:
         logger.info("长文档概览模式：{} 页，按章节抽样生成", len(pages))
@@ -505,8 +514,9 @@ def run_guide(
         _weights = [int(x) for x in re.findall(r"权重\s*(\d)", _chapter_text[:1200])]
         _avg_w = (sum(_weights) / len(_weights)) if _weights else 3.0
         target_words = int(target_words * (0.8 + 0.4 * _avg_w / 5.0))
-        _per_call = 8 if broad_mode else PAGES_PER_CALL
-        blocks = chapter_blocks(chapter, pages, per_call=_per_call, sample=overview_mode)
+        _per_call = 10 if long_broad_mode else (8 if broad_mode else PAGES_PER_CALL)
+        blocks = chapter_blocks(chapter, pages, per_call=_per_call, sample=overview_mode,
+                                sample_ratio=0.60 if long_broad_mode else None)
         for bi, (content, tags) in enumerate(blocks):
             context = {
                 "title": chapter.title if bi == 0 else f"{chapter.title}（续）",
@@ -520,7 +530,8 @@ def run_guide(
                 "weak_topics": _weak_hit,
                 "ban_topics": list(constraints.ban_topics),
                 "chapter_pages": list(chapter_labels.get(ci) or []),
-                "cards_per_page": 2 if broad_mode else 4,
+                "cards_per_page": 1 if long_broad_mode else (2 if broad_mode else 4),
+                "card_batch": 10 if long_broad_mode else 6,
                 "avg_weight": round(_avg_w, 1),
                 "overview": overview_mode,
                 "study_mode": study_mode,
@@ -682,12 +693,17 @@ def run_guide(
     final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
     _cov0 = _guide_coverage(final_markdown, source_text, overview_mode, pages)
     final_report.metrics["coverage"] = _cov0
-    if len(pages) <= 1000 and not overview_mode and not constraints.has_scope:
+    if not constraints.has_scope:
         _led = _cov0.get("ledger") or {}
         _cited = int(_led.get("cited") or 0)
-        _need = len(pages) if len(pages) <= 150 else int(len(pages) * 0.85)
+        if len(pages) <= 150:
+            _need = len(pages)
+        elif len(pages) <= 1000:
+            _need = int(len(pages) * 0.85)
+        else:
+            _need = int(len(pages) * 0.60)
         if _cited < _need:
-            final_report.add(f"大幅覆盖未达标：仅 {_cited}/{len(pages)} 页有引用（需 ≥{_need}）")
+            final_report.add(f"覆盖未达标：仅 {_cited}/{len(pages)} 页有引用（需 ≥{_need}）")
     if not final_report.ok:
         logger.warning("讲义最终校验未通过：{}", "；".join(final_report.issues[:5]))
         if constraints.strict:
@@ -748,7 +764,7 @@ def run_guide(
         "images_duplicate": img_totals["duplicate"],
         "images_low_relevance": _sem_drop,
         "page_limit": max_pages,
-        "coverage": _guide_coverage(final_markdown, source_text, overview_mode, pages),
+        "coverage": _guide_coverage(final_markdown, source_text, overview_mode, pages, long_broad_mode),
         "chars": len(final_markdown),
         "elapsed_s": round(time.time() - started, 1),
         "qa_ok": qa.ok,

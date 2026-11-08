@@ -121,8 +121,9 @@ def generate_card_chapter(raw_text: str, course=None, persona: str = "老师",
     weak = "、".join((chapter or {}).get("weak_topics") or [])
     out = [f"## 核心考点：{title}"]
     # 章节内按顺序分批；每批 5 张卡
-    for start in range(0, len(cards), BATCH):
-        batch = cards[start:start + BATCH]
+    _batch = int((chapter or {}).get("card_batch") or BATCH)
+    for start in range(0, len(cards), _batch):
+        batch = cards[start:start + _batch]
         explanations = _explain_batch(batch, title, weak, bans, ai_call=ai_call)
         out.append(f"### 原文要点 {start + 1}–{start + len(batch)}")
         for e in batch:
