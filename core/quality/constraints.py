@@ -64,6 +64,8 @@ class TaskConstraints:
     extract_type: str = ""                   # points / nouns / questions
     sections: list[dict] = field(default_factory=list)   # [{name,count,points}]
     material_kind: str = "exam"              # exam / lecture
+    guide_mode: str = "full"                 # key / full
+    exam_mode: str = "mock"                  # original / variant / predict / mock / reference_exam
     strict: bool = True                      # 违规是否直接判失败
     max_retries: int = 2
     # 老师重点（由 teacher_note.parse_teacher_note 解析后注入）
@@ -100,6 +102,8 @@ class TaskConstraints:
             extract_type=str(merged.get("extract_type") or options.get("extract_type") or ""),
             sections=sections,
             material_kind=str(merged.get("material_mode") or "exam"),
+            guide_mode=str(merged.get("mode") or merged.get("guide_mode") or "full"),
+            exam_mode=str(merged.get("exam_mode") or merged.get("mode") or "mock"),
             strict=bool(merged.get("strict", True)),
             max_retries=max(0, min(5, int(merged.get("max_retries", 2) or 0))),
             teacher_note=str(merged.get("teacher_note") or options.get("teacher_note") or ""),
@@ -160,6 +164,8 @@ class TaskConstraints:
             "extract_type": self.extract_type,
             "sections": list(self.sections),
             "material_kind": self.material_kind,
+            "guide_mode": self.guide_mode,
+            "exam_mode": self.exam_mode,
             "strict": self.strict,
             "max_retries": self.max_retries,
             "teacher_note": self.teacher_note,
@@ -184,6 +190,8 @@ def default_constraints(task: str, **kwargs) -> TaskConstraints:
         answer_mode=answer_mode,
         extract_type=str(kwargs.get("extract_type") or ""),
         material_kind=kwargs.get("material_kind", "exam"),
+        guide_mode=str(kwargs.get("guide_mode") or "full"),
+        exam_mode=str(kwargs.get("exam_mode") or "mock"),
         exclude_terms=list(kwargs.get("exclude_terms") or []),
         page_start=kwargs.get("page_start"),
         page_end=kwargs.get("page_end"),
@@ -304,6 +312,10 @@ def render_prompt(c: TaskConstraints) -> str:
             "不得把资料外的结论写成正文（补充内容必须标【延伸】）。")
         if c.material_kind == "lecture":
             lines.append("【资料类型】这是课堂讲义而不是考试重点：不强行输出考点/分值/应试套路。")
+        if c.guide_mode == "key":
+            lines.append("【精简讲义】只讲高频考点、必背结论、典型题；必须声明“精简模式，未覆盖页见覆盖报告”。")
+        else:
+            lines.append("【全量讲义】按章覆盖所有知识块；缺失页必须进入覆盖报告，不得无故跳章。")
     elif c.task == "extract":
         lines.append(
             "【提取任务约束】只从资料中提取，不得新增资料外的知识或讲解；"
@@ -319,8 +331,11 @@ def render_prompt(c: TaskConstraints) -> str:
                          + render_sections(c.sections)
                          + f"\n- 合计：{c.paper_total:g} 分")
         lines.append(
-            "【试卷任务约束】题目必须是新编的：严禁写“参考原资料第X页”之类的页码；"
-            "每个大题必须用二级标题，小题用 1. 编号，每题末尾标【考点：xxx】。")
+            "【试卷任务约束】每个大题必须用二级标题，小题用 1. 编号，每题末尾标【考点：xxx】。")
+        if c.exam_mode in ("original", "variant"):
+            lines.append("【改编出处】改数/变式题必须写“改编自第 X 页第 Y 题”，答案按新题重算。")
+        else:
+            lines.append("【严禁页码】预测/模拟/参考卷不得写“参考原资料第X页”之类的出处页码，不得抄原题。")
         if c.answer_mode == "forbidden":
             lines.append("【答案要求】只输出题目，不要输出答案，也不要写“# 答案与解析”。")
         elif c.answer_mode == "required":
@@ -488,7 +503,26 @@ def validate_output(
     elif constraints.task == "analysis":
         _check_analysis(report, text, stage)
 
-    # 4. 答案要求（通用兜底） -------------------------------------------- #
+    # 4. 覆盖门槛：≤150页必须≥98%，缺失页逐页列出 ---------------------- #
+    if stage == "final" and constraints.task in ("guide", "extract") and source_text:
+        src = source_pages(source_text)
+        cited = cited_pages(text)
+        if src:
+            covered = cited & src
+            ratio = len(covered) / len(src)
+            report.metrics["coverage"] = {
+                "total_pages": len(src), "cited_pages": len(covered),
+                "ratio": round(ratio, 3),
+                "missing": sorted(src - covered)[:80],
+            }
+            if len(src) >= 10 and len(src) <= 150 and ratio < 0.98:
+                missing = sorted(src - covered)
+                report.add(f"页码覆盖不足：{len(covered)}/{len(src)}={ratio:.0%}；缺失页：" +
+                           "、".join(str(x) for x in missing[:20]))
+            elif len(src) > 150 and ratio < 0.60:
+                report.warn(f"大幅覆盖仅 {ratio:.0%}（{len(covered)}/{len(src)}），需在覆盖报告说明概览模式")
+
+    # 5. 答案要求（通用兜底） -------------------------------------------- #
     _check_answer_mode(report, text, constraints, stage)
 
     return report
@@ -646,6 +680,18 @@ def _check_guide(report: ValidationReport, text: str, c: TaskConstraints,
     report.metrics["chapters"] = chapters
     if chapters == 0:
         report.add("缺少 ## 级章节标题")
+    if c.guide_mode == "key":
+        if "精简模式" not in text or "未覆盖页" not in text:
+            report.add("精简讲义缺少“精简模式/未覆盖页见覆盖报告”的声明")
+    # 每章结构只做软提示：不逼模型硬凑，但缺例题/小结/易错要提醒
+    for m in re.finditer(r"(?ms)^##\s+(.+?)\n(.*?)(?=^##\s|\Z)", text):
+        ch_title, body = m.group(1).strip(), m.group(2)
+        miss = []
+        if not re.search(r"例题|例\s*\d|【例】|例：", body): miss.append("例题")
+        if not re.search(r"小结|总结|本章回顾", body): miss.append("小结")
+        if not re.search(r"易错|注意|考点", body): miss.append("易错/考点")
+        if miss:
+            report.warn(f"章节「{ch_title}」缺少：{'、'.join(miss)}（按SPEC应有，但不得硬凑）")
     if source_text:
         from core.quality.evidence import audit_evidence
         _pages = [p for p in re.split(r"(?=【《.+?》第\s*\d+\s*页】)", source_text) if p.strip()]
@@ -674,14 +720,17 @@ def _check_extract(report: ValidationReport, text: str, c: TaskConstraints,
         if blocks:
             report.metrics["extract_points"] = len(blocks)
         elif extract_type == "nouns":
-            # 名词提取：每个条目都应有 [出处：…]
+            # 名词提取：每个条目都应有定义和 [出处：…]
             bullets = [ln for ln in text.splitlines() if ln.lstrip().startswith(("-", "*"))]
             if len(bullets) >= 3:
                 cited_bullets = sum(1 for ln in bullets if _has_page_cite(ln))
+                defined = sum(1 for ln in bullets if ("|" in ln or "：" in ln or ":" in ln))
                 if cited_bullets == 0:
                     report.add("名词条目全部缺少出处页码")
                 elif cited_bullets / len(bullets) < 0.5:
                     report.warn(f"只有 {cited_bullets}/{len(bullets)} 条名词带出处页码")
+                if defined == 0:
+                    report.add("名词条目没有定义列（需要 名词|定义|页码|易混词）")
                 report.metrics["extract_points"] = len(bullets)
 
         if "资料未标注页码" in text:
@@ -719,8 +768,13 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
     # 新编试卷不得引用原资料页码（图片标签里的图注不算）
     body = _IMAGE_TAG_RE.sub("", text)
     pages = sorted(cited_pages(body))
-    if pages:
-        report.add("试卷里出现原资料页码：" + "、".join(f"第{p}页" for p in pages[:6]))
+    if c.exam_mode in ("original", "variant"):
+        if pages and not re.search(r"改编自第\s*\d+\s*页", body):
+            report.add("改数/变式题出现页码，但没有“改编自第X页第Y题”的出处")
+        if not re.search(r"改编自第\s*\d+\s*页", body):
+            report.add("改数/变式题缺少“改编自第X页第Y题”")
+    elif pages:
+        report.add("预测/模拟/参考卷出现原资料页码：" + "、".join(f"第{p}页" for p in pages[:6]))
 
     if stage != "final":
         return
@@ -777,6 +831,22 @@ def _check_analysis(report: ValidationReport, text: str, stage: str) -> None:
         report.add("缺少 ## 级结构标题")
     if "```mermaid" in text and "```" not in text.split("```mermaid", 1)[1]:
         report.add("mermaid 代码块未闭合")
+    checks = {
+        "主线": r"主线|一句话|本章围绕",
+        "概念层级": r"概念层级|前置概念|核心概念|派生",
+        "因果/推导链": r"因果|推导链|推出|因此|所以",
+        "考点与题型": r"考点|题型",
+        "易混对比": r"易混|对比|区别",
+        "学习顺序": r"学习顺序|先学|后学|建议顺序",
+    }
+    missing = [name for name, pat in checks.items() if not re.search(pat, text)]
+    report.metrics["analysis_parts"] = list(checks)
+    if len(missing) >= 4:
+        report.add("逻辑分析缺少关键结构：" + "、".join(missing))
+    elif missing:
+        report.warn("逻辑分析可能缺少：" + "、".join(missing))
+    if not cited_pages(text):
+        report.add("逻辑分析缺少页码出处")
 
 
 def _check_answer_mode(report: ValidationReport, text: str, c: TaskConstraints,
