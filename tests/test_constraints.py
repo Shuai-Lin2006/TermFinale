@@ -464,3 +464,16 @@ class ChoiceAnswerLetterTest(unittest.TestCase):
         r = validate_output(self._paper("因为显然"), c, source_text="", stage="final")
         self.assertFalse(r.ok)
         self.assertTrue(any("不是选项字母" in i for i in r.issues), r.issues)
+
+
+class FigureReferenceTest(unittest.TestCase):
+    def test_figure_reference_without_description_fails(self):
+        from core.quality.constraints import TaskConstraints, validate_output
+        c = TaskConstraints(task="exam", answer_mode="required",
+                            sections=[{"name": "单项选择题", "count": 1, "points": 10}])
+        md = ("# 测试 期末试卷\n**满分：100 分**\n\n"
+              "## 一、单项选择题（共 1 题，每题 10 分）\n\n"
+              "1. 如图，求小球加速度。\nA. 1\nB. 2\nC. 3\nD. 4\n【考点：牛顿定律】\n\n"
+              "# 答案与解析\n\n## 一、单项选择题\n1. **A**。\n")
+        r = validate_output(md, c, source_text="", stage="final")
+        self.assertTrue(any("没有图/图示描述" in x for x in r.issues), r.issues)

@@ -142,6 +142,19 @@ def check_answer_semantics() -> None:
         f"{d.get('match')}/{d.get('total')} 一致；{d.get('mismatch')} 不一致 / {d.get('manual')} 人工；待确认 {len(bad)}")
 
 
+def check_test_isolation() -> None:
+    from core.database import Course, get_db_session
+    db = get_db_session()
+    try:
+        allc = db.query(Course).all()
+    finally:
+        db.close()
+    visible = [c for c in allc if not getattr(c, "is_test", False)]
+    test = [c for c in allc if getattr(c, "is_test", False)]
+    ok = bool(visible) and all(not getattr(c, "is_test", False) for c in visible)
+    add("测试数据隔离", ok, f"总 {len(allc)} / 测试 {len(test)} / 可见 {len(visible)}")
+
+
 def check_security_files() -> None:
     token = Path.home() / "Library/Application Support/TermFinale/.session_token"
     ok = token.is_file() and (token.stat().st_mode & 0o777) == 0o600
@@ -156,6 +169,7 @@ def main() -> int:
     check_1001_full()
     check_85_precise()
     check_answer_semantics()
+    check_test_isolation()
     check_security_files()
     width = max(len(n) for n, _, _ in RESULTS)
     print("\n=== 底层算法发布门禁 ===")

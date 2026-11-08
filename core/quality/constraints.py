@@ -744,6 +744,19 @@ def _check_exam(report: ValidationReport, text: str, c: TaskConstraints,
     if "【考点：" not in text and "【考点:" not in text:
         report.warn("题目缺少【考点：xxx】标注")
 
+    # 题干写“如图”却没有图/图示描述 → 学生无法作答
+    qparts = re.split(r"(?m)^\s*(?=\d{1,3}\s*[.、．)）])", text)
+    bad_fig = []
+    for q in qparts:
+        if not re.search(r"(?:如图|如下图|图所示|见图)", q):
+            continue
+        if re.search(r"\[\[\[IMAGE:", q) or re.search(r"(?:图示|图注|图形描述|文字描述)", q):
+            continue
+        m = re.match(r"\s*(\d{1,3})", q)
+        bad_fig.append(m.group(1) if m else "?")
+    if bad_fig:
+        report.add("题干引用图但没有图/图示描述：题 " + "、".join(bad_fig[:6]))
+
     # 答案自洽：题号重复/缺失（只看答案分区）
     _body, answers = _split_answer(text)
     if answers:
