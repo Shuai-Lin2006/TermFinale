@@ -161,3 +161,9 @@ class MustBodyTest(unittest.TestCase):
               "隐函数求导：方程两边对 x 求导（P.1）。")
         r = validate_output(md, c, source_text=MATH_SOURCE, stage="final")
         self.assertTrue(r.ok, r.issues)
+
+class EmphasisTest(unittest.TestCase):
+    def test_zhongdianjiang_not_weak(self):
+        r = parse_teacher_note("重点讲清电路分析步骤，图必须保留并配对")
+        self.assertNotIn("清电路分析步骤", r.weak_topics)
+        self.assertTrue(r.must_topics, r.to_dict())
