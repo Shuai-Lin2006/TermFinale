@@ -18,7 +18,7 @@ IMG_DIR = str(paths.assets_dir())
 paths.ensure_dirs()
 
 # 解析行为变更时递增：解析缓存 key 会带上它，旧缓存自动失效。
-PARSER_VERSION = "2026-11-07.1"
+PARSER_VERSION = "2026-11-08.4"
 
 FIG_DPI = 180
 OCR_DPI = 120
@@ -127,8 +127,24 @@ def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, tot
                     all_pages.append(f"【《{file_name}》第 {n} 页】\n{txt.strip()}")
                     filled += 1
                 else:
-                    all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 未识别出文字]")
-                    failed += 1
+                    # OCR 失败时再用视觉描述兜底：至少把图里的结构/公式讲清楚
+                    desc = ""
+                    try:
+                        import tempfile
+                        pix = doc[n - 1].get_pixmap(dpi=140)
+                        _tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                        _tmp.write(pix.tobytes("png")); _tmp.close()
+                        desc = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
+                        try: os.unlink(_tmp.name)
+                        except OSError: pass
+                    except Exception as _e:  # noqa: BLE001
+                        logger.warning("整页视觉兜底失败 page={} err={}", n, str(_e)[:80])
+                    if desc.strip():
+                        all_pages.append(f"【《{file_name}》第 {n} 页】\n【图示页】\n{desc.strip()}")
+                        filled += 1
+                    else:
+                        all_pages.append(f"【《{file_name}》第 {n} 页】\n[本页 OCR 未识别出文字]")
+                        failed += 1
         finally:
             doc.close()
         logger.info("PPT 图片页回填：{} 页成功 / {} 页失败（共缺 {} 页）", filled, failed, len(missing))
@@ -438,6 +454,7 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                     on_progress(index, total_slides, "slide")
                 slide_text = ""
                 candidates = []
+                page_images = []
                 for shape in slide.shapes:
                     if hasattr(shape, "text") and shape.text.strip():
                         slide_text += shape.text + "\n"
@@ -455,6 +472,8 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                             except Exception:
                                 ratio = 0.0
                             if ratio > 0.65:
+                                # 整页图不作为正文配图，但正文过短时要拿它做 OCR
+                                page_images.append((w * h, image.blob, image.ext.lower()))
                                 continue
                             candidates.append((w * h, image.blob, image.ext.lower()))
                         except Exception:
@@ -473,17 +492,21 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
                             slide_text += f"\n{img_tag}\n"
                     except Exception:
                         pass
-                if not slide_text.strip() and candidates:
+                # 图片/电路图页：正文过短时也要看整页图，不能只靠几个标题字。
+                _plain = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", slide_text, flags=re.S).strip()
+                _ocr_candidates = candidates or page_images
+                if _ocr_candidates and len(_plain) < 80:
                     try:
                         import tempfile
-                        _blob = candidates[0][1]; _img_ext = candidates[0][2]
+                        _best = max(_ocr_candidates, key=lambda x: x[0])
+                        _blob = _best[1]; _img_ext = _best[2]
                         _tmp = tempfile.NamedTemporaryFile(delete=False, suffix="." + _img_ext)
                         _tmp.write(_blob); _tmp.close()
                         _ocr = _clean_slide_ocr(analyze_image_with_ai(_tmp.name))
                         try: os.unlink(_tmp.name)
                         except OSError: pass
-                        if _ocr and _ocr.strip():
-                            slide_text += "\n" + _ocr.strip()
+                        if _ocr and _ocr.strip() and _ocr.strip() not in slide_text:
+                            slide_text += "\n【图示内容】\n" + _ocr.strip()
                     except Exception as _e:
                         logger.warning("图片页 OCR 失败: {}", str(_e)[:80])
                 if slide_text.strip():

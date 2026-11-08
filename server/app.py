@@ -1147,6 +1147,11 @@ def export_course_pdf(course_id: int):
         if not course:
             raise HTTPException(404, "课程不存在")
         name = course.name
+        # 直接打印已经生成的单文件 HTML；打印动态 reader 会抓到“正在加载”和脚本。
+        latest = (db.query(GeneratedFile)
+                  .filter(GeneratedFile.course_id == course_id)
+                  .order_by(GeneratedFile.id.desc()).first())
+        html_path = Path(latest.file_path) if latest and latest.file_path else None
     finally:
         db.close()
 
@@ -1158,7 +1163,10 @@ def export_course_pdf(course_id: int):
     paths.outputs_dir().mkdir(parents=True, exist_ok=True)
     out = paths.outputs_dir() / f"{name}_讲义_{datetime.datetime.now():%m%d_%H%M%S}.pdf"
     port = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
-    url = f"http://127.0.0.1:{port}/reader.html?course={course_id}"
+    if html_path and html_path.is_file():
+        url = html_path.as_uri()
+    else:
+        url = f"http://127.0.0.1:{port}/reader.html?course={course_id}"
     try:
         subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
                         "--virtual-time-budget=8000", f"--print-to-pdf={out}", url],
