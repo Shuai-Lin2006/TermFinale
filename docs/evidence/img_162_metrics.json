@@ -1,0 +1,42 @@
+{
+  "file": "中英混合类测试·162页.pptx",
+  "pages": 162,
+  "chars": 55531,
+  "elapsed": 778.9,
+  "validation_ok": true,
+  "coverage": {
+    "pages": 162,
+    "pages_cited": 162,
+    "coverage": 1.0,
+    "ledger": {
+      "pages": 162,
+      "accounted": 162,
+      "cited": 162,
+      "missing_entries": [],
+      "uncited": [],
+      "placeholder": [],
+      "image_only": [],
+      "short": [],
+      "status_counts": {
+        "cited": 162,
+        "uncited": 0,
+        "short": 0,
+        "image_only": 0,
+        "placeholder": 0
+      }
+    }
+  },
+  "evidence": {
+    "rate": 1.0,
+    "total": 201,
+    "supported": 201,
+    "unsupported": 0,
+    "no_citation": 0
+  },
+  "images_source": 14,
+  "images_used": 14,
+  "image_pair_total": 15,
+  "image_pair_ok": 15,
+  "image_pair_rate": 1.0,
+  "image_issues": []
+}

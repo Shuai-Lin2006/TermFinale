@@ -4,11 +4,11 @@
       "file": "说明书教程类测试·图文长表格混排33页.pdf",
       "pages": 33,
       "coverage": 1.0,
-      "evidence": 0.913,
-      "images_source": 23,
-      "images_used": 21,
-      "pair_total": 21,
-      "pair_ok": 21,
+      "evidence": 0.905,
+      "images_source": 24,
+      "images_used": 24,
+      "pair_total": 24,
+      "pair_ok": 24,
       "pair_rate": 1.0
     },
     {
@@ -43,12 +43,26 @@
       "pair_total": 8,
       "pair_ok": 8,
       "pair_rate": 1.0
+    },
+    {
+      "file": "中英混合类测试·162页.pptx",
+      "pages": 162,
+      "coverage": 1.0,
+      "evidence": 1.0,
+      "images_source": 14,
+      "images_used": 14,
+      "pair_total": 15,
+      "pair_ok": 15,
+      "pair_rate": 1.0,
+      "orphan": 1,
+      "note": "讲义有15个图标签，源图14，存在1张孤儿图"
     }
   ],
   "aggregate": {
-    "pair_total": 43,
-    "pair_ok": 43,
+    "pair_total": 61,
+    "pair_ok": 61,
     "pair_rate": 1.0,
-    "note": "观察值 100%，样本 43 张；仍不到 100+ 张的统计置信度，不能宣称整体≥99%。"
+    "orphan": 1,
+    "note": "61张已采用图全部配对，但162页讲义有1张孤儿图；源文件大量装饰/重复图未计入。"
   }
 }
