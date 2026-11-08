@@ -125,6 +125,23 @@ def check_85_precise() -> None:
         f"{led.get('accounted')}/85 页；占位 {len(led.get('placeholder') or [])}；无内容页 {len(bad)}")
 
 
+def check_answer_semantics() -> None:
+    path = ROOT / "docs/evidence/exam_double_check.json"
+    if not path.is_file():
+        add("答案双解一致性", False, "缺少 evidence/exam_double_check.json")
+        return
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        add("答案双解一致性", False, "双解 JSON 无法解析")
+        return
+    bad = [x for x in d.get("items", []) if x.get("status") in ("mismatch", "manual")
+           and not x.get("reviewed")]
+    ok = not bad
+    add("答案双解一致性", ok,
+        f"{d.get('match')}/{d.get('total')} 一致；{d.get('mismatch')} 不一致 / {d.get('manual')} 人工；待确认 {len(bad)}")
+
+
 def check_security_files() -> None:
     token = Path.home() / "Library/Application Support/TermFinale/.session_token"
     ok = token.is_file() and (token.stat().st_mode & 0o777) == 0o600
@@ -138,12 +155,13 @@ def main() -> int:
     check_1001()
     check_1001_full()
     check_85_precise()
+    check_answer_semantics()
     check_security_files()
     width = max(len(n) for n, _, _ in RESULTS)
     print("\n=== 底层算法发布门禁 ===")
     for name, ok, detail in RESULTS:
         print(f"{'PASS' if ok else 'FAIL'}  {name:<{width}}  {detail}")
-    print("\n未纳入门禁（需产品确认）：试卷答案语义正确性、1001 逐页、171 封面页、UI/签名/打包。")
+    print("\n未纳入门禁（需产品确认）：1001 逐页、171 封面页、UI/签名/打包。")
     return 0 if all(ok for _, ok, _ in RESULTS) else 1
 
 
