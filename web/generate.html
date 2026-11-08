@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("tf-theme")||"dark"}catch(e){}</script>
+<script src="assets/appearance-boot.js?v=2"></script>
 <title>生成工作台 · TermFinale</title>
 <link rel="stylesheet" href="assets/app.css?v=18">
-<link rel="stylesheet" href="assets/premium.css?v=1">
+<link rel="stylesheet" href="assets/premium.css?v=2">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -247,9 +247,10 @@
 <script>
 (function(){
   var state = { task:'guide', mode:'key', persona:'温柔小姐姐', extractType:'points',
-                withAnswer:true, course:null, materials:[], jobId:null };
+                withAnswer:true, course:null, materials:[], materialNotes:{}, jobId:null };
   var $ = function(id){ return document.getElementById(id); };
   var toast = window.__toast || function(){};
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
 
   function seg(el, key, attr){
     el.addEventListener('click', function(e){
@@ -401,6 +402,7 @@
         '<select class="mat-weight" data-id="' + m.id + '">' +
           [1,2,3,4,5].map(function(w){ return '<option value="'+w+'"'+(m.weight===w?' selected':'')+'>权重 '+w+'</option>'; }).join('') +
         '</select>' +
+        '<input class="mat-note" data-id="' + m.id + '" placeholder="老师说法/重点（选填）" value="' + esc(state.materialNotes[m.id] || '') + '">' +
         '<span class="tiny muted">' + m.size_kb + ' KB</span>' +
         (m.exists ? '' : '<span class="tiny" style="color:var(--danger)">缺失</span>') + '</div>';
     }).join('');
@@ -412,6 +414,9 @@
       });
     }
     box.querySelectorAll('input[type=checkbox]').forEach(function(cb){ cb.addEventListener('change', syncMatControls); });
+    box.querySelectorAll('.mat-note').forEach(function(el){
+      el.addEventListener('input', function(){ state.materialNotes[el.dataset.id] = el.value; });
+    });
     syncMatControls();
     box.querySelectorAll('.mat-role,.mat-weight').forEach(function(el){
       el.addEventListener('change', function(){
@@ -475,6 +480,47 @@
     $('doneState').style.display = 'none'; $('errState').style.display = 'none';
   }
 
+  function showPlan(options){
+    var ids = options.material_ids || [];
+    var selected = state.materials.filter(function(m){ return ids.indexOf(m.id) >= 0; });
+    var totalW = selected.reduce(function(a,m){ return a + (Number(m.weight) || 3); }, 0) || 1;
+    var taskName = {guide:'讲义', extract:'考点提取', exam:'训练试卷', analysis:'逻辑分析'}[state.task] || state.task;
+    var rows = selected.map(function(m){
+      var w = Number(m.weight) || 3;
+      var pct = Math.round(w / totalW * 100);
+      var note = (state.materialNotes[m.id] || '').trim();
+      return '<div class="plan-mat"><b>' + esc(m.filename) + '</b><span class="pct">' + pct + '%</span>'
+        + '<div class="track"><i style="width:' + pct + '%"></i></div>'
+        + (note ? '<div class="note">老师说法：' + esc(note) + '</div>' : '')
+        + '</div>';
+    }).join('');
+    var globalNote = ($('userNote').value || '').trim();
+    var structure = state.task === 'exam'
+      ? paperRows.map(function(r){ return r.name + ' ' + r.count + ' 题 / ' + (r.count * r.points) + ' 分'; }).join(' · ')
+      : (state.task === 'guide' ? (state.mode === 'key' ? '精简讲义 · 只讲拿分' : '全量讲义 · 讲透原理') : taskName);
+    var mask = document.createElement('div');
+    mask.className = 'plan-mask';
+    mask.innerHTML = '<div class="plan-panel" role="dialog" aria-modal="true">'
+      + '<div class="plan-head"><div><div class="eyebrow">PLAN · 确认后再生成</div>'
+      + '<h2>' + esc(state.course.name) + ' · ' + taskName + '</h2></div>'
+      + '<button class="btn ghost sm" data-plan-close>关闭</button></div>'
+      + '<p class="plan-sub">这次会按下面的资料权重取舍内容。高权重资料优先进入上下文，低权重资料仍会读取，但占用的篇幅更少；老师说法会进入这一份资料的约束。</p>'
+      + '<div class="section-head" style="margin:0 0 4px"><h2 style="font-size:15px">资料权重</h2><div class="line"></div></div>'
+      + rows
+      + '<div class="section-head" style="margin:16px 0 4px"><h2 style="font-size:15px">生成结构</h2><div class="line"></div></div>'
+      + '<p class="plan-sub" style="margin:0 0 8px">' + esc(structure) + '</p>'
+      + (globalNote ? '<div class="note" style="font-size:11px;color:var(--muted)">老师重点：' + esc(globalNote) + '</div>' : '<div class="note" style="font-size:11px;color:var(--faint)">还没有填老师重点；建议先写清“只考/不考/第几页”。</div>')
+      + '<div class="plan-foot"><button class="btn ghost" data-plan-close>返回修改</button>'
+      + '<button class="btn primary" data-plan-go>按此方案生成</button></div>'
+      + '</div>';
+    document.body.appendChild(mask);
+    function close(){ mask.remove(); }
+    mask.querySelectorAll('[data-plan-close]').forEach(function(b){ b.addEventListener('click', close); });
+    mask.addEventListener('click', function(e){ if(e.target === mask) close(); });
+    var go = mask.querySelector('[data-plan-go]');
+    go.addEventListener('click', function(){ close(); launch(options); });
+  }
+
   function start(){
     var ids = selectedIds();
     if(!ids.length){ toast('至少选一份资料'); return; }
@@ -505,6 +551,27 @@
     if(state.task === 'exam' && $('examAnswer')){
       options.constraints.answer_mode = $('examAnswer').checked ? 'required' : 'forbidden';
     }
+    // 每份资料单独权重/老师说法：不仅显示，还要真的进入选项。
+    var selected = state.materials.filter(function(m){ return ids.indexOf(m.id) >= 0; });
+    var totalW = selected.reduce(function(a,m){ return a + (Number(m.weight) || 3); }, 0) || 1;
+    options.material_weights = {};
+    options.material_notes = {};
+    selected.forEach(function(m){
+      options.material_weights[m.id] = Number(m.weight) || 3;
+      if(state.materialNotes[m.id] && state.materialNotes[m.id].trim()){
+        options.material_notes[m.id] = state.materialNotes[m.id].trim();
+      }
+    });
+    if(state.task === 'guide'){
+      var coreW = selected.filter(function(m){ return m.role === 'core'; })
+        .reduce(function(a,m){ return a + (Number(m.weight) || 3); }, 0);
+      options.core_ratio = Math.max(0.5, Math.min(0.95, coreW / totalW));
+    }
+    showPlan(options);
+    return;
+  }
+
+  function launch(options){
     showRunning();
 
     fetch('/api/jobs', { method:'POST', headers:{'Content-Type':'application/json'},
@@ -563,6 +630,12 @@
               if(cov.scope_filtered){
                 cl.textContent += ' · 按老师只考过滤 ' + cov.scope_filtered + ' 条';
               }
+              var L = cov.ledger;
+              if(L){
+                cl.textContent += ' · 账本 ' + (L.cited || 0) + '/' + (L.pages || 0);
+                if(L.image_only && L.image_only.length) cl.textContent += ' · 图片页 ' + L.image_only.length;
+                if(L.placeholder && L.placeholder.length) cl.textContent += ' · 占位 ' + L.placeholder.length;
+              }
             } else { cl.style.display = 'none'; }
             var line = $('qualityLine');
             if(v && !v.ok){
@@ -605,8 +678,12 @@
   }, 500);
 
   syncOptions(); loadCourses();
+  if(new URLSearchParams(location.search).get('plan') === '1'){
+    setTimeout(function(){ try { start(); } catch(e){ console.error(e); } }, 1800);
+  }
 })();
 </script>
   <script src="assets/i18n.js?v=1"></script>
+<script src="assets/appearance.js?v=2"></script>
 </body>
 </html>

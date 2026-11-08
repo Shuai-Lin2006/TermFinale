@@ -507,6 +507,7 @@ def _parse_material_cached(m, on_parse):
 def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
     try:
         materials = _selected_materials(course["id"], options.get("material_ids"))
+        material_notes = options.get("material_notes") or {}
         if not materials:
             raise RuntimeError("没有可用的资料")
         materials.sort(key=lambda m: (0 if (m.file_type or "core") == "core" else 1, -(m.weight or 3)))
@@ -521,7 +522,9 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                                        0.02 + 0.06 * (_i + frac) / _n))
             body = _parse_material_cached(m, on_parse)
             tag = "重点资料" if (m.file_type or "core") == "core" else "辅助资料"
-            pages.extend(f"【{tag}·权重{m.weight or 3}：{m.filename}】\n" + p for p in body)
+            _note = material_notes.get(str(m.id)) or material_notes.get(m.id) or ""
+            _head = f"【{tag}·权重{m.weight or 3}" + (f"·老师说明：{_note}" if _note else "") + f"：{m.filename}】"
+            pages.extend(_head + "\n" + p for p in body)
 
         # 任务级约束：每个任务独立读取，不跨模块复用
         constraints = TaskConstraints.from_options(task, options)
@@ -649,6 +652,7 @@ def _run_job(job: Job, course: dict, task: str, options: dict) -> None:
                 core_ratio=float(options.get("core_ratio", 0.8)),
                 lang=options.get("lang", "中文"),
                 user_note=options.get("user_note", ""),
+                material_notes=material_notes,
                 study_mode=options.get("material_mode", "exam"),
                 material_ids=options.get("material_ids") or None,
                 max_pages=(int(options["page_limit"]) if options.get("page_limit") else None),

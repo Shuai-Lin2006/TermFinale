@@ -98,6 +98,11 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【院校层级】{chapter.get('school', '普通本科')} 期末常规难度；结合用户基础与目标分调整深浅，不出偏题、怪题、超纲题，也不要低到送分。
     【内容难度】课程自设难度 {chapter.get('self_difficulty', 3)}/5，学生基础 {chapter.get('foundation', 3)}/5。难度 1~2 多铺垫、多例子；3 按常规期末；4~5 加强推导与综合，但必须限制在资料范围内，禁止偏题怪题和超纲内容。
     """
+    weak = (chapter or {}).get("weak_topics") or []
+    if weak:
+        chapter_block += ("\n【学生薄弱点·必须加讲】" + "、".join(weak) +
+                          "。这些主题要显著加篇幅：先补前置，再给 2–3 个由浅入深的例子，"
+                          "指出常见错误；不能只写一句带过。")
     must_cover = (chapter or {}).get("must_cover") or []
     if must_cover:
         chapter_block += ("\n【必须引用页码】本章资料页码：" + "、".join(f"P.{n}" for n in must_cover) +

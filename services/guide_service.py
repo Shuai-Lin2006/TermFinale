@@ -28,6 +28,7 @@ from core.generate.outline import Chapter, Outline, clean_outline_titles, fallba
 from core.parser import extract_text_from_file
 from core.personas import OUTROS
 from core.quality.qa import check_chapters
+from core.quality.teacher_note import topic_matches
 from core.quality.page_ledger import build_page_ledger, ledger_summary
 from core.quality.constraints import (
     TaskConstraints,
@@ -47,7 +48,7 @@ from services.task import (
     noop_progress,
 )
 
-MAX_PAGES = 15
+MAX_PAGES = 2000  # 安全上限；≤150 页必须全读，>150 页由 overview 抽样
 PAGES_PER_CALL = 4          # 单次请求最多塞 4 页，减少往返次数
 
 
@@ -79,12 +80,17 @@ def build_weight_prompt(core_pages: list, ref_pages: list, core_ratio: float) ->
 
 
 def truncate_pages(core_pages: list, ref_pages: list, core_ratio: float) -> tuple[list, list]:
-    """总页数上限 15（仅两类资料同时存在时生效，与旧行为一致）。"""
-    if core_pages and ref_pages:
-        core_limit = int(MAX_PAGES * core_ratio)
-        ref_limit = MAX_PAGES - core_limit
-        return core_pages[: max(1, core_limit)], ref_pages[: max(1, ref_limit)]
-    return core_pages, ref_pages
+    """安全上限不再是 15 页。
+
+    ≤150 页是“精准全量”，必须把所有页交给模型；>150 页由 overview_mode
+    按章抽样，不能在这里先砍成 15 页。只有极端超大输入才按 core_ratio 截断。
+    """
+    total = len(core_pages) + len(ref_pages)
+    if total <= MAX_PAGES:
+        return core_pages, ref_pages
+    core_limit = max(1, int(MAX_PAGES * core_ratio))
+    ref_limit = max(1, MAX_PAGES - core_limit)
+    return core_pages[:core_limit], ref_pages[:ref_limit]
 
 
 def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
@@ -284,6 +290,7 @@ def run_guide(
     max_pages: int | None = None,
     study_mode: str = "exam",
     material_ids: list[int] | None = None,
+    material_notes: dict | None = None,
     constraints: TaskConstraints | None = None,
 ) -> RunResult | None:
     """生成一份讲义。被用户中断时返回 None。
@@ -331,6 +338,12 @@ def run_guide(
                 0.05 + 0.06 * (done / max(1, total))))
 
         pages = extract_text_from_file(material.file_path, on_progress=_parse_progress)
+        _note = ((material_notes or {}).get(str(getattr(material, "id", "")))
+                 or (material_notes or {}).get(getattr(material, "id", None)) or "")
+        _kind = "重点资料" if material.file_type == "core" else "辅助资料"
+        _head = (f"【{_kind}·权重{getattr(material, 'weight', 3) or 3}"
+                 + (f"·老师说明：{_note}" if _note else "") + f"：{material.filename}】")
+        pages = [_head + "\n" + p for p in pages]
         (core_pages if material.file_type == "core" else ref_pages).extend(pages)
 
     if constraints.has_scope:
@@ -413,6 +426,15 @@ def run_guide(
         target_words = max(700, min(2800, int(chapter.est_words * (0.6 if is_key else 1.0))))
         if overview_mode:
             target_words = 900
+        _chapter_text = " ".join(pages[p] for p in chapter.pages if p < len(pages))
+        _weak_hit = [w for w in (constraints.weak_topics or [])
+                     if any(topic_matches(w, seg) for seg in [chapter.title] + re.findall(r"[^\n]{2,30}", _chapter_text[:4000]))]
+        if _weak_hit:
+            target_words = int(target_words * 1.8)
+        # 资料权重必须影响篇幅：高权重资料所在的章节写长，低权重只做补充。
+        _weights = [int(x) for x in re.findall(r"权重\s*(\d)", _chapter_text[:1200])]
+        _avg_w = (sum(_weights) / len(_weights)) if _weights else 3.0
+        target_words = int(target_words * (0.8 + 0.4 * _avg_w / 5.0))
         blocks = chapter_blocks(chapter, pages, sample=overview_mode)
         for bi, (content, tags) in enumerate(blocks):
             context = {
@@ -424,6 +446,8 @@ def run_guide(
                 "target_words": max(400, target_words // max(1, len(blocks))),
                 "urgency": urgency_text,
                 "must_cover": (chapter_labels[ci][:8] if bi == 0 else []),
+                "weak_topics": _weak_hit,
+                "avg_weight": round(_avg_w, 1),
                 "overview": overview_mode,
                 "study_mode": study_mode,
                 "school": course.get("school", "一本"),

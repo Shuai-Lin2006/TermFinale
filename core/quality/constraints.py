@@ -69,6 +69,7 @@ class TaskConstraints:
     # 老师重点（由 teacher_note.parse_teacher_note 解析后注入）
     teacher_note: str = ""
     must_topics: list[str] = field(default_factory=list)
+    weak_topics: list[str] = field(default_factory=list)
     ban_topics: list[str] = field(default_factory=list)
     only_topics: list[str] = field(default_factory=list)
     literal_bans: list[str] = field(default_factory=list)
@@ -109,6 +110,7 @@ class TaskConstraints:
         if rules is None:
             return
         for attr, target in (("must_topics", self.must_topics),
+                             ("weak_topics", self.weak_topics),
                              ("ban_topics", self.ban_topics),
                              ("literal_bans", self.literal_bans)):
             for item in getattr(rules, attr, []) or []:
@@ -162,6 +164,7 @@ class TaskConstraints:
             "max_retries": self.max_retries,
             "teacher_note": self.teacher_note,
             "must_topics": list(self.must_topics),
+            "weak_topics": list(self.weak_topics),
             "ban_topics": list(self.ban_topics),
             "only_topics": list(self.only_topics),
             "literal_bans": list(self.literal_bans),
@@ -281,6 +284,10 @@ def render_prompt(c: TaskConstraints) -> str:
     if c.must_topics:
         lines.append("【老师必考】必须覆盖并在考点/标题/题目中明确写出："
                      + "、".join(c.must_topics) + "。漏掉即不合格。")
+    if c.weak_topics:
+        lines.append("【学生薄弱点·必须加讲】以下主题不能只提一句：先补前置知识，"
+                     "再从定义/直觉讲起，给 2–3 个由浅入深的例子，指出常见错误；"
+                     "篇幅要明显高于普通小节：" + "、".join(c.weak_topics) + "。")
     if c.ban_topics:
         lines.append("【老师不考】以下内容不得作为考点、章节标题或题目出现："
                      + "、".join(c.ban_topics) + "。")
@@ -607,6 +614,12 @@ def _check_teacher_rules(report: ValidationReport, text: str, c: TaskConstraints
         if missing_pages:
             report.add("老师点名页码未覆盖：" +
                        "、".join(f"第{p}页" for p in missing_pages[:8]))
+    if c.weak_topics:
+        missing = [w for w in c.weak_topics
+                   if not any(topic_matches(t, w) for t in topics)
+                   and re.sub(r"\s+", "", w) not in re.sub(r"\s+", "", text or "")]
+        if missing:
+            report.add("学生薄弱点未覆盖：" + "、".join(missing[:4]))
 
 
 def _check_guide(report: ValidationReport, text: str, c: TaskConstraints,

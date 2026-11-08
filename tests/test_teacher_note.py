@@ -122,3 +122,24 @@ class TopicValidationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class WeakAndBareTest(unittest.TestCase):
+    def test_bare_kao_and_weak(self):
+        r = parse_teacher_note("老师说考极限，不考中值定理；我隐函数那块不会，需要多讲")
+        self.assertIn("极限", r.must_topics)
+        self.assertIn("隐函数", r.weak_topics)
+        self.assertIn("中值定理", r.ban_topics)
+        self.assertNotIn("隐函数", r.ban_topics)
+
+    def test_weak_prompt_and_hard_coverage(self):
+        from core.quality.constraints import render_prompt
+        c = TaskConstraints(task="guide", weak_topics=["隐函数"])
+        self.assertIn("学生薄弱点", render_prompt(c))
+        missing = validate_output("## 核心考点：导数\n\n正文（P.1）。", c,
+                                  source_text=MATH_SOURCE, stage="final")
+        self.assertFalse(missing.ok)
+        self.assertTrue(any("学生薄弱点" in i for i in missing.issues), missing.issues)
+        ok = validate_output("## 核心考点：导数\n\n### 隐函数\n\n从零讲起（P.1）。", c,
+                             source_text=MATH_SOURCE, stage="final")
+        self.assertTrue(ok.ok, ok.issues)

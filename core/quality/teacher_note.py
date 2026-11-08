@@ -20,6 +20,10 @@ _NEG = ("不考", "不要求", "不用看", "跳过", "略过", "排除", "别�
 _ONLY = ("只考", "只讲", "仅考", "只要求", "范围是", "只复习", "只看", "重点只")
 _POS = ("必考", "重点", "要考", "会考", "常考", "掌握", "记住", "背下来",
         "重点看", "一定要", "必须")
+# 学生薄弱点：必须加讲，绝不能当成“不考”
+_WEAK = ("不会", "不懂", "没学会", "没学懂", "薄弱", "不熟", "需要多讲", "多讲",
+         "讲细", "细讲", "从零", "基础差", "搞不懂", "不理解", "再讲讲", "重点讲",
+         "没掌握", "听不懂")
 
 _PAGE_RANGE = re.compile(r"第?\s*(\d+)\s*(?:[-–—~至到]\s*(\d+))?\s*页")
 _P_PAGE = re.compile(r"(?<![A-Za-z0-9])P\.?\s*(\d+)", re.IGNORECASE)
@@ -28,13 +32,16 @@ _ITEM_SPLIT = re.compile(r"[、，,/]|以及|及|和")
 # 化学基团这类 token：-R、-NO2、-SO3H、-COOH …
 _TOKEN = re.compile(r"(?<![A-Za-z0-9])-[A-Za-z][A-Za-z0-9₀-₉]*")
 _GROUP_HINT = ("基团", "取代基", "官能团")
-_MARKERS = _NEG + _ONLY + _POS
+_MARKERS = _NEG + _ONLY + _POS + _WEAK
+# “老师说考 A 不考 B”里的裸“考 A”
+_BARE_POS = re.compile(r"(?<![不只会常要必])考\s*([^，,；;。]+)")
 
 
 @dataclass
 class TeacherRules:
     page_refs: list[int] = field(default_factory=list)
     must_topics: list[str] = field(default_factory=list)
+    weak_topics: list[str] = field(default_factory=list)
     ban_topics: list[str] = field(default_factory=list)
     only_topics: list[str] = field(default_factory=list)
     literal_bans: list[str] = field(default_factory=list)
@@ -44,11 +51,12 @@ class TeacherRules:
 
     @property
     def empty(self) -> bool:
-        return not any((self.page_refs, self.must_topics, self.ban_topics,
+        return not any((self.page_refs, self.must_topics, self.weak_topics, self.ban_topics,
                         self.only_topics, self.literal_bans))
 
     def to_dict(self) -> dict:
         return {"page_refs": self.page_refs, "must_topics": self.must_topics,
+                "weak_topics": self.weak_topics,
                 "ban_topics": self.ban_topics, "only_topics": self.only_topics,
                 "literal_bans": self.literal_bans, "unresolved": self.unresolved,
                 "notes": self.notes}
@@ -62,8 +70,9 @@ def _clean_topic(text: str) -> str:
     text = re.sub(r"^第?\s*\d+\s*(?:[-–—~至到]\s*\d+)?\s*页\s*(?:例|题)?\s*\d*(?:\.\d+)*\s*", "", text)
     for marker in sorted(_MARKERS, key=len, reverse=True):
         text = text.replace(marker, " ")
-    text = re.sub(r"(老师|同学|我们|这次|本次|期末|考试|内容|部分|章节|知识点|考点|题目|要|的)+", " ", text)
+    text = re.sub(r"(老师|同学|我们|我|说|表示|强调|这次|本次|期末|考试|内容|部分|章节|那块|这边|这里|地方|知识点|考点|题目|要|的)+", " ", text)
     text = re.sub(r"[\s，,。；;：:、（）()【】\[\]]+", " ", text).strip()
+    text = re.sub(r"^[考讲学]\s*", "", text).strip()
     # 去掉“例3”“第5题”这类纯编号
     if re.fullmatch(r"(?:例|题)?\s*\d+(?:\.\d+)*", text):
         return ""
@@ -72,7 +81,7 @@ def _clean_topic(text: str) -> str:
 
 def _topic_items(clause: str) -> list[str]:
     raw = clause
-    for marker in sorted(_ONLY + _NEG + _POS, key=len, reverse=True):
+    for marker in sorted(_ONLY + _NEG + _POS + _WEAK, key=len, reverse=True):
         raw = raw.replace(marker, " ")
     items = []
     for part in _ITEM_SPLIT.split(raw):
@@ -135,11 +144,16 @@ def parse_teacher_note(note: str, source_text: str = "") -> TeacherRules:
         clause = clause.strip()
         if not clause:
             continue
+        has_weak = any(k in clause for k in _WEAK)
         has_neg = any(k in clause for k in _NEG)
         has_only = any(k in clause for k in _ONLY)
         has_pos = any(k in clause for k in _POS) and not has_neg and not has_only
 
-        if has_only:
+        if has_weak:
+            # “隐函数那块我不会，需要多讲” → 加讲，不是不考
+            rules.weak_topics.extend(
+                t for t in _topic_items(clause) if t and t not in rules.weak_topics)
+        elif has_only:
             rules.only_topics.extend(
                 t for t in _topic_items(clause) if t and t not in rules.only_topics)
         elif has_neg:
@@ -147,6 +161,10 @@ def parse_teacher_note(note: str, source_text: str = "") -> TeacherRules:
                 t for t in _topic_items(clause)
                 if t and t not in rules.ban_topics and not t.startswith("其他"))
         elif has_pos:
+            rules.must_topics.extend(
+                t for t in _topic_items(clause) if t and t not in rules.must_topics)
+        elif not has_neg and _BARE_POS.search(clause):
+            # “老师考 A” 没有“必考/重点”字样，也要算必考
             rules.must_topics.extend(
                 t for t in _topic_items(clause) if t and t not in rules.must_topics)
 
@@ -181,11 +199,17 @@ def parse_teacher_note(note: str, source_text: str = "") -> TeacherRules:
                 out.append(x)
         return out
     rules.must_topics = _uniq(rules.must_topics)
+    rules.weak_topics = _uniq(rules.weak_topics)
     rules.ban_topics = _uniq(rules.ban_topics)
     rules.only_topics = _uniq(rules.only_topics)
     rules.literal_bans = _uniq(rules.literal_bans)
     # “只考”里如果也混进了不考项，剔除
     rules.ban_topics = [t for t in rules.ban_topics if t not in rules.only_topics]
+    # 老师明确不考的内容，不能因为“学生想学”又加讲；保留不考，并记录
+    _weak_banned = [w for w in rules.weak_topics if any(topic_matches(w, b) for b in rules.ban_topics)]
+    if _weak_banned:
+        rules.notes.append("薄弱点与老师不考冲突，按不考处理：" + "、".join(_weak_banned))
+        rules.weak_topics = [w for w in rules.weak_topics if w not in _weak_banned]
     if rules.only_topics and not rules.must_topics:
         rules.notes.append("按“只考”白名单执行：白名单外的考点会被过滤或判失败")
     return rules

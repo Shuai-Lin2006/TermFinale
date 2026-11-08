@@ -336,3 +336,63 @@ class ChunkPageCoverageTest(unittest.TestCase):
         chunk = "【《x》第 1 页】\n内容一\n\n【《x》第 2 页】\n内容二"
         md = "（第1页）\n（第2页）"
         self.assertEqual(review_service.missing_page_numbers(md, chunk), [])
+
+
+class GuidePageBudgetTest(unittest.TestCase):
+    def test_under_150_pages_not_truncated(self):
+        core = [f"【《x》第 {i+1} 页】正文" for i in range(140)]
+        ref = [f"【《y》第 {i+1} 页】正文" for i in range(10)]
+        c, r = guide_service.truncate_pages(core, ref, 0.8)
+        self.assertEqual(len(c) + len(r), 150)
+
+
+class WeakTopicBudgetTest(unittest.TestCase):
+    def test_weak_topic_increases_chapter_target(self):
+        _ensure_course()
+        pptx = _make_pptx(["隐函数求导从零讲起"])
+        db = get_db_session()
+        try:
+            db.query(Material).filter(Material.course_id == 9001).delete()
+            db.add(Material(course_id=9001, file_path=pptx, file_type="core",
+                            weight=3, filename=Path(pptx).name))
+            db.commit()
+        finally:
+            db.close()
+        calls = []
+        def gen(raw_text, info, **kwargs):
+            calls.append(kwargs.get("chapter", {}))
+            return "## 核心考点：隐函数\n\n### 隐函数求导\n\n从零讲起（P.1）。\n"
+        outline = Outline([Chapter(index=0, title="隐函数", pages=[0], est_words=1800)], source="test")
+        c = TaskConstraints(task="guide", weak_topics=["隐函数"])
+        result = guide_service.run_guide(COURSE, mode="key", outline=outline,
+                                         guide_generator=gen, constraints=c)
+        self.assertIsNotNone(result)
+        self.assertTrue(calls)
+        self.assertGreaterEqual(calls[0].get("target_words", 0), 1500)
+        from core.quality.constraints import render_prompt
+        self.assertIn("学生薄弱点", render_prompt(c))
+
+
+class MaterialNoteTest(unittest.TestCase):
+    def test_material_note_enters_source_prefix(self):
+        _ensure_course()
+        pptx = _make_pptx(["隐函数求导"])
+        db = get_db_session()
+        try:
+            db.query(Material).filter(Material.course_id == 9001).delete()
+            m = Material(course_id=9001, file_path=pptx, file_type="core",
+                         weight=5, filename=Path(pptx).name)
+            db.add(m); db.commit(); mid = m.id
+        finally:
+            db.close()
+        seen = []
+        def gen(raw_text, info, **kwargs):
+            seen.append(raw_text)
+            return "## 核心考点：隐函数\n\n### 隐函数求导\n\n多讲例题（P.1）。\n"
+        outline = Outline([Chapter(index=0, title="隐函数", pages=[0])], source="test")
+        c = TaskConstraints(task="guide", weak_topics=["隐函数"])
+        guide_service.run_guide(COURSE, mode="key", outline=outline, guide_generator=gen,
+                                constraints=c, material_notes={str(mid): "这块我不会，多讲"})
+        self.assertTrue(seen)
+        self.assertIn("老师说明：这块我不会，多讲", seen[0])
+        self.assertIn("权重5", seen[0])
