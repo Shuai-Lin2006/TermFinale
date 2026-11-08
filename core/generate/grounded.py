@@ -14,6 +14,7 @@ from core.exam_engine import call_ai_with_retry
 from core.generate.evidence_pack import build_pack, render_pack
 
 PAGE_SPLIT = re.compile(r"(?=【《.+?》第\s*\d+\s*页】)")
+_MAT_PREFIX = re.compile(r"【[^】]*(?:重点资料|辅助资料|权重)[^】]*】\s*")
 QUOTE_LINE = re.compile(r"(?m)^>\s*原文[:：]\s*(.+?)\s*[（(]\s*P?\.?\s*(\d+)\s*[)）]\s*$")
 
 
@@ -80,7 +81,8 @@ def _remove_empty_sections(md: str) -> str:
 def generate_grounded_chapter(raw_text: str, course, persona: str = "老师", user_choice: str = "",
                               weight_prompt: str = "", lang: str = "中文", chapter: dict | None = None,
                               user_note: str = "", constraint_block: str = "", retry_note: str = "") -> str:
-    pages = [p for p in PAGE_SPLIT.split(raw_text or "") if p.strip()]
+    raw_text = _MAT_PREFIX.sub("", raw_text or "")
+    pages = [p for p in PAGE_SPLIT.split(raw_text) if p.strip()]
     pack = build_pack(pages, max_per_page=6)
     bans = (chapter or {}).get("ban_topics") or []
     if bans:

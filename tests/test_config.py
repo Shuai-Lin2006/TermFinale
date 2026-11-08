@@ -25,7 +25,10 @@ class ConfigTest(unittest.TestCase):
         self.assertNotIn("DEEPSEEK_API_KEY", config.missing_keys())
 
     def test_env_path_under_override(self):
-        self.assertIn("tf_cfg_", str(config.user_env_path()))
+        # 全量测试下 TERMFINALE_HOME 可能先被其他模块设置；只验证 .env 位于当前数据根目录
+        from core import paths
+        self.assertEqual(config.user_env_path().parent, paths.data_dir())
+        self.assertEqual(config.user_env_path().name, ".env")
 
 
 if __name__ == "__main__":

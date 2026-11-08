@@ -16,6 +16,9 @@ from core import maintenance, paths  # noqa: E402
 class MaintenanceTest(unittest.TestCase):
     def test_report_and_prune(self):
         paths.ensure_dirs()
+        for p in paths.debug_dir().iterdir():
+            if p.is_file():
+                p.unlink()
         for i in range(5):
             (paths.debug_dir() / f"f{i}.md").write_text("x" * (i + 1), encoding="utf-8")
 
@@ -26,7 +29,7 @@ class MaintenanceTest(unittest.TestCase):
 
         result = maintenance.prune_debug(keep=2)
         self.assertEqual(result["removed"], 3)
-        self.assertEqual(len(list(paths.debug_dir().iterdir())), 2)
+        self.assertEqual(len([p for p in paths.debug_dir().iterdir() if p.is_file()]), 2)
 
     def test_human_size(self):
         self.assertEqual(maintenance.human_size(999), "999B")

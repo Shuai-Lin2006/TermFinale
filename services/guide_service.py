@@ -433,8 +433,8 @@ def run_guide(
     if guide_generator:
         generator = guide_generator
     else:
-        from core.generate.grounded import generate_grounded_chapter
-        generator = generate_grounded_chapter
+        from core.generate.card_guide import generate_card_chapter
+        generator = generate_card_chapter
     info = build_course_info(course)
     evaluation = info.evaluate()
     urgency_text = (f"紧迫度 {evaluation['final_priority_weight']:.0f}/100（{evaluation['status']}），"
