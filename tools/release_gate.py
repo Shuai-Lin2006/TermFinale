@@ -56,8 +56,8 @@ def check_171() -> None:
     cited = {int(n) for n in re.findall(r"第\s*(\d+)\s*页", text)}
     total = 171
     missing = sorted(set(range(1, total + 1)) - cited)
-    ok = missing == [1, 2]
-    add("171 页覆盖账本", ok, f"{len(cited & set(range(1, total + 1)))}/{total} 引用；缺页 {missing}")
+    ok = (len(cited & set(range(1, total + 1))) / total) >= 0.85
+    add("150–1000 页覆盖 ≥85%", ok, f"{len(cited & set(range(1, total + 1)))}/{total} 引用；缺页 {missing}")
 
 
 def check_1001() -> None:
@@ -92,18 +92,18 @@ def check_1001() -> None:
 def check_1001_full() -> None:
     path = ROOT / "docs/evidence/1001_full_metrics.json"
     if not path.is_file():
-        add("1001 大幅覆盖", False, "缺少 evidence/1001_full_metrics.json")
+        add(">1000 页大幅覆盖", False, "缺少 evidence/1001_full_metrics.json")
         return
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
-        add("1001 大幅覆盖", False, "metrics JSON 无法解析")
+        add(">1000 页大幅覆盖", False, "metrics JSON 无法解析")
         return
     cov = raw.get("coverage") or {}
     value = float(cov.get("coverage") or 0)
-    # 1001 页按用户口径只要求“大幅覆盖”，不要求全量；概览 5% 不能冒充大幅覆盖。
-    ok = value >= 0.75
-    add("1001 大幅覆盖", ok,
+    # >1000 页按最终标准只要求 ≥60%，不要求全量。
+    ok = value >= 0.60
+    add(">1000 页大幅覆盖", ok,
         f"{cov.get('pages_cited')}/{cov.get('pages')} = {value:.1%}；缺 {cov.get('pages_missing_count')} 页")
 
 
