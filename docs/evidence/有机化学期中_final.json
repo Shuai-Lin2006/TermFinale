@@ -2,9 +2,9 @@
   "exam": "有机化学期中",
   "mode": "self_consistency_not_official",
   "total": 32,
-  "high": 27,
+  "high": 32,
   "single_source": 0,
-  "manual": 5,
+  "manual": 0,
   "high_items": [
     {
       "key": "一、命名题#1",
@@ -302,19 +302,6 @@
       "four_way_status": "agree",
       "final": "D",
       "reason": "4/4 多数"
-    }
-  ],
-  "single_items": [],
-  "manual_items": [
-    {
-      "key": "五、推断题#1",
-      "a": "A为2-甲基-1-戊烯（CH2=C(CH3)CH2CH2CH3）。推断：C6H10不饱和度为2，催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；与硝酸银氨溶液生成灰白色沉淀，说明含端基炔氢，A为端炔；汞盐催化水合得CH3COCH2CH(CH3)2（或题给CH3CHCH2CCH3），说明三键位于端位。反应式：A + H2 → 2-甲基戊烷；A + Ag(NH3)2+ → AgC≡CCH2CH(CH3)2（灰白色沉淀）；A + H2O → CH3COCH2CH(CH3)2。",
-      "b": "A为2-甲基-1-戊烯-4-炔（CH2=C(CH3)CH2C≡CH）。推断：C6H10不饱和度为2；催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；与硝酸银氨溶液生成灰白色沉淀，说明含端炔（≡CH）；汞盐催化水合得CH3COCH2CH(CH3)2（4-甲基-2-戊酮），说明炔键位于末端且水合遵循马氏规则。反应式：CH2=C(CH3)CH2C≡CH + 2H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2C≡CH + Ag(NH3)2+ → CH2=C(CH3)CH2C≡CAg↓；CH2=C(CH3)CH2C≡CH + H2O → CH3COCH2CH(CH3)2。",
-      "c": "A为2-甲基-1-戊烯（CH2=C(CH3)CH2CH2CH3）。推断：A分子式C6H10，催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；A与硝酸银氨溶液生成灰白色沉淀，说明含端基炔氢，但结合汞盐催化水合产物CH3CH(OH)CH2COCH3，确定A为2-甲基-1-戊烯。反应式：CH2=C(CH3)CH2CH2CH3 + H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2CH2CH3 + H2O → CH3C(OH)(CH3)CH2CH2CH3（主要）及CH3CH(CH3)CH2COCH3。",
-      "status": "conflict",
-      "d": "A为2-甲基-1-戊烯-4-炔，结构式CH2=C(CH3)CH2C≡CH。推断：A催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；A与硝酸银氨溶液生成灰白色沉淀，说明含端炔基—C≡CH；A在汞盐催化下与水作用生成CH3COCH2CH(CH3)2（即CH3CH(CH3)CH2COCH3），说明三键水化生成甲基酮，炔键位于端位。反应式：CH2=C(CH3)CH2C≡CH + 2H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2C≡CH + Ag(NH3)2+ → CH2=C(CH3)CH2C≡CAg↓；CH2=C(CH3)CH2C≡CH + H2O →(Hg2+) CH2=C(CH3)CH2COCH3。",
-      "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
     },
     {
       "key": "五、推断题#2",
@@ -324,7 +311,10 @@
       "status": "conflict",
       "d": "A为2-甲基-2-丁烯，结构式(CH3)2C=CHCH3。推断：A加1分子氢得C5H12，为烯烃；酸性KMnO4氧化断裂双键，生成含一个碳原子的羧酸（乙酸或甲酸类），说明双键一端为CH3；臭氧化还原水解得两种不同醛，说明双键两端碳上均含氢且结构不同。反应式：(CH3)2C=CHCH3 + H2 → (CH3)2CHCH2CH3；氧化：(CH3)2C=CHCH3 + KMnO4(H+) → (CH3)2CO + CH3COOH；臭氧化：(CH3)2C=CHCH3 + O3 → (CH3)2C=O + CH3CHO。",
       "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
+      "reason": "平票或多个不同答案",
+      "final": "B",
+      "reviewed": true,
+      "review_note": "四遍中三遍指向2-甲基-2-丁烯"
     },
     {
       "key": "四、问答题#1",
@@ -334,7 +324,10 @@
       "status": "conflict",
       "d": "分别取三种化合物，加入溴的四氯化碳溶液：环戊烯和乙炔均使溴褪色，环丙烷不褪色。再向能使溴褪色的两者中分别加入硝酸银的氨溶液：乙炔生成白色沉淀，环戊烯无沉淀。由此鉴别：环丙烷、环戊烯、乙炔。",
       "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
+      "reason": "平票或多个不同答案",
+      "final": "C",
+      "reviewed": true,
+      "review_note": "环丙烷不能使溴褪色；环戊烯与乙炔能使溴褪色，再用银氨区分"
     },
     {
       "key": "四、问答题#2",
@@ -344,7 +337,10 @@
       "status": "conflict",
       "d": "马氏规则：不对称烯烃与卤化氢等极性试剂发生加成反应时，氢原子主要加到含氢较多的双键碳原子上，卤素等加到含氢较少的双键碳原子上。",
       "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
+      "reason": "平票或多个不同答案",
+      "final": "A",
+      "reviewed": true,
+      "review_note": "四遍语义均为马氏规则，仅措辞不同"
     },
     {
       "key": "四、问答题#3",
@@ -354,7 +350,25 @@
       "status": "conflict",
       "d": "亲电取代反应的四种类型：卤代、硝化、磺化、傅-克反应（烷基化或酰基化）。",
       "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
+      "reason": "平票或多个不同答案",
+      "final": "A",
+      "reviewed": true,
+      "review_note": "四遍语义均为硝化/卤代/磺化/傅-克，仅B称信息不完整"
+    },
+    {
+      "key": "五、推断题#1",
+      "a": "A为2-甲基-1-戊烯（CH2=C(CH3)CH2CH2CH3）。推断：C6H10不饱和度为2，催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；与硝酸银氨溶液生成灰白色沉淀，说明含端基炔氢，A为端炔；汞盐催化水合得CH3COCH2CH(CH3)2（或题给CH3CHCH2CCH3），说明三键位于端位。反应式：A + H2 → 2-甲基戊烷；A + Ag(NH3)2+ → AgC≡CCH2CH(CH3)2（灰白色沉淀）；A + H2O → CH3COCH2CH(CH3)2。",
+      "b": "A为2-甲基-1-戊烯-4-炔（CH2=C(CH3)CH2C≡CH）。推断：C6H10不饱和度为2；催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；与硝酸银氨溶液生成灰白色沉淀，说明含端炔（≡CH）；汞盐催化水合得CH3COCH2CH(CH3)2（4-甲基-2-戊酮），说明炔键位于末端且水合遵循马氏规则。反应式：CH2=C(CH3)CH2C≡CH + 2H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2C≡CH + Ag(NH3)2+ → CH2=C(CH3)CH2C≡CAg↓；CH2=C(CH3)CH2C≡CH + H2O → CH3COCH2CH(CH3)2。",
+      "c": "A为2-甲基-1-戊烯（CH2=C(CH3)CH2CH2CH3）。推断：A分子式C6H10，催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；A与硝酸银氨溶液生成灰白色沉淀，说明含端基炔氢，但结合汞盐催化水合产物CH3CH(OH)CH2COCH3，确定A为2-甲基-1-戊烯。反应式：CH2=C(CH3)CH2CH2CH3 + H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2CH2CH3 + H2O → CH3C(OH)(CH3)CH2CH2CH3（主要）及CH3CH(CH3)CH2COCH3。",
+      "status": "conflict",
+      "d": "A为2-甲基-1-戊烯-4-炔，结构式CH2=C(CH3)CH2C≡CH。推断：A催化氢化得2-甲基戊烷，说明碳骨架为2-甲基戊烷；A与硝酸银氨溶液生成灰白色沉淀，说明含端炔基—C≡CH；A在汞盐催化下与水作用生成CH3COCH2CH(CH3)2（即CH3CH(CH3)CH2COCH3），说明三键水化生成甲基酮，炔键位于端位。反应式：CH2=C(CH3)CH2C≡CH + 2H2 → CH3CH(CH3)CH2CH2CH3；CH2=C(CH3)CH2C≡CH + Ag(NH3)2+ → CH2=C(CH3)CH2C≡CAg↓；CH2=C(CH3)CH2C≡CH + H2O →(Hg2+) CH2=C(CH3)CH2COCH3。",
+      "four_way_status": "conflict",
+      "reason": "平票或多个不同答案",
+      "final": "B",
+      "reviewed": true,
+      "review_note": "银氨灰白沉淀说明端炔，C6H10 加氢得2-甲基戊烷"
     }
-  ]
+  ],
+  "single_items": [],
+  "manual_items": []
 }

@@ -2,9 +2,9 @@
   "exam": "物理化学期中",
   "mode": "self_consistency_not_official",
   "total": 27,
-  "high": 25,
+  "high": 26,
   "single_source": 0,
-  "manual": 2,
+  "manual": 1,
   "high_items": [
     {
       "key": "判断题#1",
@@ -280,10 +280,7 @@
       "four_way_status": "agree",
       "final": "C",
       "reason": "4/4 多数"
-    }
-  ],
-  "single_items": [],
-  "manual_items": [
+    },
     {
       "key": "计算题#1",
       "a": "使用掉氧气的质量约为 1.31×10^3 g（约 1.31 kg）",
@@ -292,8 +289,14 @@
       "status": "conflict",
       "d": "使用掉氧气的质量约为 1.31 kg（约 1309 g）",
       "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
-    },
+      "reason": "平票或多个不同答案",
+      "final": "约 1.31 kg",
+      "reviewed": true,
+      "review_note": "四遍单位/舍入等价（1.31kg=1.31×10^3g）"
+    }
+  ],
+  "single_items": [],
+  "manual_items": [
     {
       "key": "计算题#2",
       "a": "(1) ΔU=0；ΔH=0；Q=W=1.573 kJ（Q=1.573 kJ，W=-1.573 kJ）。(2) ΔU=-1.42 kJ；ΔH=-1.99 kJ；Q=0；W=1.42 kJ",

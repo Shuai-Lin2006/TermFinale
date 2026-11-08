@@ -2,9 +2,9 @@
   "exam": "高等数学二期中",
   "mode": "self_consistency_not_official",
   "total": 28,
-  "high": 20,
+  "high": 23,
   "single_source": 5,
-  "manual": 3,
+  "manual": 0,
   "high_items": [
     {
       "key": "七#1",
@@ -225,6 +225,45 @@
       "four_way_status": "agree",
       "final": "C",
       "reason": "4/4 多数"
+    },
+    {
+      "key": "三#1",
+      "a": "收敛半径 R=1；收敛域 [-1,1)；和函数 S(x)=-\\ln(1+x)，-1<x<1",
+      "b": "",
+      "c": "收敛半径 R=1；收敛域 (-1,1]；和函数 S(x)=-\\ln(1+x)，-1<x\\le 1",
+      "status": "conflict",
+      "d": "收敛半径 R=1；收敛域 [-1,1)；和函数 S(x)=-\\ln(1+x)，-1\\le x<1",
+      "four_way_status": "conflict",
+      "reason": "平票或多个不同答案",
+      "final": "C",
+      "reviewed": true,
+      "review_note": "x=1 收敛、x=-1 发散，收敛域 (-1,1]"
+    },
+    {
+      "key": "填空题#3",
+      "a": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 \\rho^4\\sin\\varphi\\cos^2\\varphi\\,\\mathrm{d}\\rho",
+      "b": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 \\rho^4\\sin\\varphi\\cos^2\\varphi\\,\\mathrm{d}\\rho",
+      "c": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 r^2\\cos^2\\varphi\\cdot r^2\\sin\\varphi\\,\\mathrm{d}r",
+      "status": "agree",
+      "d": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 r^2\\cos^2\\varphi\\cdot r^2\\sin\\varphi\\,\\mathrm{d}r",
+      "four_way_status": "conflict",
+      "reason": "平票或多个不同答案",
+      "final": "A",
+      "reviewed": true,
+      "review_note": "球坐标 A/B 等价，取 A"
+    },
+    {
+      "key": "填空题#5",
+      "a": "\\mathrm{d}x-\\mathrm{d}y",
+      "b": "\\mathrm{d}x-\\mathrm{d}y",
+      "c": "\\mathrm{d}x-\\mathrm{d}y-\\mathrm{d}z",
+      "status": "agree",
+      "d": "\\mathrm{d}x-\\mathrm{d}y-\\mathrm{d}z",
+      "four_way_status": "conflict",
+      "reason": "平票或多个不同答案",
+      "final": "C",
+      "reviewed": true,
+      "review_note": "df(1,1,1)=dx-dy-dz"
     }
   ],
   "single_items": [
@@ -284,36 +323,5 @@
       "reason": "仅一个模型作答"
     }
   ],
-  "manual_items": [
-    {
-      "key": "三#1",
-      "a": "收敛半径 R=1；收敛域 [-1,1)；和函数 S(x)=-\\ln(1+x)，-1<x<1",
-      "b": "",
-      "c": "收敛半径 R=1；收敛域 (-1,1]；和函数 S(x)=-\\ln(1+x)，-1<x\\le 1",
-      "status": "conflict",
-      "d": "收敛半径 R=1；收敛域 [-1,1)；和函数 S(x)=-\\ln(1+x)，-1\\le x<1",
-      "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
-    },
-    {
-      "key": "填空题#3",
-      "a": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 \\rho^4\\sin\\varphi\\cos^2\\varphi\\,\\mathrm{d}\\rho",
-      "b": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 \\rho^4\\sin\\varphi\\cos^2\\varphi\\,\\mathrm{d}\\rho",
-      "c": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 r^2\\cos^2\\varphi\\cdot r^2\\sin\\varphi\\,\\mathrm{d}r",
-      "status": "agree",
-      "d": "\\int_0^{2\\pi}\\mathrm{d}\\theta\\int_0^{\\pi/2}\\mathrm{d}\\varphi\\int_0^1 r^2\\cos^2\\varphi\\cdot r^2\\sin\\varphi\\,\\mathrm{d}r",
-      "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
-    },
-    {
-      "key": "填空题#5",
-      "a": "\\mathrm{d}x-\\mathrm{d}y",
-      "b": "\\mathrm{d}x-\\mathrm{d}y",
-      "c": "\\mathrm{d}x-\\mathrm{d}y-\\mathrm{d}z",
-      "status": "agree",
-      "d": "\\mathrm{d}x-\\mathrm{d}y-\\mathrm{d}z",
-      "four_way_status": "conflict",
-      "reason": "平票或多个不同答案"
-    }
-  ]
+  "manual_items": []
 }
