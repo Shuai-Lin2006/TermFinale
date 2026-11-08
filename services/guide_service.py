@@ -602,6 +602,8 @@ def run_guide(
         logger.warning("质量校验: {}", issue)
 
     final_markdown = "\n\n---\n\n".join(limit_image_stacking(md) for _, md in chapter_mds)
+    # 整篇再闭合一次：章节拼接/图片回注后仍可能留下未闭合的 $$。
+    final_markdown, _math_fixes = close_inline_math(final_markdown)
     outro_lang = "en" if lang == "English" else "zh"
     final_markdown, _final_img = sanitize_images(final_markdown, source_text)
     final_markdown, _sem_drop = validate_image_semantics(final_markdown, source_text)
