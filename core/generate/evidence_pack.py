@@ -11,6 +11,7 @@ PAGE_HEADER_RE = re.compile(r"》\s*第\s*(\d+)\s*页】")
 IMAGE_RE = re.compile(r"\[\[\[IMAGE:.*?\]\]\]", re.S)
 AD_RE = re.compile(r"(?:QQ\s*群|公众号|蜂考|扫码|关注)")
 MATERIAL_PREFIX_RE = re.compile(r"^【[^】]*(?:资料|权重)[^】]*】\s*")
+FILE_HEADER_RE = re.compile(r"^【《[^》]+》[^】]*】\s*")
 SPLIT_RE = re.compile(r"(?<=[。！？!?；;])\s*")
 
 
@@ -23,6 +24,7 @@ class Evidence:
 
 def _clean(page: str) -> str:
     t = MATERIAL_PREFIX_RE.sub("", page or "")
+    t = FILE_HEADER_RE.sub("", t)
     t = PAGE_HEADER_RE.sub("", t)
     t = IMAGE_RE.sub("", t)
     lines = [ln.strip() for ln in t.splitlines() if ln.strip() and not AD_RE.search(ln)]

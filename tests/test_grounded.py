@@ -22,3 +22,10 @@ class GroundedTest(unittest.TestCase):
         self.assertIn("见到 y", out)
         self.assertNotIn("编了一句", out)
         self.assertEqual((kept, dropped), (1, 1))
+
+    def test_metadata_quote_rejected(self):
+        pack = build_pack(PAGES)
+        md = "> 原文：【《高数》第 1 页】隐函数求导（P.1）\n**讲解**：假引文。\n"
+        out, kept, dropped = validate_quotes(md, pack)
+        self.assertEqual(kept, 0)
+        self.assertEqual(dropped, 1)

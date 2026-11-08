@@ -13,12 +13,13 @@ from loguru import logger
 from core.ai_vision import analyze_image_with_ai
 from core import paths
 from core.parsing import figures as figure_lib
+from core.quality.text_quality import is_low_quality_page
 
 IMG_DIR = str(paths.assets_dir())
 paths.ensure_dirs()
 
 # 解析行为变更时递增：解析缓存 key 会带上它，旧缓存自动失效。
-PARSER_VERSION = "2026-11-08.4"
+PARSER_VERSION = "2026-11-08.5"
 
 FIG_DPI = 180
 OCR_DPI = 120
@@ -561,6 +562,17 @@ def extract_text_from_file(file_path: str, on_progress=None) -> list:
 
                     # 混合扫描件：这一页没有文字层，但有图/矢量内容 → 单页 OCR。
                     plain = re.sub(r"\[\[\[IMAGE:.*?\]\]\]", "", page_text, flags=re.S).strip()
+                    # 有文字层但文本层是公式乱码/单字母串：同样单页 OCR 回退。
+                    if plain and is_low_quality_page(plain):
+                        ocr_txt = ""
+                        try:
+                            ocr_txt = _clean_ocr_text(_ocr_page(page) or "")
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("PDF 第 {} 页乱码 OCR 异常: {}", page_num + 1, str(exc)[:80])
+                        if ocr_txt.strip() and len(ocr_txt) >= max(20, int(len(plain) * 0.45)):
+                            logger.info("PDF 第 {} 页文本层乱码，已用 OCR 替换（{}→{} 字）",
+                                        page_num + 1, len(plain), len(ocr_txt))
+                            page_text = ocr_txt + ("\n" + page_text if page_text.strip() else "")
                     if not plain and (page.get_images() or page.get_drawings()):
                         ocr_txt = ""
                         for _attempt in (1, 2):

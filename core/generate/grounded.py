@@ -33,6 +33,12 @@ def validate_quotes(markdown: str, pack) -> tuple[str, int, int]:
         if not m:
             out.append(line); i += 1; continue
         quote, page = m.group(1), int(m.group(2))
+        if any(x in quote for x in ("【《", "重点资料", "辅助资料", "资料页")):
+            dropped += 1
+            i += 1
+            while i < len(lines) and not lines[i].startswith(("#", "> 原文")):
+                i += 1
+            continue
         qn = _norm(quote)
         ok = any(qn and qn in _norm(e.quote) and e.page == page for e in pack)
         if not ok:
@@ -75,7 +81,8 @@ def generate_grounded_chapter(raw_text: str, course, persona: str = "老师", us
 1. 只允许使用证据句库里的原句做“> 原文”，不得改写引文；
 2. 每个小节至少一条原文；讲解要围绕原文，不能写资料没有的结论；
 3. 目标篇幅约 {target} 字；{('学生薄弱点必须加讲：' + weak) if weak else ''}
-4. 不要输出结语/客套；不要重复证据句；不要编页码。
+4. 不要输出结语/客套/方法说明/“扫描残缺/无法还原/复习建议”等元话语；只写学科内容。
+5. 每个小节至少 2 条原文；全文尽量覆盖证据库里 8 条以上不同证据。
 {constraint_block}
 {retry_note}
 """
