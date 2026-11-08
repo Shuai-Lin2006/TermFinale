@@ -56,6 +56,9 @@ class EvidenceReport:
 
 
 def audit_evidence(markdown: str, pages: list[str], threshold: float = 0.30) -> EvidenceReport:
+    # 页码索引是来源地图，不是生成论据；不计入逐句证据率
+    if "## 资料页码索引" in (markdown or ""):
+        markdown = markdown.split("## 资料页码索引", 1)[0]
     page_map = _page_texts(pages)
     report = EvidenceReport()
     if not page_map:

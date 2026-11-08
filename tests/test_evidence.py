@@ -31,3 +31,28 @@ class EvidenceTest(unittest.TestCase):
         r = audit_evidence(md, PAGES)
         self.assertEqual(r.total, 1)
         self.assertEqual(r.no_citation, 1)
+
+
+class RepairTest(unittest.TestCase):
+    def test_repairs_only_with_source_match(self):
+        from core.quality.evidence import repair_citations
+        md = "### 隐函数\n\n方程两边对 x 求导再解出 y'，这是隐函数求导的核心。"
+        out, n = repair_citations(md, PAGES)
+        self.assertEqual(n, 1)
+        self.assertIn("（P.1）", out)
+
+    def test_unrelated_not_repaired(self):
+        from core.quality.evidence import repair_citations
+        md = "### 无关\n\n量子力学波函数坍缩与薛定谔方程。"
+        out, n = repair_citations(md, PAGES)
+        self.assertEqual(n, 0)
+        self.assertNotIn("（P.", out)
+
+
+class IndexSectionTest(unittest.TestCase):
+    def test_index_section_not_evidence(self):
+        md = ("### 隐函数\n\n隐函数求导：方程两边对 x 求导，再解出 y'（P.1）。\n\n"
+              "## 资料页码索引\n\n> 原文：【本页无可用文字】（P.2）\n")
+        r = audit_evidence(md, PAGES)
+        self.assertEqual(r.total, 1)
+        self.assertEqual(r.supported, 1)

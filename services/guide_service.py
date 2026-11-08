@@ -219,7 +219,17 @@ def append_missing_page_index(markdown: str, pages: list[str], bans: list[str] |
         parts.append(f"### 第 {n} 页\n\n> 原文：{quote}（P.{n}）\n\n**讲解**：该页已纳入覆盖索引；原文不足时请对照原资料。")
     if not parts:
         return markdown, 0
-    block = "\n\n---\n\n## 资料页码索引\n\n" + "\n\n".join(parts)
+    header = "## 资料页码索引"
+    body = "\n\n".join(parts)
+    if header in markdown:
+        # 第二次补页：并入已有索引，避免重复标题
+        pos = markdown.index(header) + len(header)
+        end = markdown.find("\n## ", pos)
+        if end == -1:
+            end = len(markdown)
+        markdown = markdown[:end].rstrip() + "\n\n" + body + "\n" + markdown[end:]
+        return markdown, len(parts)
+    block = "\n\n---\n\n## 资料页码索引\n\n" + body
     return markdown.rstrip() + block + "\n", len(parts)
 
 
