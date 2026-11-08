@@ -31,3 +31,9 @@ class CardGuideTest(unittest.TestCase):
         md = generate_card_chapter(raw, chapter={"title": "参数"}, ai_call=fake_ai)
         self.assertIn("（P.2）", md)
         self.assertNotIn("（P.1）", md)
+
+    def test_fallback_image_page(self):
+        raw = "【《高数》第 3 页】\n[[[IMAGE: f.png | 图注: 电路图（第 3 页）]]]"
+        md = generate_card_chapter(raw, chapter={"title": "图"}, ai_call=fake_ai)
+        self.assertIn("（P.3）", md)
+        self.assertIn("图示", md)
