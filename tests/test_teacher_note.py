@@ -72,7 +72,7 @@ class TopicValidationTest(unittest.TestCase):
     def test_body_mention_not_hard(self):
         c = TaskConstraints(task="guide", only_topics=["隐函数求导"])
         md = ("## 核心考点：导数\n\n### 1.1 隐函数求导\n\n"
-              "这里顺带提到极限的思想，但只讲隐函数求导（P.1）。")
+              "隐函数求导法，极限顺带（P.1）。")
         report = validate_output(md, c, source_text=MATH_SOURCE, stage="final")
         self.assertTrue(report.ok, report.issues)
 

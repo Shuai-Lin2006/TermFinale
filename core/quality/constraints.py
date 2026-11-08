@@ -644,6 +644,18 @@ def _check_guide(report: ValidationReport, text: str, c: TaskConstraints,
     report.metrics["chapters"] = chapters
     if chapters == 0:
         report.add("缺少 ## 级章节标题")
+    if source_text:
+        from core.quality.evidence import audit_evidence
+        _pages = [p for p in re.split(r"(?=【《.+?》第\s*\d+\s*页】)", source_text) if p.strip()]
+        _ev = audit_evidence(text, _pages)
+        report.metrics["evidence"] = {"rate": _ev.rate, "total": _ev.total,
+                                      "supported": _ev.supported,
+                                      "unsupported": _ev.unsupported,
+                                      "no_citation": _ev.no_citation}
+        if _ev.total and _ev.rate < 0.80:
+            report.add(f"逐句证据不足：{_ev.rate:.0%} 段有依据（{_ev.unsupported} 低依据 / {_ev.no_citation} 无页码）")
+        elif _ev.total and _ev.rate < 0.95:
+            report.warn(f"逐句证据率 {_ev.rate:.0%}，建议提升到 95%")
     if c.material_kind == "lecture" and "【考点" in text:
         report.warn("课堂讲义模式仍出现【考点】式应试标题")
 
