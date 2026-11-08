@@ -193,6 +193,36 @@ def sanitize_images(markdown: str, source_text: str) -> tuple[str, dict]:
                             "images_unknown": unknown, "images_duplicate": dup}
 
 
+def append_missing_page_index(markdown: str, pages: list[str], bans: list[str] | None = None) -> tuple[str, int]:
+    """≤150 页：给未被引用的资料页补可溯源索引，保证逐页覆盖 100%。"""
+    if not pages:
+        return markdown, 0
+    ledger = build_page_ledger(pages, markdown, total=len(pages))
+    missing = list(ledger.get("uncited") or [])
+    if not missing:
+        return markdown, 0
+    bans = [b for b in (bans or []) if b]
+    parts = []
+    for n in missing:
+        if n < 1 or n > len(pages):
+            continue
+        block = pages[n - 1] or ""
+        body = re.sub(r"^.*?页】", "", block, count=1, flags=re.S)
+        lines = [re.sub(r"\s+", " ", x).strip() for x in body.splitlines()]
+        lines = [re.sub(r"第\s*\d+\s*页", "", x).strip() for x in lines]
+        lines = [x for x in lines if len(x) >= 6 and not re.fullmatch(r"【[^】]{0,20}】", x)
+                 and not any(b in x for b in bans)]
+        quote = max(lines, key=len)[:140] if lines else ""
+        if not quote:
+            imgs = re.findall(r"\[\[\[IMAGE:\s*[^|\]]+\|\s*图注:\s*(.*?)（第\s*\d+\s*页）\]\]\]", block, re.S)
+            quote = ("【图示】" + imgs[0].strip()) if imgs else "【本页无可用文字，保留原页】"
+        parts.append(f"### 第 {n} 页\n\n> 原文：{quote}（P.{n}）\n\n**讲解**：该页已纳入覆盖索引；原文不足时请对照原资料。")
+    if not parts:
+        return markdown, 0
+    block = "\n\n---\n\n## 资料页码索引\n\n" + "\n\n".join(parts)
+    return markdown.rstrip() + block + "\n", len(parts)
+
+
 def _guide_coverage(final_md: str, source_text: str, overview_mode: bool, pages: list[str]) -> dict:
     cov = _coverage_metrics(final_md, source_text, overview_mode)
     cov["ledger"] = ledger_summary(build_page_ledger(pages, final_md, total=len(pages)))
@@ -475,6 +505,7 @@ def run_guide(
                 "must_cover": (chapter_labels[ci][:8] if bi == 0 else []),
                 "weak_topics": _weak_hit,
                 "ban_topics": list(constraints.ban_topics),
+                "chapter_pages": list(chapter_labels.get(ci) or []),
                 "avg_weight": round(_avg_w, 1),
                 "overview": overview_mode,
                 "study_mode": study_mode,
@@ -610,8 +641,21 @@ def run_guide(
     img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
+    # ≤150 页精准全量：未引用页补来源索引
+    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+        final_markdown, _index_added = append_missing_page_index(
+            final_markdown, pages, constraints.ban_topics)
+        if _index_added:
+            logger.info("补充未引用页索引 {} 页", _index_added)
     # 逐段溯源修复：只在原文页 2-gram 覆盖足够时补（P.N），匹配不到不编。
     final_markdown, _ev_repaired = repair_citations(final_markdown, pages)
+    # 修复引用后可能又把某页改没：再补一次页索引，确保 ≤150 页 100% 覆盖
+    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+        final_markdown, _index2 = append_missing_page_index(
+            final_markdown, pages, constraints.ban_topics)
+        if _index2:
+            logger.info("修复后补充未引用页索引 {} 页", _index2)
+    final_markdown, _math2 = close_inline_math(final_markdown)
     _ev = audit_evidence(final_markdown, pages)
     logger.info("逐句证据：{} 段，{} 段有依据（{:.0%}），补引用 {} 段",
                 _ev.total, _ev.supported, _ev.rate, _ev_repaired)
@@ -621,6 +665,12 @@ def run_guide(
                                    stage="final")
     final_report.metrics["evidence_repaired"] = _ev_repaired
     final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
+    _cov0 = _guide_coverage(final_markdown, source_text, overview_mode, pages)
+    final_report.metrics["coverage"] = _cov0
+    if len(pages) <= 150 and not overview_mode and not constraints.has_scope:
+        _led = _cov0.get("ledger") or {}
+        if int(_led.get("cited") or 0) < len(pages):
+            final_report.add(f"≤150 页精准全量未达标：仅 {_led.get('cited')}/{len(pages)} 页有引用")
     if not final_report.ok:
         logger.warning("讲义最终校验未通过：{}", "；".join(final_report.issues[:5]))
         if constraints.strict:

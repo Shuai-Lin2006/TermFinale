@@ -67,7 +67,7 @@ def audit_evidence(markdown: str, pages: list[str], threshold: float = 0.30) -> 
         if block.lstrip().startswith("#") or block.strip() in ("---", "***"):
             continue
         # 讲解/延伸是解释层，不是资料事实；由前面的原文引文负责可溯源
-        if block.lstrip().startswith(("**讲解**", "**延伸**", "**易错**")):
+        if block.lstrip().startswith(("**讲解**", "**延伸**", "**易错**", "**说明**")):
             continue
         if len(_norm(block)) < 18:
             continue

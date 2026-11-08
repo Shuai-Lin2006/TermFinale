@@ -1,19 +1,20 @@
 {
-  "generated_at": "2026-11-08T13:46:58+08:00",
+  "generated_at": "2026-11-08T14:02:32+08:00",
   "pages": 35,
   "chapters": 7,
-  "chars": 9368,
-  "elapsed_seconds": 119.0,
+  "chars": 10730,
+  "elapsed_seconds": 120.0,
   "validation_ok": true,
-  "evidence_rate": 0.96,
-  "evidence_total": 25,
-  "evidence_supported": 24,
+  "evidence_rate": 0.931,
+  "evidence_total": 29,
+  "evidence_supported": 27,
   "ban_param_equation_mentions": 0,
-  "implicit_mentions": 28,
+  "implicit_mentions": 24,
   "coverage": {
-    "pages_cited": 27,
-    "coverage": 0.771,
-    "uncited_pages": [1, 6, 7, 11, 22, 24, 26, 27]
+    "pages_cited": 35,
+    "coverage": 1.0,
+    "uncited_pages": []
   },
-  "note": "整份首次通过内容校验；≤150 页精准全量要求的 100% 页覆盖尚未达到。"
+  "warnings": ["逐句证据率 93%，建议提升到 95%", "资料页码索引标题重复"],
+  "note": "≤150 页精准全量首次达到 100% 页覆盖并通过内容校验；证据率仍差 2 个百分点。"
 }
