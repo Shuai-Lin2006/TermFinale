@@ -673,6 +673,11 @@ def run_guide(
     img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
+    # 必需配图保底：全量源图标签里仍缺的，按来源页插回；避免步骤/界面图被静默丢弃。
+    _all_tags = re.findall(r"\[\[\[IMAGE:[^\n]*?\]\]\]", source_text)
+    final_markdown, _img_guaranteed = reinject_missing_images(final_markdown, _all_tags)
+    if _img_guaranteed:
+        logger.info("最终保底回注必需配图 {} 张", _img_guaranteed)
     # ≤150 页精准全量：未引用页补来源索引
     if (len(pages) <= 1000 or long_broad_mode) and not constraints.has_scope:
         final_markdown, _index_added = append_missing_page_index(

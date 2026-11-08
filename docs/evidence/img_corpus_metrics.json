@@ -1,0 +1,42 @@
+{
+  "file": "说明书教程类测试·图文长表格混排33页.pdf",
+  "pages": 33,
+  "chars": 22228,
+  "elapsed": 253.3,
+  "validation_ok": true,
+  "coverage": {
+    "pages": 33,
+    "pages_cited": 33,
+    "coverage": 1.0,
+    "ledger": {
+      "pages": 33,
+      "accounted": 33,
+      "cited": 33,
+      "missing_entries": [],
+      "uncited": [],
+      "placeholder": [],
+      "image_only": [],
+      "short": [],
+      "status_counts": {
+        "cited": 33,
+        "uncited": 0,
+        "short": 0,
+        "image_only": 0,
+        "placeholder": 0
+      }
+    }
+  },
+  "evidence": {
+    "rate": 0.905,
+    "total": 95,
+    "supported": 86,
+    "unsupported": 9,
+    "no_citation": 0
+  },
+  "images_source": 24,
+  "images_used": 21,
+  "image_pair_total": 24,
+  "image_pair_ok": 24,
+  "image_pair_rate": 1.0,
+  "image_issues": []
+}
