@@ -396,3 +396,16 @@ class MaterialNoteTest(unittest.TestCase):
         self.assertTrue(seen)
         self.assertIn("老师说明：这块我不会，多讲", seen[0])
         self.assertIn("权重5", seen[0])
+
+
+class ReinjectImagesTest(unittest.TestCase):
+    def test_more_than_two_images_kept_by_page(self):
+        md = "正文（P.6）。\n\n正文（P.21）。\n"
+        tags = [
+            "[[[IMAGE: a.png | 图注: A（第 6 页）]]]",
+            "[[[IMAGE: b.png | 图注: B（第 6 页）]]]",
+            "[[[IMAGE: c.png | 图注: C（第 21 页）]]]",
+        ]
+        out, n = guide_service.reinject_missing_images(md, tags)
+        self.assertEqual(n, 3)
+        self.assertIn("a.png", out); self.assertIn("c.png", out)

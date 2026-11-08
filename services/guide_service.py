@@ -95,17 +95,30 @@ def truncate_pages(core_pages: list, ref_pages: list, core_ratio: float) -> tupl
 
 
 def reinject_missing_images(markdown: str, tags: list[str]) -> tuple[str, int]:
-    """AI 丢掉的图片标签补在本章末尾（带小标题），保证图不丢且不打断段落。"""
+    """AI 丢掉的图片按来源页分组插回对应段落，避免章末堆图/张冠李戴。"""
     missing = [t for t in tags if t not in markdown]
     if not missing:
         return markdown, 0
-    # 丢失较多时不强行堆到章末：那会把不同页的图挤在一起，造成张冠李戴
-    if len(missing) > 2:
-        return markdown, 0
-    block = "#### 📷 配图\n\n" + "\n\n".join(missing)
-    return markdown.rstrip() + "\n\n" + block + "\n", len(missing)
-
-
+    by_page: dict[int, list[str]] = {}
+    for t in missing:
+        m = re.search(r"（第\s*(\d+)\s*页）", t)
+        by_page.setdefault(int(m.group(1)) if m else 0, []).append(t)
+    out = markdown
+    count = 0
+    for page, group in sorted(by_page.items()):
+        block = (f"#### 📷 配图（P.{page}）\n\n" if page else "#### 📷 配图\n\n") + "\n\n".join(group)
+        # 插到引用该页的段落之后；找不到再放章末
+        pat = re.compile(rf"(?m)^.*(?:P\.?{page}|第\s*{page}\s*页).*$")
+        m = pat.search(out)
+        if m:
+            pos = out.find("\n\n", m.end())
+            if pos == -1:
+                pos = len(out)
+            out = out[:pos] + "\n\n" + block + "\n" + out[pos:]
+        else:
+            out = out.rstrip() + "\n\n" + block + "\n"
+        count += len(group)
+    return out, count
 
 def limit_image_stacking(markdown: str, min_gap: int = 400) -> str:
     """任意 3 张图不得挤在 400 字符内；超出者删除。"""
