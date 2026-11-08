@@ -829,8 +829,12 @@ async def job_events(job_id: str):
 
 @app.post("/api/ask")
 async def ask(payload: dict):
+    # 有课程上下文 → 课程级检索问答；旧导出 HTML 没课程 → 片段问答兼容
+    if payload.get("course_id"):
+        from core.tutor import ask_course
+        return await asyncio.to_thread(ask_course, payload)
     from core.local_bridge import _answer
-    return {"answer": await asyncio.to_thread(_answer, payload)}
+    return {"answer": await asyncio.to_thread(_answer, payload), "sources": []}
 
 
 @app.get("/api/notes")
