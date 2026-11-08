@@ -14,7 +14,7 @@
       "status": "conflict",
       "d": "f(x)=\\frac{1}{2}(\\ln x)^2",
       "four_way_status": "agree",
-      "final": "",
+      "final": "f(x)=\\frac{1}{2}x\\ln x-\\frac{1}{2}x+\\frac{1}{2}",
       "reason": "2/3 多数"
     },
     {
@@ -36,7 +36,7 @@
       "status": "conflict",
       "d": "\\frac{\\pi}{4}-\\frac{2}{3}",
       "four_way_status": "agree",
-      "final": "",
+      "final": "\\frac{\\pi}{4}-\\frac{1}{2}",
       "reason": "2/3 多数"
     },
     {
@@ -275,7 +275,7 @@
       "status": "conflict",
       "d": "",
       "four_way_status": "conflict",
-      "final": "",
+      "final": "收敛半径 R=1；收敛域 [-1,1)；和函数 S(x)=-\\ln(1+x)，-1\\le x<1",
       "reason": "仅一个模型作答"
     },
     {
@@ -286,7 +286,7 @@
       "status": "conflict",
       "d": "",
       "four_way_status": "conflict",
-      "final": "",
+      "final": "\\frac{1}{2}",
       "reason": "仅一个模型作答"
     },
     {
@@ -297,7 +297,7 @@
       "status": "conflict",
       "d": "",
       "four_way_status": "conflict",
-      "final": "",
+      "final": "\\frac{\\mathrm{d}u}{\\mathrm{d}x}=e^{ax}\\cos x",
       "reason": "仅一个模型作答"
     },
     {
@@ -308,7 +308,7 @@
       "status": "conflict",
       "d": "",
       "four_way_status": "conflict",
-      "final": "",
+      "final": "\\frac{\\pi}{4}-1",
       "reason": "仅一个模型作答"
     },
     {
@@ -319,7 +319,7 @@
       "status": "conflict",
       "d": "",
       "four_way_status": "conflict",
-      "final": "",
+      "final": "f(x)=\\frac{1}{2}x\\ln x-\\frac{1}{2}x+\\frac{1}{2}",
       "reason": "仅一个模型作答"
     }
   ],
