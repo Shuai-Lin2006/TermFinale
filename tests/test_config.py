@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 os.environ.setdefault("TERMFINALE_HOME", tempfile.mkdtemp(prefix="tf_cfg_"))
 # 其它测试模块会 import core.exam_engine → load_env()；不跳过项目 .env 的话
@@ -17,9 +18,14 @@ from core import config  # noqa: E402
 
 class ConfigTest(unittest.TestCase):
     def test_missing_then_save(self):
-        self.assertIn("DEEPSEEK_API_KEY", config.missing_keys())
-
-        path = config.save_key("DEEPSEEK_API_KEY", "sk-test-123")
+        import tempfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            fake = Path(d) / ".env"
+            with patch.object(config, "user_env_path", return_value=fake):
+                config.save_key("DEEPSEEK_API_KEY", "sk-test-123")
+                self.assertTrue(fake.exists())
+                self.assertIn("DEEPSEEK_API_KEY=sk-test-123", fake.read_text(encoding="utf-8"))
         self.assertTrue(path.exists())
         self.assertIn("DEEPSEEK_API_KEY=sk-test-123", path.read_text(encoding="utf-8"))
         self.assertNotIn("DEEPSEEK_API_KEY", config.missing_keys())
