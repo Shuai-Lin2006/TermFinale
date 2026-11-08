@@ -30,6 +30,7 @@ from core.personas import OUTROS
 from core.quality.qa import check_chapters
 from core.quality.teacher_note import topic_matches
 from core.quality.page_ledger import build_page_ledger, ledger_summary
+from core.quality.evidence import audit_evidence, repair_citations
 from core.quality.constraints import (
     TaskConstraints,
     default_constraints,
@@ -578,10 +579,16 @@ def run_guide(
     img_totals.update({"source": _final_img["images_source"], "used": _final_img["images_used"],
                        "unknown": _final_img["images_unknown"], "duplicate": _final_img["images_duplicate"]})
     final_markdown = limit_image_stacking(final_markdown)
+    # 逐段溯源修复：只在原文页 2-gram 覆盖足够时补（P.N），匹配不到不编。
+    final_markdown, _ev_repaired = repair_citations(final_markdown, pages)
+    _ev = audit_evidence(final_markdown, pages)
+    logger.info("逐句证据：{} 段，{} 段有依据（{:.0%}），补引用 {} 段",
+                _ev.total, _ev.supported, _ev.rate, _ev_repaired)
 
     # 最终硬校验：排除项、页码范围、结构、答案要求（结语是固定文案，不参与校验）
     final_report = validate_output(final_markdown, constraints, source_text=source_text,
                                    stage="final")
+    final_report.metrics["evidence_repaired"] = _ev_repaired
     final_report.metrics["attempts"] = block_violations.metrics.get("attempts", 1)
     if not final_report.ok:
         logger.warning("讲义最终校验未通过：{}", "；".join(final_report.issues[:5]))

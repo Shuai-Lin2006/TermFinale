@@ -91,6 +91,7 @@ def generate_super_guide(raw_text: str, course: CourseInfo, persona: str = "老�
     【必须覆盖，一个都不能少】{must}
     【相邻章节（只用于避免重复，不要展开）】{neighbors}
     【篇幅要求】约 {target_words} 字（中文字符计），明显不足或大幅超出都算不合格。
+    【逐段溯源】每个自然段或每个要点结尾必须写（P.页码）；没有资料依据的句子直接删掉；不要只在章末标一次。
     【紧迫度】{chapter.get('urgency', '未评估')}
     【边界铁律】只讲本章范围；不得复述其他章节内容；不得自行新增无关知识点。
     【章节概览模式】{('这是 150 页以上资料的全书概览：只讲本章主线、必考点与范围边界，不要逐页展开；明确标注“概览”，不要假装逐页精讲。' if chapter.get('overview') else '')}

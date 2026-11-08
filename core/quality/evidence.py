@@ -97,3 +97,47 @@ def audit_evidence(markdown: str, pages: list[str], threshold: float = 0.30) -> 
                 f"低依据 {best:.0%}（{cites}）：" + block[:80])
     report.rate = round(report.supported / report.total, 3) if report.total else 0.0
     return report
+
+
+def repair_citations(markdown: str, pages: list[str], threshold: float = 0.35) -> tuple[str, int]:
+    """给没有页码/页码不支持的段落在原文页里找依据；匹配不到就不动。
+
+    只在 2-gram 覆盖足够时补（P.N），不是按段平均分配页码。
+    """
+    page_map = _page_texts(pages)
+    if not page_map:
+        return markdown or "", 0
+    page_grams = {n: _grams(t) for n, t in page_map.items()}
+    blocks = re.split(r"(\n\s*\n)", markdown or "")
+    repaired = 0
+    out = []
+    for block in blocks:
+        if not block or block.isspace() or block.strip() in ("---", "***"):
+            out.append(block); continue
+        if block.lstrip().startswith("#"):
+            out.append(block); continue
+        if len(_norm(block)) < 18:
+            out.append(block); continue
+        cites = [int(m.group(1) or m.group(2)) for m in CITE_RE.finditer(block)]
+        clean = CITE_RE.sub("", block)
+        cg = _grams(clean)
+        if not cg:
+            out.append(block); continue
+        best_n, best = None, 0.0
+        for n, pg in page_grams.items():
+            if not pg:
+                continue
+            score = len(cg & pg) / len(cg)
+            if score > best:
+                best_n, best = n, score
+        if best_n is None or best < threshold:
+            out.append(block); continue
+        if cites and best <= threshold and any(c in page_map for c in cites):
+            # 已有引用不算，避免覆盖正确引用
+            out.append(block); continue
+        # 无引用，或引用页本身匹配很低 → 改为最佳真实页
+        new_block = CITE_RE.sub("", block).rstrip()
+        new_block = new_block + f"（P.{best_n}）"
+        out.append(new_block)
+        repaired += 1
+    return "".join(out), repaired
