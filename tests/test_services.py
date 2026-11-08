@@ -33,11 +33,15 @@ def _ensure_course(course_id: int = 9001) -> None:
     init_db()
     db = get_db_session()
     try:
-        if not db.query(Course).filter(Course.id == course_id).first():
+        c = db.query(Course).filter(Course.id == course_id).first()
+        if not c:
             db.add(Course(id=course_id, name=COURSE["name"], major="测试",
                           school_level="一本", credits=3.0, days_left=7,
                           target_score=80, user_difficulty=3, self_difficulty=3,
-                          foundation=3, is_major=True, persona="老师"))
+                          foundation=3, is_major=True, persona="老师", is_test=True))
+            db.commit()
+        elif not getattr(c, "is_test", False):
+            c.is_test = True
             db.commit()
     finally:
         db.close()
