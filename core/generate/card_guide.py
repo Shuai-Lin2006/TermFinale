@@ -19,6 +19,7 @@ BATCH = 6
 def _clean_explain(text: str, bans: list[str]) -> str:
     t = re.sub(r"\s+", " ", str(text or "")).strip()
     t = re.sub(r"[（(]\s*P?\.?\s*\d+\s*[)）]", "", t)
+    t = re.sub(r"第\s*\d+\s*页", "", t)
     if len(t) < 8:
         return ""
     if any(b and b in t for b in bans):
@@ -120,6 +121,9 @@ def _fallback_cards(pages: list[str], page_hints: list[int] | None = None, bans:
         if imgs:
             quote = f"【图示】{imgs[0][1].strip() or '第' + str(n) + '页图示'}"
             out.append(Evidence(f"E{len(out) + 1}", n, quote))
+        else:
+            # 纯空白页也要保留来源，不能返回空块导致整份失败
+            out.append(Evidence(f"E{len(out) + 1}", n, "【本页无可用文字，保留原页】"))
     return out
 
 

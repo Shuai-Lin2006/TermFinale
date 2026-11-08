@@ -1,0 +1,8 @@
+{
+  "runs": [
+    {"file": "说明书教程类测试·图文长表格混排33页.pdf", "pages": 33, "coverage": 1.0, "evidence": 0.913, "images_source": 23, "images_used": 21, "pair_total": 21, "pair_ok": 21, "pair_rate": 1.0},
+    {"file": "历史学测试·复杂地图 40页.pdf", "pages": 40, "coverage": 1.0, "evidence": 0.944, "images_source": 9, "images_used": 9, "pair_total": 9, "pair_ok": 9, "pair_rate": 1.0},
+    {"file": "电工类测试·电路图类·85页.pptx", "pages": 85, "coverage": 1.0, "evidence": 1.0, "images_source": 6, "images_used": 6, "pair_total": 5, "pair_ok": 5, "pair_rate": 1.0}
+  ],
+  "aggregate": {"pair_total": 35, "pair_ok": 35, "pair_rate": 1.0, "note": "观察值 100%，样本 35 张，未达到 100+ 张的统计置信度；不能据此宣称整体 ≥99%。"}
+}

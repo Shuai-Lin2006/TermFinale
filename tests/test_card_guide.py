@@ -52,3 +52,13 @@ class CardGuideTest(unittest.TestCase):
         raw = "【《高数》第 1 页】\n\\begin{aligned} x+1"
         md = generate_card_chapter(raw, chapter={"title": "x"}, ai_call=fake_ai)
         self.assertNotIn("\\begin", md)
+
+    def test_blank_page_creates_placeholder(self):
+        raw = "【《高数》第 5 页】\n"
+        md = generate_card_chapter(raw, chapter={"title": "空页"}, ai_call=fake_ai)
+        self.assertIn("（P.5）", md)
+        self.assertIn("保留原页", md)
+
+    def test_explain_strips_source_page_ref(self):
+        from core.generate.card_guide import _clean_explain
+        self.assertNotIn("第104页", _clean_explain("见第104页", []))
