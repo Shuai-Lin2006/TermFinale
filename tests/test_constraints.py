@@ -477,3 +477,18 @@ class FigureReferenceTest(unittest.TestCase):
               "# 答案与解析\n\n## 一、单项选择题\n1. **A**。\n")
         r = validate_output(md, c, source_text="", stage="final")
         self.assertTrue(any("没有图/图示描述" in x for x in r.issues), r.issues)
+
+
+class MathFixTest(unittest.TestCase):
+    def test_odd_inline_dollar_closed(self):
+        from core.quality.mathfix import close_inline_math
+        out, n = close_inline_math("这里 $x+1 没闭合\n\n```\n$x\n```")
+        self.assertEqual(n, 1)
+        self.assertTrue(out.splitlines()[0].endswith("$"))
+        self.assertEqual(out.splitlines()[0].count("$") % 2, 0)
+
+    def test_unclosed_display_math_closed(self):
+        from core.quality.mathfix import close_inline_math
+        out, n = close_inline_math("正文\n$$\nx+1")
+        self.assertEqual(n, 1)
+        self.assertEqual(out.count("$$") % 2, 0)

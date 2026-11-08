@@ -31,6 +31,7 @@ from core.quality.qa import check_chapters
 from core.quality.teacher_note import topic_matches
 from core.quality.page_ledger import build_page_ledger, ledger_summary
 from core.quality.evidence import audit_evidence, repair_citations
+from core.quality.mathfix import close_inline_math
 from core.quality.constraints import (
     TaskConstraints,
     default_constraints,
@@ -414,6 +415,14 @@ def run_guide(
                     pages, chapters=min(12, max(6, len(pages) // 80)))
             outline_store.save(cache_key, outline)
     outline = clean_outline_titles(outline)
+    # 老师明确不考的章节，不要生成后再撞硬校验：大纲阶段剔除
+    if constraints.ban_topics:
+        _kept = [c for c in outline.chapters
+                 if not any(topic_matches(c.title, b) for b in constraints.ban_topics)]
+        if len(_kept) != len(outline.chapters):
+            logger.info("按老师不考剔除 {} 章：{}", len(outline.chapters) - len(_kept),
+                        "、".join(c.title for c in outline.chapters if c not in _kept))
+            outline.chapters = _kept
     if not outline.chapters:
         raise RuntimeError("无法规划章节结构")
 
@@ -465,6 +474,7 @@ def run_guide(
                 "urgency": urgency_text,
                 "must_cover": (chapter_labels[ci][:8] if bi == 0 else []),
                 "weak_topics": _weak_hit,
+                "ban_topics": list(constraints.ban_topics),
                 "avg_weight": round(_avg_w, 1),
                 "overview": overview_mode,
                 "study_mode": study_mode,
@@ -496,10 +506,12 @@ def run_guide(
             if feedback:
                 note = (user_note + "\n\n" + feedback).strip() if user_note else feedback
             try:
-                return generator(f"【本章资料】\n{payload}", info, persona=persona,
-                                 user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
-                                 chapter=context, user_note=note,
-                                 constraint_block=constraint_block)
+                raw = generator(f"【本章资料】\n{payload}", info, persona=persona,
+                                user_choice=user_choice, weight_prompt=weight_prompt, lang=lang,
+                                chapter=context, user_note=note,
+                                constraint_block=constraint_block)
+                raw, _fixes = close_inline_math(raw)
+                return raw
             except Exception as exc:  # noqa: BLE001
                 logger.error("第 {} 章第 {} 块生成异常: {}", ci + 1, bi + 1, exc)
                 return ""
