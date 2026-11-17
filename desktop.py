@@ -75,9 +75,20 @@ def _serve_v2() -> None:
 
 def _serve_product() -> None:
     """v3 学习台：桌面默认入口，读 v2 artifact + 本地学习数据。"""
-    import uvicorn
-    from tfv2.api.product_app import app as product_app
-    uvicorn.run(product_app, host="127.0.0.1", port=PRODUCT_PORT, log_level="warning")
+    try:
+        import traceback
+        import uvicorn
+        from tfv2.api.product_app import app as product_app
+        uvicorn.run(product_app, host="127.0.0.1", port=PRODUCT_PORT, log_level="warning")
+    except BaseException:
+        try:
+            from core import paths
+            paths.ensure_dirs()
+            log = paths.logs_dir() / "server_error.log"
+            log.write_text(traceback.format_exc(), encoding="utf-8")
+        except Exception:
+            pass
+        raise
 
 
 def _port_up(port: int) -> bool:
@@ -88,7 +99,7 @@ def _port_up(port: int) -> bool:
         return False
 
 
-def _wait_server(timeout: float = 25.0) -> bool:
+def _wait_server(timeout: float = 90.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
