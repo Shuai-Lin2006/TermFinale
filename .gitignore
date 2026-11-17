@@ -70,3 +70,9 @@ deliverables/
 
 # 根目录真实试卷扫描件（有版权，不入库）
 /*.pdf
+
+# 本地保留的内部开发文档（不进入公开仓库）
+_internal_docs/
+
+# 截图检查报告
+docs/screenshots/*report.json

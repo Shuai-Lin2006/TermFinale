@@ -1,9 +1,0 @@
-{
-  "ledger": [
-    {"file": "电工类测试·电路图类·85页.pptx", "source": 5, "used": 5, "missing": [], "orphan": []},
-    {"file": "说明书教程类测试·图文长表格混排33页.pdf", "source": 24, "used": 21, "missing": ["fig_cefb543d_p20_1.png(P.20)", "fig_cefb543d_p20_2.png(P.20)", "fig_cefb543d_p22_4.png(P.22)"], "orphan": []},
-    {"file": "医学带图的.pdf", "source": 8, "used": 8, "missing": [], "orphan": []},
-    {"file": "历史学测试·复杂地图 40页.pdf", "source": 8, "used": 8, "missing": [], "orphan": ["来源标签未匹配"]}
-  ],
-  "note": "逐图账本证明：43/43 只是已采用图配对，源图并未全部进入讲义。"
-}
