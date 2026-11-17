@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
     env:
       PYTHONUTF8: "1"
       PYTHONIOENCODING: "utf-8"
@@ -33,6 +35,20 @@ jobs:
         run: |
           $ver = (Get-Content VERSION).Trim()
           Compress-Archive -Path "dist\TermFinale\*" -DestinationPath "TermFinale-$ver-win-x64.zip" -Force
+
+      - name: Upload to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ver = (Get-Content VERSION).Trim()
+          $tag = "v$ver"
+          $zip = "TermFinale-$ver-win-x64.zip"
+          if (gh release view $tag 2>$null) {
+            gh release upload $tag $zip --clobber
+          } else {
+            Write-Host "Release $tag not found; artifact kept only."
+          }
 
       - uses: actions/upload-artifact@v4
         with:
