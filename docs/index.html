@@ -378,7 +378,8 @@
     .then(function (rel) {
       var assets = rel.assets || [];
       var mac = pick(assets, ["mac"]) || pick(assets, ["darwin"]);
-      var win = pick(assets, ["win"]) || pick(assets, ["windows"]);
+      var winSetup = pick(assets, ["win", "setup"]);
+      var win = winSetup || pick(assets, ["win"]) || pick(assets, ["windows"]);
       var tag = rel.tag_name || rel.name || "";
       if (els.note) els.note.innerHTML = "最新版本 <b>" + tag + "</b> · 发布于 " + String(rel.published_at || "").slice(0, 10) + " · 安装包自动更新链接";
       setBtn(els.macBtn, mac, "Mac 下载", "Mac 构建中");

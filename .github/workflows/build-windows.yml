@@ -36,6 +36,13 @@ jobs:
           $ver = (Get-Content VERSION).Trim()
           Compress-Archive -Path "dist\TermFinale\*" -DestinationPath "TermFinale-$ver-win-x64.zip" -Force
 
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "installer\TermFinale.iss"
+
       - name: Upload to GitHub Release
         shell: pwsh
         env:
@@ -44,8 +51,9 @@ jobs:
           $ver = (Get-Content VERSION).Trim()
           $tag = "v$ver"
           $zip = "TermFinale-$ver-win-x64.zip"
+          $setup = "dist\TermFinale-$ver-win-x64-setup.exe"
           if (gh release view $tag 2>$null) {
-            gh release upload $tag $zip --clobber
+            gh release upload $tag $zip $setup --clobber
           } else {
             Write-Host "Release $tag not found; artifact kept only."
           }
@@ -53,5 +61,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: termfinale-windows
-          path: TermFinale-*-win-x64.zip
+          path: |
+            TermFinale-*-win-x64.zip
+            dist/TermFinale-*-win-x64-setup.exe
           retention-days: 30
