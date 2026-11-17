@@ -41,7 +41,7 @@ TermFinale 是一个**本地优先**的桌面应用：导入 PDF / PPT / Word / 
 
 | 质量报告 | 阅读器 |
 |---|---|
-| ![质量报告](docs/screenshots/readme-artifact.png) | ![阅读器](docs/screenshots/ui-reader.png) |
+| ![质量报告](docs/screenshots/readme-artifact.png) | ![阅读器](docs/screenshots/readme-reader.png) |
 
 ---
 
