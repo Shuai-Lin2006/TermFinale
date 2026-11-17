@@ -74,8 +74,10 @@ def main() -> None:
             try:
                 from desktop import main as web_main
 
-                if web_main() == 0:
+                result = web_main()
+                if result == 0:
                     return
+                raise RuntimeError(f"WebView 外壳返回 {result}")
             except Exception:
                 write_crash("WebView 外壳启动失败，改用 Edge 窗口\n" + traceback.format_exc())
                 os.environ["TERMFINALE_UI"] = "edge"

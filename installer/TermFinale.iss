@@ -1,6 +1,6 @@
 ; TermFinale Windows 安装包（Inno Setup 6）
 #define MyAppName "TermFinale"
-#define MyAppVersion "0.4.0"
+#define MyAppVersion "0.4.1"
 #define MyAppPublisher "Lan"
 #define MyAppExeName "TermFinale.exe"
 
