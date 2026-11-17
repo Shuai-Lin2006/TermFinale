@@ -28,11 +28,12 @@ def setup_logging(level: str = "INFO", console: bool = True) -> Path | None:
         return paths.logs_dir()
 
     logger.remove()
-    if console:
+    stream = sys.stderr or sys.stdout
+    if console and stream is not None:
         logger.add(
-            sys.stderr,
+            stream,
             level=level,
-            colorize=sys.stderr.isatty(),
+            colorize=bool(getattr(stream, "isatty", lambda: False)()),
             format=_FORMAT,
             backtrace=False,
             diagnose=False,

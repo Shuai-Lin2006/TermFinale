@@ -47,6 +47,8 @@ hiddenimports = [
     "httpx",
     "loguru",
     "webview",
+    "clr",
+    "pythonnet",
     "uvicorn",
     "fastapi",
     "starlette",
