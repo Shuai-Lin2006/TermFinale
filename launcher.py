@@ -16,6 +16,17 @@ from pathlib import Path
 os.environ.setdefault("TERMFINALE_TYPST", "1")
 
 
+
+
+def _ensure_stdio() -> None:
+    """窗口模式（console=False）下 sys.stdout/stderr 可能是 None，uvicorn/logging 会崩。"""
+    import os
+    import sys
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
 def _candidate_log_dirs() -> list[Path]:
     dirs: list[Path] = []
     try:
@@ -61,6 +72,7 @@ def _notify(text: str, where: str | None) -> None:
 
 
 def main() -> None:
+    _ensure_stdio()
     try:
         from core.single_instance import acquire
 

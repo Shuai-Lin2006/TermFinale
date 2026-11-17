@@ -287,6 +287,17 @@ class SplashBridge:
         return True
 
 
+
+
+def _ensure_stdio() -> None:
+    """窗口模式（console=False）下 sys.stdout/stderr 可能是 None，uvicorn/logging 会崩。"""
+    import os
+    import sys
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
 def _find_edge() -> str | None:
     if sys.platform == "win32":
         roots = [
@@ -338,6 +349,7 @@ def _open_edge_app(url: str) -> int:
     return 0
 
 def main() -> int:
+    _ensure_stdio()
     from core import config, paths
 
     config.load_env()
@@ -411,7 +423,7 @@ def main() -> int:
     try:
         from core.build_info import VERSION as _VERSION
     except Exception:
-        _VERSION = "0.4.3"
+        _VERSION = "0.4.4"
     main_window = webview.create_window(
         f"TermFinale {_VERSION}",
         f"http://127.0.0.1:{PRODUCT_PORT}/",
