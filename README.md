@@ -128,7 +128,16 @@ Key 只写入本机用户目录的 `.env`，不会上传；随时可以删除或
 - macOS 或 Windows
 - 可选：本地 MinerU 环境（扫描件 OCR），不装也能处理文字版 PDF
 
-### 安装
+### Windows 一键打包（推荐）
+
+1. 安装 [Python 3.12](https://www.python.org/downloads/release/python-31210/)（安装时勾选 **Add python.exe to PATH**）
+2. 在 GitHub 页面点 **Code → Download ZIP**，解压
+3. 双击解压目录里的 **`build_windows.bat`**
+4. 等 3–10 分钟，生成 `TermFinale-<版本>-win-x64.zip`
+
+不需要安装 Git，也不需要敲命令。
+
+### 从源码运行
 
 ```bash
 git clone https://github.com/Shuai-Lin2006/TermFinale.git
