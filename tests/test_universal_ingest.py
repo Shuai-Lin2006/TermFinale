@@ -1,12 +1,20 @@
 """Universal ingress: docx and pptx both produce PageLedger."""
 from __future__ import annotations
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from tfv2.ingest.universal import open_source
 
 
+def _has_soffice() -> bool:
+    if shutil.which("soffice"):
+        return True
+    return Path("/Applications/LibreOffice.app/Contents/MacOS/soffice").is_file()
+
+
 class Tests(unittest.TestCase):
+    @unittest.skipUnless(_has_soffice(), "需要 LibreOffice（soffice）才能转换 DOCX")
     def test_docx(self):
         from docx import Document
         with tempfile.TemporaryDirectory() as td:

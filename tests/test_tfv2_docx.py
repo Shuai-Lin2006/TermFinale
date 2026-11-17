@@ -1,6 +1,7 @@
 """v2 原生 Word (.docx) 渲染测试。"""
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -61,6 +62,11 @@ def _tiny_png(path: Path) -> None:
     Image.new("RGB", (120, 80), "white").save(path)
 
 
+def _has_typst() -> bool:
+    return bool(shutil.which("typst")) or Path("tools/typst").is_file() or Path("tools/typst.exe").is_file()
+
+
+@unittest.skipUnless(_has_typst(), "需要 Typst 才能渲染公式图片")
 class DocxRenderTests(unittest.TestCase):
     def test_renders_native_textbook_structure(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

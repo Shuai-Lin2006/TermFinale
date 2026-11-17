@@ -1,12 +1,19 @@
 """Round 14: formula image fallback for HTML/PDF/Word."""
 from __future__ import annotations
 
+import shutil
 import unittest
+from pathlib import Path
 
 from tfv2.render.formula_image import formula_data_uri, formula_png
 from tfv2.render.lecture_html import _safe_formula_prose
 
 
+def _has_typst() -> bool:
+    return bool(shutil.which("typst")) or Path("tools/typst").is_file() or Path("tools/typst.exe").is_file()
+
+
+@unittest.skipUnless(_has_typst(), "需要 Typst 才能渲染公式图片")
 class FormulaImageTests(unittest.TestCase):
     def test_clean_formula_renders_to_png(self):
         png = formula_png(r"\frac{a+b}{c-d}")
