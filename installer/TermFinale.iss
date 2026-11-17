@@ -13,9 +13,9 @@ DefaultDirName={localappdata}\Programs\TermFinale
 DefaultGroupName=TermFinale
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputDir=dist
+OutputDir=..\dist
 OutputBaseFilename=TermFinale-{#MyAppVersion}-win-x64-setup
-SetupIconFile=assets\icon.ico
+SetupIconFile=..\assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2
 SolidCompression=yes
@@ -31,7 +31,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："; Flags: unchecked
 
 [Files]
-Source: "dist\TermFinale\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\dist\TermFinale\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{autoprograms}\TermFinale"; Filename: "{app}\{#MyAppExeName}"
