@@ -34,11 +34,15 @@ def main() -> int:
     except Exception:
         git_hash = "dev"
     build_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    try:
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip() or "0.4.0"
+    except Exception:
+        version = "0.4.0"
     (ROOT / "core" / "build_info.py").write_text(
         f'"""构建信息：由 tools/build.py 自动生成。"""\n'
-        f'VERSION = "0.3.0"\nBUILD_TIME = "{build_time}"\nGIT_HASH = "{git_hash}"\n',
+        f'VERSION = "{version}"\nBUILD_TIME = "{build_time}"\nGIT_HASH = "{git_hash}"\n',
         encoding="utf-8")
-    print(f"构建信息：v0.3.0 · {build_time} · {git_hash}")
+    print(f"构建信息：v{version} · {build_time} · {git_hash}")
 
     if shutil.which("pyinstaller") is None and not _has_module("PyInstaller"):
         print("❌ 未安装 PyInstaller，请先执行：pip install pyinstaller")

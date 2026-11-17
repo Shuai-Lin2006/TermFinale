@@ -78,11 +78,11 @@ TermFinale 是一个**本地优先**的桌面应用：导入 PDF / PPT / Word / 
 
 ## 下载与安装
 
-**当前状态：Beta。** Mac / Windows 安装包制作中，完成后会放在 [Releases](https://github.com/Shuai-Lin2006/TermFinale/releases)。
+**当前状态：Beta。** macOS（Apple Silicon）安装包已发布，Windows 版本制作中。所有版本都在 [Releases](https://github.com/Shuai-Lin2006/TermFinale/releases)。
 
 | 平台 | 要求 | 状态 |
 |---|---|---|
-| macOS | Apple Silicon / Intel，macOS 11+ | 打包中 |
+| macOS | Apple Silicon（arm64），macOS 11+ | [v0.4.0 已发布](https://github.com/Shuai-Lin2006/TermFinale/releases/tag/v0.4.0) |
 | Windows | Windows 10/11 x64 | 打包中 |
 
 也可以从源码运行，见下方[从源码运行](#从源码运行)。

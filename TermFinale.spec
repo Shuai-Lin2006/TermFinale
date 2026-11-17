@@ -26,7 +26,10 @@ datas += [("web_v2", "web_v2")]                   # 当前学习台 UI
 datas += [("THIRD_PARTY_NOTICES.md", ".")]
 datas += [("licenses", "licenses")]
 datas += [("tools/docling_structure.py", "tools")]
-datas += [("tools/typst", "tools")]
+_typst_name = "typst.exe" if _sys.platform == "win32" else "typst"
+_typst_path = _os.path.join(SPECPATH, "tools", _typst_name)
+if _os.path.exists(_typst_path):
+    datas += [(_typst_path, "tools")]
 try:
     datas += collect_data_files("opencc")
 except Exception:
@@ -120,7 +123,7 @@ if _sys.platform == "darwin":
         bundle_identifier="com.termfinale.desktop",
         info_plist={
             "NSHighResolutionCapable": True,
-            "CFBundleShortVersionString": "0.3.0",
+            "CFBundleShortVersionString": "0.4.0",
             "LSMinimumSystemVersion": "11.0",
         },
     )
