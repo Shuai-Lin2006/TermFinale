@@ -8,6 +8,8 @@ import tempfile
 import threading
 import time
 import urllib.request
+import shutil
+import subprocess
 from pathlib import Path
 
 if getattr(sys, "frozen", False):
@@ -273,6 +275,37 @@ class SplashBridge:
             pass
         return True
 
+
+def _find_edge() -> str | None:
+    if sys.platform == "win32":
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+            shutil.which("msedge"),
+        ]
+    elif sys.platform == "darwin":
+        candidates = ["/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"]
+    else:
+        candidates = [shutil.which("microsoft-edge"), shutil.which("google-chrome")]
+    for c in candidates:
+        if c and os.path.isfile(c):
+            return c
+    return None
+
+
+def _open_edge_app(url: str) -> int:
+    """WebView 不可用时的兜底：用系统 Edge 的 app 模式打开同一个本地页面。"""
+    edge = _find_edge()
+    if not edge:
+        print("未找到 Microsoft Edge，无法打开界面")
+        return 1
+    profile = os.path.join(tempfile.gettempdir(), "termfinale-edge-profile")
+    args = [edge, f"--app={url}", "--window-size=1440,920",
+            f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check"]
+    proc = subprocess.Popen(args)
+    proc.wait()
+    return 0
+
 def main() -> int:
     from core import config, paths
 
@@ -302,6 +335,9 @@ def main() -> int:
     if not _wait_server():
         print("本地服务启动失败")
         return 1
+
+    if os.getenv("TERMFINALE_UI", "").strip().lower() == "edge":
+        return _open_edge_app(f"http://127.0.0.1:{PRODUCT_PORT}/")
 
 
     # macOS：给 pywebview 的 BrowserView 打补丁，创建 WKWebView 后立即关闭滑动返回

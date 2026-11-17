@@ -77,7 +77,12 @@ def main() -> None:
                 if web_main() == 0:
                     return
             except Exception:
-                write_crash("WebView 外壳启动失败，回退 Tk 界面\n" + traceback.format_exc())
+                write_crash("WebView 外壳启动失败，改用 Edge 窗口\n" + traceback.format_exc())
+                os.environ["TERMFINALE_UI"] = "edge"
+                from desktop import main as edge_main
+
+                if edge_main() == 0:
+                    return
 
         import main as app_main
 
