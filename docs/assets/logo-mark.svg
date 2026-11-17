@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="TermFinale">
+  <defs>
+    <linearGradient id="tf-bg" x1="4" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173b31"/><stop offset=".55" stop-color="#224737"/><stop offset="1" stop-color="#3b4b2a"/>
+    </linearGradient>
+    <linearGradient id="tf-paper" x1="14" y1="10" x2="35" y2="38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffaf0"/><stop offset="1" stop-color="#e9e1cf"/>
+    </linearGradient>
+    <linearGradient id="tf-lime" x1="27" y1="9" x2="37" y2="20" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f1ff83"/><stop offset="1" stop-color="#c7ed31"/>
+    </linearGradient>
+    <radialGradient id="tf-glow" cx="0" cy="0" r="1" gradientTransform="translate(34 12) rotate(130) scale(25)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dfff3f" stop-opacity=".22"/><stop offset="1" stop-color="#dfff3f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="tf-shadow" x="8" y="6" width="30" height="34" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" flood-color="#081b15" flood-opacity=".55"/>
+    </filter>
+    <clipPath id="tf-clip"><rect x="1.5" y="1.5" width="45" height="45" rx="12"/></clipPath>
+  </defs>
+  <rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="url(#tf-bg)" stroke="#dfff3f" stroke-opacity=".5" stroke-width="1.5"/>
+  <g clip-path="url(#tf-clip)">
+    <rect x="1.5" y="1.5" width="45" height="45" fill="url(#tf-glow)"/>
+    <ellipse cx="24" cy="24" rx="25.5" ry="11.5" transform="rotate(-32 24 24)" fill="none" stroke="#dfff3f" stroke-opacity=".28" stroke-width=".8"/>
+    <ellipse cx="24" cy="24" rx="20" ry="8.4" transform="rotate(-32 24 24)" fill="none" stroke="#fff8e8" stroke-opacity=".13" stroke-width=".7" stroke-dasharray="1.5 2.2"/>
+    <path d="M9.5 18.5 27 7l12.5 8" fill="none" stroke="#f7f2e5" stroke-opacity=".13" stroke-width=".8"/>
+    <path d="M12 10.5 26.4 8.2 35 17v20.2H12z" fill="#f7f1e2" opacity=".22" transform="rotate(-5 23 23)"/>
+    <path d="M13 9.5h14.3L36 18.4v20.1H13z" fill="url(#tf-paper)" filter="url(#tf-shadow)"/>
+    <path d="M27.3 9.5v8.9H36z" fill="url(#tf-lime)"/>
+    <path d="M27.3 9.5v8.9H36z" fill="none" stroke="#f1ff83" stroke-opacity=".55" stroke-width=".7"/>
+    <path d="M17 19.2h14M24 19.2v15M20.6 34.2h6.8" fill="none" stroke="#173b31" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M16.2 37.7h15.6" stroke="#173b31" stroke-opacity=".16" stroke-width=".8"/>
+    <circle cx="37" cy="11.8" r="1.8" fill="#f1ff83"/>
+    <circle cx="37" cy="11.8" r="3.6" fill="none" stroke="#f1ff83" stroke-opacity=".25" stroke-width=".7"/>
+    <circle cx="9.8" cy="34.8" r="1" fill="#fff8e8" opacity=".55"/>
+    <circle cx="8.5" cy="10.3" r=".7" fill="#dfff3f" opacity=".8"/>
+  </g>
+</svg>

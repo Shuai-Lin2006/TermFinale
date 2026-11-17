@@ -1,0 +1,4 @@
+{
+  "note": "人工填标准答案后运行；must_contain 是必须出现的事实/公式/答案，must_not_contain 是明确错误。空 cases 表示尚未标注，不冒充通过。",
+  "cases": []
+}

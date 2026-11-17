@@ -71,3 +71,6 @@ DASHSCOPE_API_KEY=sk-xxxxxxxx
   3. **结果缓存**：按图片内容哈希存到 `debug/caption_cache.json`，同一份资料**第二次生成不再调用视觉模型**。
 - 想更快可换 `QWEN_VL_MODEL=qwen3-vl-plus`（实测约 1.5s/张，图注略简）。
 - 完全不需要图注时设 `TERMFINALE_DISABLE_VISION=1`（图片仍保留，图注为"第 N 页配图"）。
+
+
+> 说明：`qwen3.8-max` 是多模态**理解/视觉**模型，用于读图、OCR、图注，不是图像生成模型；要生成插图需单独接入 `qwen-image` / `qwen-image-edit` 或其他文生图模型。精确电路/物理图仍走结构化 SVG，不走文生图。

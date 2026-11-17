@@ -140,8 +140,12 @@ def start_bridge() -> bool:
         _state.update(server=server, port=port, token=token)
         try:
             paths.ensure_dirs()
-            (paths.data_dir() / _BRIDGE_FILE).write_text(
-                json.dumps({"port": port, "token": token}), encoding="utf-8")
+            bridge_file = paths.data_dir() / _BRIDGE_FILE
+            bridge_file.write_text(json.dumps({"port": port, "token": token}), encoding="utf-8")
+            try:
+                bridge_file.chmod(0o600)
+            except OSError:
+                pass
         except OSError:
             pass
         threading.Thread(target=server.serve_forever, daemon=True).start()

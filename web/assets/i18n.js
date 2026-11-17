@@ -322,7 +322,7 @@
 
   window.TF_LANG = { get: function () { return lang; }, apply: apply, msg: message };
   document.addEventListener('DOMContentLoaded', function () {
-    apply(); langSelect();
+    apply();
     if (lang === 'en' || lang === 'zh-Hant') {
       new MutationObserver(function (muts) {
         muts.forEach(function (m) {

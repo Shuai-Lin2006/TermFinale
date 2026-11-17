@@ -19,10 +19,21 @@ if not _os.path.exists(_ICON):
 datas = []
 datas += collect_data_files("customtkinter")   # 主题/皮肤资源，缺了会启动即崩
 datas += collect_data_files("certifi")
+datas += collect_data_files("docx")          # Word 默认模板/页脚，缺了导出直接 500
 datas += [("core/assets", "core/assets")]
-datas += [("web", "web")]                         # 新 Web UI 静态资源
+datas += [("web", "web")]                         # legacy reader / KaTeX
+datas += [("web_v2", "web_v2")]                   # 当前学习台 UI
+datas += [("THIRD_PARTY_NOTICES.md", ".")]
+datas += [("licenses", "licenses")]
+datas += [("tools/docling_structure.py", "tools")]
+datas += [("tools/typst", "tools")]
+try:
+    datas += collect_data_files("opencc")
+except Exception:
+    pass
 
 hiddenimports = [
+    "tkinter",
     "fitz",
     "pymupdf",
     "sqlalchemy.dialects.sqlite",
@@ -33,12 +44,21 @@ hiddenimports = [
     "httpx",
     "loguru",
     "webview",
-    "webview.platforms.cocoa",
     "uvicorn",
     "fastapi",
     "starlette",
     "python_multipart",
+    "opencc",
+    "tfv2.product.backup",
+    "tfv2.render.typst_lecture",
+    "tfv2.render.typst_math",
+    "tfv2.render.formula_asset",
 ]
+
+if _sys.platform == "darwin":
+    hiddenimports += ["webview.platforms.cocoa"]
+elif _sys.platform == "win32":
+    hiddenimports += ["webview.platforms.edgechromium", "webview.platforms.winforms", "webview.platforms.win32"]
 
 # 音频转写：dashscope 内部有动态导入，显式收集
 try:
@@ -92,14 +112,15 @@ coll = COLLECT(
     upx=False,
     name="TermFinale",
 )
-app = BUNDLE(
-    coll,
-    name="TermFinale.app",
-    icon=_ICON,
-    bundle_identifier="com.termfinale.desktop",
-    info_plist={
-        "NSHighResolutionCapable": True,
-        "CFBundleShortVersionString": "0.3.0",
-        "LSMinimumSystemVersion": "11.0",
-    },
-)
+if _sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name="TermFinale.app",
+        icon=_ICON,
+        bundle_identifier="com.termfinale.desktop",
+        info_plist={
+            "NSHighResolutionCapable": True,
+            "CFBundleShortVersionString": "0.3.0",
+            "LSMinimumSystemVersion": "11.0",
+        },
+    )

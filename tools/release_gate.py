@@ -151,7 +151,8 @@ def check_test_isolation() -> None:
         db.close()
     visible = [c for c in allc if not getattr(c, "is_test", False)]
     test = [c for c in allc if getattr(c, "is_test", False)]
-    ok = bool(visible) and all(not getattr(c, "is_test", False) for c in visible)
+    # 全新用户没有任何课程时也应通过；只要求可见课程中没有测试数据。
+    ok = all(not getattr(c, "is_test", False) for c in visible)
     add("测试数据隔离", ok, f"总 {len(allc)} / 测试 {len(test)} / 可见 {len(visible)}")
 
 

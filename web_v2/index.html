@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TermFinale 学习台</title>
+<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/katex/katex.inline.css">
+<script src="/katex/katex.min.js"></script>
+<script src="/katex/auto-render.min.js"></script>
+<link rel="stylesheet" href="/static/app.css?v=20261117-r21">
+</head>
+<body>
+<div class="onboarding" id="onboarding" hidden></div>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <a class="brand" href="#/">
+      <img class="brand-logo" src="/static/logo-mark.svg" alt="TermFinale">
+      <span><strong>TermFinale</strong><small data-i18n="brand.sub">学习台</small></span>
+    </a>
+    <button class="command" id="commandSearch" type="button" aria-label="搜索课程与资料库">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+      <span data-i18n="nav.search">打开课程与资料库</span><kbd>⌘K</kbd>
+    </button>
+    <nav class="nav" aria-label="主导航">
+      <div class="nav-group">
+        <span class="nav-label" data-i18n="nav.groupLearn">学习</span>
+        <a href="#/" data-nav="home"><svg class="nav-ico" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg><span data-i18n="nav.home">主控台</span></a>
+        <a href="#/library" data-nav="library"><svg class="nav-ico" viewBox="0 0 24 24"><path d="M4 5h6v14H4zM14 5h6v14h-6z"/></svg><span data-i18n="nav.library">课程库</span></a>
+        <a href="#/review" data-nav="review"><svg class="nav-ico" viewBox="0 0 24 24"><path d="M12 3 3 8v8l9 5 9-5V8z"/><path d="m8 12 3 3 5-6"/></svg><span data-i18n="nav.review">错题本</span></a>
+        <a href="#/notes" data-nav="notes"><svg class="nav-ico" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span data-i18n="nav.notes">笔记</span></a>
+      </div>
+      <div class="nav-group nav-system">
+        <a href="#/guide" data-nav="guide"><svg class="nav-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.2 1.8c-.9.8-1.7 1.3-1.7 2.7"/><path d="M12 17h.01"/></svg><span data-i18n="nav.guide">说明</span></a>
+        <a href="#/settings" data-nav="settings"><svg class="nav-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span data-i18n="nav.settings">设置</span></a>
+      </div>
+    </nav>
+    <a class="sidebar-user" href="#/settings" id="sidebarUser" aria-label="个人资料">
+      <span class="avatar" id="userAvatar">学</span>
+      <span class="user-meta">
+        <strong id="userName">学习者</strong>
+        <span class="user-school-line" id="userSchoolRow" hidden>
+          <img id="userSchoolLogo" src="/static/logo-mark.svg" alt="">
+          <span class="school-logo-fallback" id="userSchoolFallback" hidden>校</span>
+          <b id="userSchoolName"></b>
+        </span>
+        <small id="userMajor"></small>
+      </span>
+    </a>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="menuBtn" type="button" aria-label="菜单" data-i18n-aria="aria.menu"><svg class="nav-ico" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button class="top-back" id="topBack" type="button" hidden onclick="act.back('#/', event)">← <span data-i18n="nav.back">返回</span></button>
+      <div class="crumb" id="crumb" data-i18n="nav.home">今日</div>
+      <a class="course-chip" id="currentCourseChip" hidden></a>
+      <span class="local-chip"><i></i><span data-i18n="foot.localShort">本地</span></span>
+      <div class="top-actions">
+        <button class="icon-btn lang-top" id="langBtn" type="button" aria-label="切换界面语言">EN</button>
+        <button class="icon-btn mobile-ai" id="aiFabMobile" type="button" aria-label="AI 助教">AI</button>
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="切换主题" data-i18n-aria="aria.theme">☾</button>
+      </div>
+    </header>
+    <div class="view" id="view" aria-live="polite"></div>
+  </main>
+</div>
+
+<div class="gen-ring" id="genRing" hidden aria-live="polite">
+  <svg viewBox="0 0 120 120" aria-hidden="true">
+    <circle class="gen-ring-track" cx="60" cy="60" r="52"></circle>
+    <circle class="gen-ring-arc" id="genRingArc" cx="60" cy="60" r="52"></circle>
+  </svg>
+  <div class="gen-ring-copy"><strong id="genRingPct">0%</strong><small id="genRingEta">正在估算…</small></div>
+  <div class="gen-ring-label" id="genRingLabel"></div>
+</div>
+<button class="ai-fab" id="aiFab" type="button" aria-label="AI 助教">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>
+  <span>AI</span>
+</button>
+<aside class="ai-drawer" id="aiDrawer" hidden>
+  <div class="ai-head">
+    <div><strong id="aiTitle">AI 助教</strong><div class="ai-context" id="aiContext"></div></div>
+    <button class="ai-web-toggle" id="aiWeb" type="button">联网</button>
+    <button class="ai-web-toggle" id="aiDeep" type="button" title="打开后复杂问题会思考更久、更稳">深度思考</button>
+    <button class="icon-btn" id="aiClose" type="button" aria-label="关闭">×</button>
+  </div>
+  <div class="ai-messages" id="aiMessages"></div>
+  <div class="ai-quick" id="aiQuick"></div>
+  <form class="ai-form" id="aiForm">
+    <textarea id="aiInput" rows="2" maxlength="4000" placeholder="问 AI：解释、出题、提炼重点、任何学习问题…"></textarea>
+    <button class="btn btn-primary" id="aiSend" type="submit">发送</button>
+    <button class="btn btn-ghost" id="aiStop" type="button" hidden>停止</button>
+  </form>
+  <div class="ai-note" id="aiNote"></div>
+</aside>
+
+<div class="search-overlay" id="searchOverlay" hidden>
+  <div class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+      <input id="searchInput" type="text" autocomplete="off" placeholder="搜索课程、讲义标题或正文…" aria-label="搜索" data-i18n-placeholder="search.placeholder">
+      <button class="search-close" id="searchClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="search-meta" id="searchTitle" data-i18n="search.title">搜索课程与资料</div>
+    <div class="search-results" id="searchResults"><div class="search-hint" data-i18n="search.hint">输入关键词开始搜索；⌘K 打开，Esc 关闭</div></div>
+  </div>
+</div>
+
+<div class="doc-reader-overlay" id="docReaderOverlay" hidden>
+  <div class="doc-reader-scrim" onclick="act.closeDocReader(event)"></div>
+  <section class="doc-reader-dialog" role="dialog" aria-modal="true" aria-labelledby="docReaderTitle">
+    <header class="doc-reader-bar">
+      <button class="btn btn-ghost" type="button" onclick="act.closeDocReader(event)">← <span data-i18n="doc.back">返回内容工具</span></button>
+      <img class="reader-logo" src="/static/logo-mark.svg" alt="TermFinale">
+      <div class="doc-reader-heading">
+        <div class="doc-reader-kicker" id="docReaderKicker"></div>
+        <h2 class="doc-reader-title" id="docReaderTitle"></h2>
+        <div class="doc-reader-meta" id="docReaderMeta"></div>
+      </div>
+      <div class="doc-reader-actions">
+        <div class="doc-reader-search"><input id="docSearchInput" type="search" placeholder="在结果中搜索…" aria-label="在结果中搜索"><button class="btn btn-ghost" type="button" onclick="act.docReaderSearch()">搜索</button></div>
+        <span class="doc-reader-save" id="docReaderSaveStatus" aria-live="polite"></span>
+        <button class="btn btn-ghost" type="button" onclick="act.printDocReader()">打印</button>
+        <button class="btn btn-ghost" type="button" onclick="act.taskExportHtml()">HTML</button>
+        <button class="btn btn-ghost" type="button" onclick="act.saveDocReaderFile('docx')">Word</button>
+        <button class="btn btn-ghost" type="button" onclick="act.saveDocReaderFile('pdf')">PDF</button>
+      </div>
+    </header>
+    <div class="doc-reader-paper" id="docReaderPaper"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="/static/app.js?v=20261117-r78"></script><script src="/static/picker.js?v=20261117-15"></script>
+</body>
+</html>

@@ -88,11 +88,18 @@ def audit_evidence(markdown: str, pages: list[str], threshold: float = 0.30) -> 
             continue
         cg = _grams(block)
         best = 0.0
+        # 段内句子级：原句+讲解合并时，不能用整段 2-gram 稀释
+        sents = [x for x in re.split(r"(?<=[。！？!?；;])", block) if len(_norm(x)) >= 10]
         for n in cites:
             pg = page_grams.get(n) or set()
             if not cg or not pg:
                 continue
-            best = max(best, len(cg & pg) / len(cg))
+            score = len(cg & pg) / len(cg)
+            for sent in sents:
+                sg = _grams(sent)
+                if sg:
+                    score = max(score, len(sg & pg) / len(sg))
+            best = max(best, score)
         ok = best >= threshold
         report.total += 1
         report.supported += 1 if ok else 0

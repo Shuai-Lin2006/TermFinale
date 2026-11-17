@@ -3,7 +3,7 @@
 ## 产品
 TermFinale：Mac/Windows 桌面期末复习软件，Electron + FastAPI + SQLite，本地优先。
 终极目标：比“把资料直接丢给顶级 AI + 强提示词”更可靠、更完整、更能坚持学完；可证明覆盖了什么、错在哪里。
-边界：150页内逐页精准；150页以上章节概览；辅助复习，不替代老师划重点。
+边界：150页内逐页精准；150页以上章节概览（2026-11-09 起；单个资料，不是多份相加）；辅助复习，不替代老师划重点。
 
 ## 当前架构
 - Electron 壳：~/Applications/TermFinale.app，后端 8903，源码 desktop_shell/main.js

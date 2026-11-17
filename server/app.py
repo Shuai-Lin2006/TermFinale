@@ -20,7 +20,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
@@ -1524,6 +1524,16 @@ def settings_page():
 @app.get("/upload.html")
 def upload_page():
     return _page("upload.html")
+
+
+@app.get("/v2")
+def v2_library():
+    return RedirectResponse(url=os.getenv("TFV2_READER_URL", "http://127.0.0.1:8905/"))
+
+
+@app.get("/v3")
+def v3_product():
+    return RedirectResponse(url=os.getenv("TFV3_URL", "http://127.0.0.1:8907/"))
 
 
 @app.get("/generate.html")

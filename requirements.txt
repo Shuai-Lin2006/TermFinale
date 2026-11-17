@@ -15,10 +15,15 @@ SQLAlchemy==2.1.6
 # 可选：解析增强（标题/表格），不装也能跑
 # pymupdf4llm==2.0
 
-fastapi
-uvicorn
-python-multipart==0.0.20
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart==0.0.31
 
-dashscope
-pywebview
-opencc-python-reimplemented
+dashscope==2.0.3
+pywebview==6.2.1
+opencc-python-reimplemented==0.1.7
+
+playwright==1.64.1  # also used by the PDF renderer
+
+sympy>=1.14
+antlr4-python3-runtime==4.11

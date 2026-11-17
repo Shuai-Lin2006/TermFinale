@@ -11,6 +11,10 @@ import sys
 import traceback
 from pathlib import Path
 
+# Bundled Typst produces an additional publication PDF. It is a secondary
+# artifact and cannot break the normal HTML/KaTeX PDF (build catches errors).
+os.environ.setdefault("TERMFINALE_TYPST", "1")
+
 
 def _candidate_log_dirs() -> list[Path]:
     dirs: list[Path] = []
@@ -86,4 +90,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Required for frozen Windows builds that spawn worker processes.
+    import multiprocessing
+    multiprocessing.freeze_support()
     main()

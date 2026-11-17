@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "updated": "2026-11-17",
+  "note": "评测样本清单：加样本只改这里，不改脚本。paths 相对仓库根目录。",
+  "lectures": [
+    {
+      "id": "sel-e6635a2b0517",
+      "label": "50 页标准",
+      "min_sections": 4
+    },
+    {
+      "id": "sel-8918678c191c",
+      "label": "60 页精品",
+      "min_sections": 4
+    },
+    {
+      "id": "sel-86645a0e697c",
+      "label": "100 页高范围",
+      "min_sections": 8
+    },
+    {
+      "id": "sel-1c554498bd98",
+      "label": "100 页精品（200 页资料选页）",
+      "min_sections": 8
+    },
+    {
+      "id": "finish600",
+      "label": "600 页普通",
+      "min_sections": 20
+    },
+    {
+      "id": "math1001img",
+      "label": "1001 页影像版",
+      "image_mode": true
+    },
+    {
+      "id": "math500img",
+      "label": "500 页影像版",
+      "image_mode": true
+    },
+    {
+      "id": "sel-cd61157469ee",
+      "label": "32 页 · 23 节",
+      "min_sections": 10
+    },
+    {
+      "id": "sel-d39857fe6fc6",
+      "label": "32 页 · 4 节",
+      "min_sections": 3
+    },
+    {
+      "id": "sel-9123a789c28c",
+      "label": "500 页 · 50 节",
+      "min_sections": 20
+    }
+  ],
+  "parses": [
+    {
+      "path": "重庆大学24-25高数上期中.pdf",
+      "label": "扫描版真题"
+    },
+    {
+      "path": "第十五届全国大学生数学竞赛初赛非数A.pdf",
+      "label": "扫描版竞赛题"
+    }
+  ],
+  "references": [
+    {
+      "path": "重庆大学24-25高数上期中.pdf",
+      "label": "扫描版真题"
+    },
+    {
+      "path": "第十五届全国大学生数学竞赛初赛非数A.pdf",
+      "label": "扫描版竞赛题"
+    }
+  ]
+}

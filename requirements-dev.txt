@@ -1,0 +1,2 @@
+# Runtime requirements already include Playwright (the PDF renderer).
+# This file is intentionally empty of extra application dependencies.

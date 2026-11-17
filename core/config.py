@@ -37,6 +37,11 @@ def load_env(force: bool = False) -> list[Path]:
             if candidate.is_file():
                 load_dotenv(candidate, override=False)
                 loaded.append(candidate)
+                if candidate == user_env_path():
+                    try:
+                        candidate.chmod(0o600)
+                    except OSError:
+                        pass
         except Exception as exc:  # 缺文件/权限问题都不该阻断启动
             logger.warning("读取环境文件失败 {}: {}", candidate, exc)
     _loaded = True
@@ -70,6 +75,10 @@ def save_key(name: str, value: str) -> Path:
                  if not ln.strip().startswith(f"{name}=")]
     lines.append(f"{name}={value.strip()}")
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        target.chmod(0o600)
+    except OSError:
+        pass
     os.environ[name] = value.strip()
     return target
 
@@ -80,13 +89,13 @@ def text_model() -> str:
     必须配合 model_extra() 关闭思考，否则复杂 prompt 会把 8192 预算全耗在思考上、
     正文返回空字符串；实测关闭后 8192 即可完整写出整套试卷。
     """
-    return get_key("DEEPSEEK_MODEL", "deepseek-flash")
+    return get_key("DEEPSEEK_MODEL", "deepseek-v4-pro")
 
 
 def max_tokens() -> int:
     """单次输出预算。推理模型需要更大；chat 8192 可完整写完一套卷。"""
     try:
-        return max(2048, min(16384, int(get_key("DEEPSEEK_MAX_TOKENS", "8192"))))
+        return max(2048, min(32768, int(get_key("DEEPSEEK_MAX_TOKENS", "16384"))))
     except ValueError:
         return 8192
 
@@ -96,13 +105,16 @@ def vision_model() -> str:
     return get_key("QWEN_VL_MODEL", "qwen3.8-max")
 
 
-def model_extra() -> dict:
+def model_extra(model: str | None = None) -> dict:
     """推理模型默认关闭思考：否则长输出会被思考过程吃光预算，返回空正文。
 
     可用 TERMFINALE_THINKING=on 打开；换非推理模型时也应设为 on 以免传未知参数。
     """
-    mode = get_key("TERMFINALE_THINKING", "disabled").lower()
-    if mode in ("on", "enabled", "1", "true"):
+    mode = get_key("TERMFINALE_THINKING", "auto").lower()
+    name = (model or text_model()).lower()
+    if "pro" in name:
+        return {"reasoning_effort": get_key("TERMFINALE_REASONING_EFFORT", "high")}
+    if mode not in ("off", "disabled", "0", "false"):
         return {}
     return {"extra_body": {"thinking": {"type": "disabled"}}}
 

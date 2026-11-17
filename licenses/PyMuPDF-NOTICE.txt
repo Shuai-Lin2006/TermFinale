@@ -1,0 +1,10 @@
+PyMuPDF / MuPDF 2.0
+Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License
+
+PyMuPDF is used by TermFinale for PDF parsing, page rendering and PDF links.
+It is not free for a closed-source commercial distribution. Before publishing:
+  * buy an Artifex commercial license, or
+  * release the complete corresponding application source under AGPL-3.0.
+
+Project source: https://github.com/pymupdf/PyMuPDF
+Commercial licensing: https://artifex.com/licensing/

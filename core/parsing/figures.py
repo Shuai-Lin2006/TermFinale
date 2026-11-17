@@ -18,7 +18,7 @@ from pathlib import Path
 import fitz
 from loguru import logger
 
-FIG_PAD = 30  # 裁剪留白，避免图内文字标签被切
+FIG_PAD = 48  # 裁剪留白，避免图内文字标签被切
 from PIL import Image, ImageStat
 
 # 过滤阈值（页面比例）

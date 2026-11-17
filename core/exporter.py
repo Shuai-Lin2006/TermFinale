@@ -144,7 +144,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
             headers = [h for h in headers if '考点' not in h]
             toc_title = "目录"
 
-        toc_html = f"<div class='toc-box'><h2>📑 {toc_title}</h2><ul>"
+        toc_html = f"<div class='toc-box' style='background:none;border:none;padding:0;box-shadow:none'><h2>{toc_title}</h2><ul>"
         for i, h in enumerate(headers): toc_html += f"<li><a href='#chapter-{i}'>{h}</a></li>"
         toc_html += "</ul></div>"
         if not headers: toc_html = ""
@@ -368,6 +368,9 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
 </script>
 <style>
     sup.src {{ font-size: 7px; color: #b3b3b3; margin-left: 2px; vertical-align: super; font-family: ui-monospace,Menlo,monospace; float: right; }}
+    .content p {{ text-indent: 2em; margin: 0 0 10px; line-height: 1.95; }}
+    .content p.tip {{ text-indent: 0; background: #f7f9fc; border-left: 3px solid #9bb7d4; padding: 8px 12px; margin: 10px 0 14px; color: #334; font-size: 14px; }}
+    .source-line {{ text-indent: 0; }}
     body {{ font-family: -apple-system, "PingFang SC", sans-serif; background-color: #f4f6f9; color: #2c3e50; line-height: 1.9; margin: 0; padding: 40px 20px; }}
     .container {{ max-width: 850px; margin: 0 auto; background: #ffffff; padding: 50px 60px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }}
     h3 {{ font-size: 18px; color: #1a1a1a; background: #F0F8FF; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #007AFF; margin-top: 30px; margin-bottom: 15px; }}
@@ -425,9 +428,11 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     .custom-info {{ display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 20px; }}
     .info-item {{ background: #f8fafd; border: 1px solid #e1e8ed; padding: 10px 20px; border-radius: 12px; font-size: 14px; color: #555; }}
     .info-item strong {{ color: #0056b3; font-size: 16px; margin-left: 8px; }}
-    .toc-box {{ background: #f8fafd; padding: 20px 30px; border-radius: 12px; margin-bottom: 40px; border: 1px solid #e1e8ed; }}
-    .toc-box h2 {{ font-size: 20px; margin-top: 0; border: none; color: #1a1a1a; }}
+    .toc-box {{ background: none; padding: 0; border-radius: 0; margin: 0 0 26px; border: none; page-break-after: always; break-after: page; }}
+    .toc-box h2 {{ font-size: 21px; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid #ddd; color: #1a1a1a; }}
     .toc-box ul {{ list-style: none; padding-left: 0; margin-bottom: 0; }}
+    .toc-box li {{ line-height: 2.1; font-size: 15px; border-bottom: 1px dotted #eee; }}
+    .toc-box a {{ color: #1a1a1a; text-decoration: none; }}
     .toc-box li {{ margin: 10px 0; font-size: 15px; background: none; border: none; padding: 0; }}
     .toc-box a {{ color: #333333; text-decoration: none; }}
     h2.chapter-title {{ font-size: 24px; color: #0056b3; margin-top: 60px; padding-left: 12px; border-left: 5px solid #007AFF; }}

@@ -26,9 +26,10 @@ OCR_DPI = 120
 _OCR_CACHE_FILE = paths.debug_dir() / "ocr_cache.json"
 _ocr_cache: dict | None = None
 _OCR_PROMPT = (
-    "把这张图片里的所有文字按阅读顺序完整转录为纯文本。\n"
-    "要求：1) 不要总结、不要解释、不要遗漏；2) 保留题号、选项、编号与分行；"
-    "3) 公式用 $...$ 包裹；4) 只输出转录结果。"
+    "把这张图片里的所有内容按阅读顺序完整转录。\n"
+    "要求：1) 不要总结、不要解释、不要遗漏；2) 保留标题、题号、选项、编号与分行；"
+    "3) 表格必须保留行列结构，用 Markdown 表格输出（| 列1 | 列2 |，每行一行）；"
+    "4) 看不清的字用 [?] 标出，不要猜；5) 公式用 $...$ 包裹；6) 只输出转录结果。"
 )
 
 
@@ -115,6 +116,10 @@ def _fill_missing_ppt_pages(file_path: str, file_name: str, all_pages: list, tot
             for n in missing:
                 if n > len(doc):
                     continue
+                if _DISABLE_VISION:
+                    all_pages.append(f"【《{file_name}》第 {n} 页】\n第 {n} 页图示")
+                    filled += 1
+                    continue
                 txt = ""
                 for _attempt in (1, 2):
                     try:
@@ -185,6 +190,12 @@ def _clean_ocr_text(text: str) -> str:
         text = re.sub(r"^```[a-zA-Z]*\s*", "", text)
         text = re.sub(r"\s*```$", "", text).strip()
     if "<" in text and ">" in text:
+        # 表格先转 Markdown 行，避免把列结构拍平
+        text = re.sub(r"<table[^>]*>", "\n\n", text, flags=re.IGNORECASE)
+        text = re.sub(r"</table>", "\n", text, flags=re.IGNORECASE)
+        text = re.sub(r"<tr[^>]*>", "\n| ", text, flags=re.IGNORECASE)
+        text = re.sub(r"</tr>", " |", text, flags=re.IGNORECASE)
+        text = re.sub(r"</t[dh]>", " | ", text, flags=re.IGNORECASE)
         text = re.sub(r"</p>|<br\s*/?>|</div>", "\n", text, flags=re.IGNORECASE)
         text = re.sub(r"<[^>]+>", "", text)
         text = html_lib.unescape(text)
@@ -199,7 +210,7 @@ def _ocr_page(page, model: str | None = None) -> str:
 
     pix = page.get_pixmap(dpi=OCR_DPI)
     png = pix.tobytes("png")
-    digest = hashlib.md5(png).hexdigest()
+    digest = hashlib.md5(png + _OCR_PROMPT.encode("utf-8") + (model or "").encode("utf-8")).hexdigest()
     cache = _load_ocr_cache()
     if digest in cache:
         return cache[digest]
@@ -404,7 +415,7 @@ def process_image(img_bytes, img_filename, with_caption=True, caption_text=None)
             caption = ""
 
     if not caption or len(caption.strip()) < 2:
-        caption = "PPT 图示" if not with_caption else "原题配图"
+        caption = "PPT 图示" if not with_caption else "资料图片（视觉识别失败，需核对）"
 
     return f"[[[IMAGE: {img_filename} | 图注: {caption}]]]"
 

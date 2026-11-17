@@ -6,12 +6,32 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import webbrowser
 from pathlib import Path
 
 from loguru import logger
+
+
+def find_soffice() -> str | None:
+    """Locate LibreOffice even when the packaged app has a minimal PATH."""
+    env = os.getenv("TERMFINALE_SOFFICE", "").strip()
+    candidates = [
+        env,
+        shutil.which("soffice"),
+        shutil.which("libreoffice"),
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+        "/opt/homebrew/bin/soffice",
+        "/usr/local/bin/soffice",
+        r"C:\Program Files\LibreOffice\program\soffice.exe",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            return candidate
+    return None
 
 
 def to_uri(path: str | Path) -> str:

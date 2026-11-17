@@ -2,16 +2,60 @@
 from __future__ import annotations
 
 import os
+import socket
 import sys
+import tempfile
 import threading
 import time
 import urllib.request
 from pathlib import Path
 
+if getattr(sys, "frozen", False):
+    # Keep every writable file under the platform's user-data directory.
+    if sys.platform == "darwin":
+        _app_home = Path.home() / "Library" / "Application Support" / "TermFinale"
+    elif os.name == "nt":
+        _app_home = Path(os.environ.get("APPDATA", str(Path.home()))) / "TermFinale"
+    else:
+        _app_home = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))) / "TermFinale"
+    _user_data = _app_home / "v3-data"
+    _user_data.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("TERMFINALE_HOME", str(_app_home))
+    os.environ.setdefault("TFV2_DATA_ROOT", str(_user_data))
+    os.environ.setdefault("TFV2_PRODUCT_DB", str(_user_data / "product.sqlite3"))
+    # The packaged app gets the same-origin guard plus session protection.
+    os.environ.setdefault("TERMFINALE_PRODUCT_AUTH", "1")
+
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 PORT = int(os.getenv("TERMFINALE_WEB_PORT", "8900"))
+V2_PORT = int(os.getenv("TFV2_PORT", "8905"))
+PRODUCT_PORT = int(os.getenv("TFV3_PORT", "8907"))
+
+
+def _port_free(port: int) -> bool:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("127.0.0.1", port))
+        return True
+    except OSError:
+        return False
+    finally:
+        sock.close()
+
+
+def _pick_port(default: int) -> int:
+    """Use the configured port when free, otherwise allocate a loopback port."""
+    if _port_free(default):
+        return default
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+    finally:
+        probe.close()
 
 
 def _serve() -> None:
@@ -20,16 +64,214 @@ def _serve() -> None:
     uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning")
 
 
+def _serve_v2() -> None:
+    """v2 讲义库/阅读器跑在同一个桌面进程里，旧 App 只负责入口。"""
+    import uvicorn
+    from tfv2.api.reader_app import app as v2app
+    uvicorn.run(v2app, host="127.0.0.1", port=V2_PORT, log_level="warning")
+
+
+def _serve_product() -> None:
+    """v3 学习台：桌面默认入口，读 v2 artifact + 本地学习数据。"""
+    import uvicorn
+    from tfv2.api.product_app import app as product_app
+    uvicorn.run(product_app, host="127.0.0.1", port=PRODUCT_PORT, log_level="warning")
+
+
+def _port_up(port: int) -> bool:
+    try:
+        urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=0.4)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _wait_server(timeout: float = 25.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/health", timeout=0.6)
+            urllib.request.urlopen(f"http://127.0.0.1:{PRODUCT_PORT}/api/health", timeout=0.6)
             return True
         except Exception:  # noqa: BLE001
             time.sleep(0.15)
     return False
 
+
+
+class SplashScreen:
+    """Borderless black splash; animation is driven only by Tk ``after`` callbacks."""
+
+    WIDTH = 760
+    HEIGHT = 430
+
+    def __init__(self) -> None:
+        import tkinter as tk
+
+        self._tk = tk
+        self.root = tk.Tk()
+        self.root.overrideredirect(True)
+        self.root.configure(bg="#000000")
+        self.root.attributes("-alpha", 0.0)
+        try:
+            self.root.attributes("-topmost", True)
+        except Exception:
+            pass
+
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        x = (sw - self.WIDTH) // 2
+        y = (sh - self.HEIGHT) // 2
+        self.root.geometry(f"{self.WIDTH}x{self.HEIGHT}+{x}+{y}")
+
+        # Two dark, slightly larger labels sit behind the wordmark as a text glow.
+        self.glow_outer = tk.Label(
+            self.root, text="TermFinale", bg="#000000", fg="#101010",
+            font=("PingFang SC", 82, "bold"),
+        )
+        self.glow_inner = tk.Label(
+            self.root, text="TermFinale", bg="#000000", fg="#1c1c1c",
+            font=("PingFang SC", 78, "bold"),
+        )
+        self.glow_outer.place(relx=0.5, rely=0.43, anchor="center", x=2, y=3)
+        self.glow_inner.place(relx=0.5, rely=0.43, anchor="center", x=-1, y=-1)
+        self.title = tk.Label(
+            self.root, text="TermFinale", bg="#000000", fg="#ffffff",
+            font=("PingFang SC", 74, "bold"),
+        )
+        self.title.place(relx=0.5, rely=0.43, anchor="center")
+        self.tagline = tk.Label(
+            self.root, text="高效 · efficiency", bg="#000000", fg="#86868B",
+            font=("PingFang SC", 12),
+        )
+        self.tagline.place(relx=0.5, rely=0.62, anchor="center")
+
+        self.root.bind("<Escape>", lambda _event: self.root.destroy())
+        self.root.after(0, self._fade_in)
+
+    def _fade_in(self, step: int = 0, steps: int = 15, interval: int = 20) -> None:
+        alpha = min(1.0, (step + 1) / steps)
+        try:
+            self.root.attributes("-alpha", alpha)
+        except Exception:
+            pass
+        if step + 1 < steps:
+            self.root.after(interval, lambda: self._fade_in(step + 1, steps, interval))
+        else:
+            self.root.after(1000, self._fade_out)
+
+    def _fade_out(self, step: int = 0, steps: int = 20, interval: int = 20) -> None:
+        alpha = max(0.0, 1.0 - (step + 1) / steps)
+        try:
+            self.root.attributes("-alpha", alpha)
+        except Exception:
+            pass
+        if step + 1 < steps:
+            self.root.after(interval, lambda: self._fade_out(step + 1, steps, interval))
+        else:
+            self.root.destroy()
+
+    def run(self) -> None:
+        self.root.mainloop()
+
+
+def show_splash() -> None:
+    try:
+        SplashScreen().run()
+    except Exception:
+        # Splash must never prevent the application from opening.
+        try:
+            with open(Path(tempfile.gettempdir()) / "termfinale_splash.log", "a", encoding="utf-8") as f:
+                import traceback
+                f.write(traceback.format_exc())
+        except Exception:
+            pass
+
+SPLASH_HTML = """<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f1a13}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  .splash{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    background:
+      radial-gradient(ellipse 60% 70% at 50% 42%,rgba(216,255,66,.075),transparent 65%),
+      radial-gradient(ellipse 80% 100% at 50% 110%,rgba(36,72,48,.65),transparent 70%),
+      #0f1a13;
+    opacity:0}
+  .splash.run{animation:fadein .3s cubic-bezier(.22,.61,.36,1) forwards,fadeout .4s cubic-bezier(.4,0,1,1) 1.3s forwards}
+  .splash:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+    background-image:radial-gradient(rgba(247,243,232,.16) .6px,transparent .6px);
+    background-size:5px 5px;mask-image:radial-gradient(ellipse at center,black,transparent 78%)}
+  .content{position:relative;text-align:center;transform:translateY(1px)}
+  .eyebrow{font-size:9px;line-height:1;letter-spacing:.36em;text-transform:uppercase;color:#8e9c8b;
+    margin-bottom:22px;opacity:0;animation:tagin .5s ease-out .16s forwards}
+  .word{position:relative;display:inline-block;font-family:"Songti SC","STSong","New York",Georgia,serif;
+    font-size:72px;font-weight:700;letter-spacing:-.055em;line-height:1;color:#f6f1e4;
+    text-shadow:0 0 38px rgba(216,255,66,.10);
+    opacity:0;filter:blur(7px);transform:translateY(14px) scale(.985);
+    animation:wordin .62s cubic-bezier(.16,1,.3,1) .08s forwards}
+  .rule{width:38px;height:1px;background:#d8ff42;margin:24px auto 15px;opacity:0;
+    animation:tagin .45s ease-out .34s forwards}
+  .tagline{font-size:10.5px;font-weight:300;letter-spacing:.27em;color:#aab4a5;line-height:1.5;
+    opacity:0;animation:tagin .5s ease-out .4s forwards}
+  .tagline b{font-weight:400;color:#d7ddcf}
+  .meta{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:8px;
+    letter-spacing:.3em;color:#657366;text-transform:uppercase;opacity:0;animation:tagin .5s ease-out .5s forwards}
+  @keyframes fadein{to{opacity:1}}
+  @keyframes fadeout{to{opacity:0}}
+  @keyframes wordin{to{opacity:1;filter:blur(0);transform:translateY(0) scale(1)}}
+  @keyframes tagin{to{opacity:1}}
+</style></head><body>
+<div class="splash">
+  <div class="content">
+    <div class="eyebrow">Study desk</div>
+    <div class="word">TermFinale</div>
+    <div class="rule"></div>
+    <div class="tagline"><b>高效</b> · efficiency</div>
+  </div>
+  <div class="meta">TermFinale · 学习工作台</div>
+</div>
+<script>
+  (function(){
+    var fired=false, started=false;
+    function finish(){
+      if(fired) return; fired=true;
+      try { if(window.pywebview && window.pywebview.api) window.pywebview.api.done(); } catch(e) {}
+    }
+    function start(){
+      if(started) return; started=true;
+      var el=document.querySelector('.splash');
+      if(el) el.classList.add('run');
+      setTimeout(finish, 1720);
+    }
+    if(window.pywebview) start();
+    else window.addEventListener('pywebviewready', start);
+    // If the bridge injects late, starting anyway is safer than a stuck splash.
+    setTimeout(start, 120);
+  })();
+</script>
+</body></html>"""
+
+
+class SplashBridge:
+    """Callbacks used by the frameless splash WebView."""
+
+    def __init__(self) -> None:
+        self.splash = None
+        self.main = None
+
+    def done(self) -> bool:
+        try:
+            if self.splash is not None:
+                self.splash.destroy()
+        except Exception:
+            pass
+        try:
+            if self.main is not None:
+                self.main.show()
+                self.main.restore()
+        except Exception:
+            pass
+        return True
 
 def main() -> int:
     from core import config, paths
@@ -43,7 +285,20 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         pass
 
-    threading.Thread(target=_serve, daemon=True).start()
+    global PORT, V2_PORT, PRODUCT_PORT
+    PORT = _pick_port(PORT)
+    V2_PORT = _pick_port(V2_PORT)
+    PRODUCT_PORT = _pick_port(PRODUCT_PORT)
+    # Keep the legacy auth/CORS code and any child import on the same ports
+    # that the WebView actually uses.
+    os.environ["TERMFINALE_WEB_PORT"] = str(PORT)
+    os.environ["TFV2_PORT"] = str(V2_PORT)
+    os.environ["TFV3_PORT"] = str(PRODUCT_PORT)
+    # v3 is the only UI the desktop shell opens. The legacy 8900/8905
+    # services stay available for source/legacy use, but are not started in
+    # the packaged app: fewer ports, no duplicate DB writers, no stale routes.
+    threading.Thread(target=_serve_product, daemon=True).start()
+
     if not _wait_server():
         print("本地服务启动失败")
         return 1
@@ -60,10 +315,10 @@ def main() -> int:
                 try:
                     self.webview.setAllowsBackForwardNavigationGestures_(False)
                     self.webview.setValue_forKey_(False, "allowsBackForwardNavigationGestures")
-                    with open("/tmp/tf_swipe.log", "a") as f:
+                    with open(Path(tempfile.gettempdir()) / "tf_swipe.log", "a", encoding="utf-8") as f:
                         f.write(f"BrowserView patched, gestures={self.webview.allowsBackForwardNavigationGestures()}\n")
                 except Exception as e:
-                    with open("/tmp/tf_swipe.log", "a") as f:
+                    with open(Path(tempfile.gettempdir()) / "tf_swipe.log", "a", encoding="utf-8") as f:
                         f.write(f"BrowserView patch failed: {e}\n")
 
             _cocoa.BrowserView.__init__ = _patched_init
@@ -77,23 +332,53 @@ def main() -> int:
             from AppKit import NSEvent
             NSEvent.addLocalMonitorForEventsMatchingMask_handler_(
                 1 << 31, lambda event: None)  # NSEventTypeSwipe
-            with open("/tmp/tf_swipe.log", "a") as f:
+            with open(Path(tempfile.gettempdir()) / "tf_swipe.log", "a", encoding="utf-8") as f:
                 f.write("swipe monitor installed\n")
         except Exception as e:
-            with open("/tmp/tf_swipe.log", "a") as f:
+            with open(Path(tempfile.gettempdir()) / "tf_swipe.log", "a", encoding="utf-8") as f:
                 f.write(f"swipe monitor failed: {e}\n")
 
     import webview
 
-    window = webview.create_window(
+    splash_bridge = SplashBridge()
+    main_window = webview.create_window(
         "TermFinale",
-        f"http://127.0.0.1:{PORT}/dashboard.html",
+        f"http://127.0.0.1:{PRODUCT_PORT}/",
         width=1440, height=920, min_size=(1080, 700),
         background_color="#FAFAF8",
+        hidden=True,
     )
+    splash_window = webview.create_window(
+        "TermFinale",
+        html=SPLASH_HTML,
+        width=760, height=430,
+        frameless=True, on_top=True, resizable=False, easy_drag=False,
+        background_color="#0f1a13",
+        js_api=splash_bridge,
+        hidden=True,
+    )
+    splash_bridge.splash = splash_window
+    splash_bridge.main = main_window
+    window = main_window
+
+    def _show_splash():
+        try:
+            splash_window.show()
+            splash_window.evaluate_js("document.querySelector('.splash').classList.add('run')")
+        except Exception:
+            pass
+        # Safety net: never leave the main window hidden if the JS bridge fails.
+        try:
+            threading.Timer(2.6, splash_bridge.done).start()
+        except Exception:
+            pass
+
+    splash_window.events.loaded += _show_splash
 
     def _disable_swipe_back():
         """macOS：关闭 WKWebView 横向滑动返回，避免输入框拖选误触。"""
+        if sys.platform != "darwin":
+            return
         try:
             native = None
             for _ in range(150):
@@ -138,11 +423,11 @@ def main() -> int:
                     webview_obj.setValue_forKey_(False, "allowsBackForwardNavigationGestures")
                 except Exception:
                     pass
-            with open("/tmp/termfinale_swipe.log", "a") as f:
+            with open(Path(tempfile.gettempdir()) / "termfinale_swipe.log", "a", encoding="utf-8") as f:
                 f.write(f"native={type(native).__name__} webview={type(webview_obj).__name__} "
                         f"has_setter={hasattr(webview_obj, 'setAllowsBackForwardNavigationGestures_')}\n")
         except Exception as e:
-            with open("/tmp/termfinale_swipe.log", "a") as f:
+            with open(Path(tempfile.gettempdir()) / "termfinale_swipe.log", "a", encoding="utf-8") as f:
                 f.write(f"ERROR {e}\n")
 
     webview.start(_disable_swipe_back)

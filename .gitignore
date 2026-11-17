@@ -33,3 +33,40 @@ core/app.log
 
 # macOS
 .DS_Store
+
+# 本地数据与运行产物（体积大，绝不入库）
+data/
+uploads/
+previews/
+*.tgz
+
+# 开发工具缓存
+.dsh-vision-router/
+.unslop/
+
+# 说明/测试过程产生的大图，不入库（文字类证据保留）
+docs/evidence/**/*.png
+docs/evidence/**/*.jpg
+docs/evidence/**/*.jpeg
+docs/evidence/**/*.webp
+docs/evidence/**/*.mp4
+docs/evidence/**/*.html
+
+# 开发环境 / 实验残留
+.venv*/
+explore/
+gold/
+style-explorer.html
+manifest.json
+web_v2/*.pdf
+
+# 本地二进制与依赖
+tools/typst
+**/__pycache__/
+
+# 体积较大的过程证据与交付打包
+docs/evidence/
+deliverables/
+
+# 根目录真实试卷扫描件（有版权，不入库）
+/*.pdf

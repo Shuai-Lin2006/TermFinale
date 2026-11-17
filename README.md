@@ -1,253 +1,286 @@
-# TermFinale
+<p align="center">
+  <img src="docs/assets/app-icon.png" width="96" alt="TermFinale">
+</p>
 
-> 把一堆课件，压成一份能在剩余天数内读完的期末讲义。
+<h1 align="center">TermFinale</h1>
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)
-![Status](https://img.shields.io/badge/status-beta-orange)
-![CI](https://github.com/Shuai-Lin2006/TermFinale/actions/workflows/ci.yml/badge.svg)
+<p align="center">
+  面向大学生的本地期末复习工作台：把教材和课件变成可读、可核对、可打印的讲义。
+</p>
 
-TermFinale 是一个面向大学生的**桌面端期末复习工具**：导入 PPT / PDF / Word，本地解析文本与图形，结合你的考试信息规划大纲，逐章生成讲义、逻辑图、考点清单和模拟试卷，最后输出成可以直接打印的单文件 HTML。
+<p align="center">
+  <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
+  <img alt="Status: Beta" src="https://img.shields.io/badge/status-beta-orange">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-878%20passed-brightgreen">
+</p>
 
-不是聊天框，而是一条“上传资料 → 生成复习材料”的流水线。
+<p align="center">
+  <a href="https://shuai-lin2006.github.io/TermFinale/">下载页</a> ·
+  <a href="#快速开始">快速开始</a> ·
+  <a href="#常见问题">常见问题</a> ·
+  <a href="docs/使用说明书.md">使用说明</a> ·
+  <a href="docs/发布计划.md">发布计划</a>
+</p>
 
 ---
 
-## 目录
+TermFinale 是一个**本地优先**的桌面应用：导入 PDF / PPT / Word / 图片，按页选段，生成带原书页码的讲义、练习题和模拟卷，并支持错题复习与 AI 问答。资料、笔记和生成结果都保存在本机。
 
-- [界面预览](#界面预览)
-- [能做什么](#能做什么)
-- [下载与安装](#下载与安装)
-- [第一次使用](#第一次使用)
-- [怎么用效果最好](#怎么用效果最好)
-- [常见问题](#常见问题)
-- [隐私与免责](#隐私与免责)
-- [技术栈与项目结构](#技术栈与项目结构)
-- [本地开发](#本地开发)
-- [打包](#打包)
-- [Roadmap](#roadmap)
-- [License](#license)
+它不追求“吃透每一个知识点”，而是服务于期末周：**用更少的时间，把一门课复习到能拿分的程度。**
+
+> English summary: TermFinale is a local-first desktop study workspace for Chinese university finals. It turns course materials into page-cited lecture notes, practice questions, and mock exams, with local storage and user-supplied model API keys.
 
 ---
 
 ## 界面预览
 
-![今日工作台](docs/screenshots/dashboard.png)
-
-![阅读器](docs/screenshots/review.png)
-
-![生成工作台](docs/screenshots/training.png)
-
-![设置](docs/screenshots/settings.png)
-
-## 能做什么
-
-| 模块 | 产出 |
+| 主控台 | 课程与讲义 |
 |---|---|
-| **讲义** | 先出大纲再逐章生成，每章包含：必背要点、公式卡、例题、原位配图、自测。支持「全量 / 精简」、5 种讲解人设、中英双语 |
-| **逻辑分析** | 一次生成：知识图谱（Mermaid）+ 因果链 + 概念/公式/题型对照表 |
-| **资料提取** | 按页打包提取名词、考点、原题；自动去重并报告覆盖了哪些页 |
-| **练习卷** | 提取原题并生成「无答案 + 每题留白」的打印版，题号由程序统一重排 |
-| **训练试卷** | 按目标分生成「题型 × 数量 × 分值」蓝图，生成后自动验卷（缺题、分值、重复题、考点标注） |
-| **配图** | 把 PPT/PDF 里的图形区域渲染成图片，按原位置插回讲义；矢量图也能取 |
-| **扫描件 OCR** | 没有文字层的扫描版 PDF 会自动用视觉模型转录成文字（结果有缓存） |
-| **录音转写** | 上传 mp3/wav/m4a 等音频，自动转成文字作为复习资料（百炼 Key） |
-| **拍照导入** | 没有电子版教材时，拍书页/截图上传，自动 OCR 成可用的复习资料 |
-| **自定义要求** | 生成前可写「老师强调第 3 章 / 多给计算题 / 讲慢一点」，模型按你的偏好生成 |
-| **复习管理** | 课程紧迫度模型、剩余天数、今日建议、自定义笔记与资料归档 |
+| ![主控台](docs/screenshots/readme-dashboard.png) | ![课程页](docs/screenshots/readme-course.png) |
 
-生成物是**单文件 HTML**：自带公式渲染、思维导图、名词弹窗、搜索、打印/导出 PDF。
+| 质量报告 | 阅读器 |
+|---|---|
+| ![质量报告](docs/screenshots/readme-artifact.png) | ![阅读器](docs/screenshots/ui-reader.png) |
+
+---
+
+## 功能
+
+**资料与讲义**
+
+- 支持 PDF / PPT / PPTX / DOC / DOCX / 图片
+- 按页选段，先看 2 页预览，再生成完整讲义
+- 每段标注原书页码，可对照核对
+- 公式/扫描页保留原页影像，不强行转文字
+- 导出 PDF / Word
+
+**质量与审计**
+
+- 质量门禁：结构、内容、PDF、语言
+- 逐页覆盖检查：哪一页没讲到，列出来
+- 审计驱动的补讲：自动补讲缺口并重渲染
+- 引用依据、重点词覆盖、重复与套话检查
+
+**练习与复习**
+
+- 从讲义或资料页出题：选择 / 计算 / 简答
+- 判分、解析、页码出处
+- 错题本 + 记忆曲线复习计划
+- 模拟卷生成（答案审计冲突时整卷退回，不带着错误交付）
+
+**效率工具**
+
+- AI 助教：基于当前讲义的问答，回答带页码引用
+- 笔记、全文搜索、本机备份
+
+---
 
 ## 下载与安装
 
-> 当前为 **内测版本**，仅提供 macOS (Apple Silicon) 安装包；Windows 版本需自行构建（见 [打包](#打包)）。
+**当前状态：Beta。** Mac / Windows 安装包制作中，完成后会放在 [Releases](https://github.com/Shuai-Lin2006/TermFinale/releases)。
 
-前往 [Releases](../../releases) 下载最新的 `TermFinale.app.zip`，解压后把 `TermFinale.app` 拖进「应用程序」。
+| 平台 | 要求 | 状态 |
+|---|---|---|
+| macOS | Apple Silicon / Intel，macOS 11+ | 打包中 |
+| Windows | Windows 10/11 x64 | 打包中 |
 
-### macOS：提示“无法验证开发者”
+也可以从源码运行，见下方[从源码运行](#从源码运行)。
 
-因为安装包没有做 Apple 公证，首次打开会被 Gatekeeper 拦截。任选一种方式：
+### 安装提示
 
-- **方式一**：在「应用程序」里**右键**点击 `TermFinale.app` → 打开 → 再点「打开」
-- **方式二**：终端执行一次
+- **macOS**：Beta 包暂未签名/公证，首次打开需右键 →「打开」；或在「系统设置 → 隐私与安全性」中允许
+- **Windows**：未做代码签名，SmartScreen 提示时选「更多信息 → 仍要运行」
 
-```bash
-xattr -dr com.apple.quarantine /Applications/TermFinale.app
-```
+---
 
-### Windows
+## 快速开始
 
-解压后直接运行 `TermFinale.exe`。若出现 SmartScreen 提示，点「更多信息」→「仍要运行」。
+### 1. 准备 API Key
 
-> Windows 版本需要在 Windows 机器上构建，步骤见 [`docs/BUILD_WINDOWS.md`](docs/BUILD_WINDOWS.md)。
+TermFinale 不内置模型额度，需要你自己的 API Key：
 
-## 第一次使用
+| Key | 必填 | 用途 |
+|---|---|---|
+| DeepSeek | 是 | 讲义生成、出题、对话 |
+| 阿里云百炼 | 否 | 内容复核、图片理解 |
+| Kimi / Moonshot | 否 | 复核备用 |
 
-### 1. 配置 API Key（必做）
+Key 只写入本机用户目录的 `.env`，不会上传；随时可以删除或更换。
 
-TermFinale **不内置 Key**，需要你自己的大模型账号。打开软件 → 右上角 **⚙ 设置**：
+### 2. 新建课程并导入资料
 
-| 字段 | 是否必填 | 用途 | 去哪申请 |
-|---|---|---|---|
-| DeepSeek API Key | ✅ 必填 | 文本生成（讲义/提取/试卷） | <https://platform.deepseek.com> |
-| 阿里云百炼 API Key | 选填 | 给图片生成文字说明 | <https://bailian.console.aliyun.com> |
+1. 打开软件，完成三步引导（名字、学校、专业）
+2. 进入「设置 → 模型」，填入 DeepSeek Key，点「测试连接」
+3. 课程库 →「新建课程」→ 填考试信息 → 上传资料 → 保存
+4. 选择页码范围 → 选讲义档位 → 预览 2 页 →「同意继续」生成
+5. 生成完成后进入质量页，可补充检查、阅读、练习、出卷
 
-粘贴后点「测试连接」，看到 `DeepSeek ✅` 再保存。
+详细步骤见 [使用说明书](docs/使用说明书.md)，软件内「说明」页也有同样内容。
 
-- Key 只保存在你本机的用户数据目录，**不会上传**。
-- 不填百炼 Key 也能用，只是图片下方显示「第 N 页配图」。
-- 费用按调用量计费，一份 32 页讲义大约几毛钱，个人使用通常每月几元到十几元。
+---
 
-### 2. 新建科目
+## 从源码运行
 
-填写课程名、学校层级、学分、是否专业课、剩余天数、目标分数。这些信息会影响 AI 的讲法：
+### 环境
 
-- 只剩 3 天 → 自动偏向“只保必考”的精简讲法
-- 目标 90+ → 增加推导与综合题
-- 专业课 / 学分高 → 内容更硬核
+- Python 3.12+（开发使用 3.14）
+- macOS 或 Windows
+- 可选：本地 MinerU 环境（扫描件 OCR），不装也能处理文字版 PDF
 
-### 3. 上传资料并生成
-
-建议把资料分成「核心重点」（老师划的重点、真题）和「参考资料」（教材、课件）。上传后选择：
-
-- **全量讲义**：时间充裕，想学透原理
-- **精简讲义**：时间紧张，只讲核心拿分套路
-- **AI 导师人设**：老师 / 学术AI / 暴力极客 / 温柔小姐姐 / 阳光小哥哥
-
-生成完成后会自动打开预览页，可点「在浏览器中打开」或「导出 PDF」。
-
-## 怎么用效果最好
-
-1. **优先上传 PDF**：PPT 转换后的 PDF 通常排版更稳定；PPT 也能用，但图片和公式的还原度略低。
-2. **首次生成会慢**：需要逐个识别图片（32 页约 3 分钟），**第二次生成同一份资料几乎秒过**（图片说明与大纲都有缓存）。
-3. **资料越“脏”越要分类**：把真题/重点放“核心”，教材放“参考”，权重滑块才有意义。
-4. **人设只影响语气**，不影响知识点；想要最密的信息量选「学术AI」。
-5. **生成内容请对照原始资料**：AI 会标注出处页码，也会用 `【延伸】` 标出资料之外的补充，两者要区分看。
-
-## 常见问题
-
-**Q：双击没反应 / 打不开？**
-见上文 Gatekeeper 处理方式；仍不行请查看日志：`~/Library/Application Support/TermFinale/logs/`。
-
-**Q：提示“还没有配置 API Key”？**
-右上角 ⚙ 设置里填入 DeepSeek Key。
-
-**Q：点了生成一直转圈？**
-首次生成需要解析文件并识别图片，比较慢；界面会显示「已用时间 / 预计剩余」。第二次会很快。
-
-**Q：图片下面只写“第 N 页配图”？**
-没有配置阿里云百炼 Key，或该图被判定为装饰图。配好 Key 后重新生成即可。
-
-**Q：报错“生成结果为空” / “余额不足”？**
-通常是 API Key 无效、欠费或触发了限流。到对应平台检查余额后重试。
-
-**Q：生成的内容有错误怎么办？**
-AI 生成内容仅供参考，请以原始资料为准。发现明显错误欢迎提 Issue，附上课程与资料类型即可。
-
-**Q：我的数据存在哪？怎么备份/删除？**
-
-| 系统 | 目录 |
-|---|---|
-| macOS | `~/Library/Application Support/TermFinale/` |
-| Windows | `%APPDATA%\TermFinale\` |
-
-里面有数据库、解析出的图片、日志、`.env`。整个文件夹拷走即备份，删除即清空。
-
-## 隐私与免责
-
-- 课件**只在本机解析**，不会上传到任何我们的服务器。
-- 生成时：文本发送给 **DeepSeek**，图片发送给 **阿里云百炼**（仅用于生成图注），遵循各自的服务条款。
-- API Key 仅保存在本机 `.env`，不写入代码、不随程序分发。
-- AI 生成内容可能存在错误或遗漏，**请以原始资料为准**，不要直接用于正式考试以外的用途。
-- 请勿上传包含个人隐私或涉密内容的资料。
-
-## 技术栈与项目结构
-
-Python + CustomTkinter 桌面应用，本地 SQLite，输出标准 HTML。
-
-```
-main.py              UI（CustomTkinter）
-launcher.py          打包入口（崩溃日志兜底）
-app/desktop/         主题 token + 组件库
-services/            用例层：guide / review（不依赖 UI）
-core/
-  paths.py           跨平台数据目录
-  config.py          密钥与 .env
-  parser.py          文档解析
-  parsing/figures.py 图形区域检测与渲染
-  generate/          大纲、组卷蓝图
-  quality/qa.py      生成质量校验
-  exporter.py        Markdown → 单文件 HTML
-models/              课程紧迫度模型
-tests/               单元测试
-tools/               冒烟与打包脚本
-```
-
-## 本地开发
+### 安装
 
 ```bash
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+git clone https://github.com/Shuai-Lin2006/TermFinale.git
+cd TermFinale
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-cp .env.example .env      # 填入你的 Key
-python main.py
 ```
 
-改完代码跑一遍离线冒烟（不联网、不花钱）：
+### 启动
 
 ```bash
-python tools/smoke.py
+# 仅启动本地服务（浏览器访问 http://127.0.0.1:8907）
+.venv/bin/python -m uvicorn tfv2.api.product_app:app --host 127.0.0.1 --port 8907
+
+# 桌面窗口（推荐）
+.venv/bin/python desktop.py
 ```
 
-单独跑测试：
+首次启动后，在「设置 → 模型」填入 API Key。
+
+---
+
+## 工作原理
+
+```text
+资料 PDF/PPT/图片
+        │
+        ▼
+页账本（逐页文字 / 图片 / 公式）
+        │
+        ▼
+大纲规划 ──► 分节撰写 ──► 规范化与公式清洗
+        │
+        ▼
+质量门禁（结构 / 内容 / PDF / 语言 / 逐页覆盖）
+        │
+        ├─ 未通过 ──► 指出问题，不回退成“看起来完成”
+        │
+        ▼
+排版渲染（HTML / PDF / Word）
+        │
+        ▼
+练习、错题、复习、模拟卷
+```
+
+核心原则：**可追溯优先于“写得漂亮”**。每段正文都要能对上原书页码，不达标就标出来。
+
+---
+
+## 技术栈
+
+| 层 | 技术 |
+|---|---|
+| 运行时 | Python 3.14、SQLite |
+| 后端 | FastAPI、Uvicorn、Pydantic、SQLAlchemy |
+| 前端 | 原生 JavaScript、原生 CSS、KaTeX |
+| PDF / 文档 | PyMuPDF、MinerU、pix2tex、Typst、Playwright、python-docx、python-pptx |
+| 模型服务 | DeepSeek、阿里云百炼 / Qwen、Kimi / Moonshot（用户自带 Key） |
+| 桌面 | pywebview、CustomTkinter、PyInstaller |
+| 测试 | unittest（878 项）、自建评测集与基准脚本 |
+
+---
+
+## 项目结构
+
+```text
+tfv2/                 产品核心：生成、质量、审计、题库、存储
+  api/                本地 HTTP API
+  authoring/          分节撰写与规范化
+  build.py            讲义渲染与门禁
+  ingest/             PDF/PPT 解析、OCR、公式
+  quality/            质量门禁、覆盖审计、可信度
+  product/            课程、任务、练习、复习、服务
+web_v2/               前端（原生 JS/CSS）
+core/                 共享基础：配置、日志、模型客户端
+tests/                单元测试
+docs/                 文档、截图、发布说明
+scripts/              评测、基准、工具脚本
+desktop.py            桌面入口
+TermFinale.spec       PyInstaller 打包配置
+```
+
+---
+
+## 测试与质量
 
 ```bash
-python -m tests.test_weights
-python -m tests.test_maintenance
-python -m tests.test_config
+# 单元测试
+.venv/bin/python -m unittest discover -s tests -t .
+
+# 评测集（不跑 OCR，快速）
+.venv/bin/python scripts/eval_harness.py --no-ocr
+
+# 完整验证（测试 + 评测 + API 文档）
+bash scripts/verify.sh
 ```
 
-## 评测
+当前：**878 项单元测试通过**；评测集讲义不通过 0 / 10；页面与 API 冒烟通过。
 
-```bash
-# 只测解析（不调用 AI、不花钱）
-python tools/evaluate.py ~/Desktop/a.pdf ~/Desktop/b.pptx
+质量策略：
 
-# 加测 AI 环节（会产生费用）
-python tools/evaluate.py ~/Desktop/a.pdf --ai extract,exam,guide
-```
+- 模型输出必须带出处，缺出处会被丢弃
+- 覆盖不足会标「部分提取」，不冒充全量
+- 答案审计冲突时整卷判「需重做」
+- 公式页保留原页影像，不把识别错误当正确答案
 
-报告写到 `evaluation/report_<时间>.md`（含机器指标 + 人工评分表），评测数据目录隔离在 `_backup/eval_home`，不会污染你的课程库。
+---
 
-## 打包
+## 已知限制
 
-```bash
-pip install pyinstaller
-python tools/build.py
-```
+- 生成内容仍可能出错，请以原书为准
+- 公式/图片页不能直接出文字题，需要选文字页
+- 扫描件 OCR 较慢；可选「快速保存」，把识别推迟到首次生成
+- 质量检查是程序 + 模型，不是人工逐页复核
+- 需要联网和 API Key；资料、笔记保存在本机
+- 不是系统学习工具，不适合想逐字吃透教材的场景
 
-- macOS 产物：`dist/TermFinale.app`
-- Windows 产物：`dist/TermFinale/TermFinale.exe`
-- **建议 Python 3.12**：PyInstaller 对新版本解释器支持滞后
-- 详细 Windows 步骤见 [`docs/BUILD_WINDOWS.md`](docs/BUILD_WINDOWS.md)
+---
 
 ## Roadmap
 
-- [x] 讲义 / 逻辑分析 / 资料提取 / 训练试卷
-- [x] 图形提取与原位配图
-- [x] 大纲先行、质量校验、并发生成与缓存
-- [x] 应用内 API Key 设置
-- [ ] Windows 官方构建与自动发布（GitHub Actions）
-- [ ] 考前 1 页速览
-- [ ] 错题本 / 自测记录
-- [ ] 深色模式、图标体系
+- 更完整的本地模型支持，减少联网依赖
+- 公式可搜索、可出题、可校对
+- 按错题和掌握度安排每日复习页
+- 多设备迁移与端到端加密备份
+- 讲义模板、导出样式
+- Anki / Markdown 互通
+- 更清楚的“哪里可能有问题、为什么”质量报告
+
+---
+
+## 参与与反馈
+
+- 提交 Issue：bug、内容错误、功能建议
+- 愿意提供课程资料试用、或参与开发，欢迎联系
+- 联系方式见软件内「说明 → 产品介绍」
+
+反馈问题时请附：版本与系统、资料类型（文字版/扫描件/PPT）、问题截图或页码。
+
+---
 
 ## License
 
-[MIT](LICENSE)
+本项目以 **GNU Affero General Public License v3.0（AGPL-3.0）** 发布，见 [LICENSE](LICENSE)。
 
-## 致谢
+选择 AGPL 的原因：项目使用 [PyMuPDF](https://github.com/pymupdf/PyMuPDF) 和 [MinerU](https://github.com/opendatalab/MinerU)（均为 AGPL-3.0）处理 PDF 与扫描件。按 AGPL 分发时需提供对应源码；本仓库即为源码，下载页也会给出源码入口。
 
-- [DeepSeek](https://www.deepseek.com/) 提供文本生成
-- [阿里云百炼](https://bailian.console.aliyun.com/) 提供视觉理解
-- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) / [PyMuPDF](https://pymupdf.readthedocs.io/) / [KaTeX](https://katex.org/) / [Mermaid](https://mermaid.js.org/)
+第三方组件与许可证清单见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+---
+
+## 免责声明
+
+本项目为个人开发的学习工具，与任何学校、考试机构无关。生成内容由模型产生，可能存在错误；请以课程资料和教师要求为准，不要将生成内容直接作为考试依据。
