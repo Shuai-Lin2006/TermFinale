@@ -11,6 +11,10 @@ from tfv2.render.docx import MAX_FIGURE_HEIGHT_CM
 
 
 class FigureFitTests(unittest.TestCase):
+    @unittest.skipUnless(
+        (Path("docs/evidence/v2_ring_full") / "sections.json").is_file(),
+        "本地样本 docs/evidence/v2_ring_full 不存在（公开仓库不包含过程证据）",
+    )
     def test_ten_page_sample_captions_and_height(self):
         base = Path("docs/evidence/v2_ring_full")
         sections = json.loads((base / "sections.json").read_text(encoding="utf-8"))

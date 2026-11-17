@@ -130,6 +130,10 @@ class FigureRouterTests(unittest.TestCase):
             {"id": "r", "type": "resistor", "x": 100, "y": 100}], "edges": []}, subject="电路", out_path=out)
         self.assertIsNone(r)
 
+    @unittest.skipUnless(
+        Path("docs/evidence/v2_circuit_full").is_dir(),
+        "本地样本 docs/evidence 不存在（公开仓库不包含过程证据）",
+    )
     def test_source_auto_match_artifact_page(self):
         out = self.root / "auto_source.png"
         with patch.object(service, "ARTIFACT_ROOTS", [Path("docs/evidence")]):
