@@ -3,214 +3,358 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TermFinale · 下载</title>
-<meta name="description" content="TermFinale：面向大学生的本地期末复习工作台。下载 macOS / Windows 版本。">
+<title>TermFinale · 期末复习工作台</title>
+<meta name="description" content="TermFinale：把教材变成可读、可核对、可打印的讲义。本地优先，支持 macOS / Windows。">
+<meta property="og:title" content="TermFinale · 期末复习工作台">
+<meta property="og:description" content="把教材变成可读、可核对、可打印的讲义。">
 <link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
 <style>
   :root{
-    --paper:#f2f6fb; --card:#ffffff; --ink:#141a24; --ink2:#4a5666; --ink3:#78869a;
-    --hair:rgba(20,26,36,.12); --teal:#0e8f8d; --teal-soft:#d9f3f1; --indigo:#5b6cff;
-    --radius:14px; --shadow:0 1px 2px rgba(20,26,36,.04),0 14px 36px rgba(20,26,36,.07);
+    --bg:#070b12; --bg2:#0b1220; --panel:rgba(255,255,255,.045); --line:rgba(255,255,255,.10);
+    --ink:#eef3fb; --ink2:#a9b6c8; --ink3:#6f7d92;
+    --blue:#5b8cff; --cyan:#38d9d0; --violet:#8b7cff;
+    --radius:16px;
     --sans:"Avenir Next","PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
     --serif:"Iowan Old Style","Songti SC","Noto Serif CJK SC",Georgia,serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   *{box-sizing:border-box}
-  html,body{margin:0}
-  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased}
-  a{color:inherit}
-  .bg{position:fixed;inset:0;pointer-events:none;z-index:-1;background:
-    radial-gradient(1000px 520px at 10% -8%,#e3efff 0%,transparent 62%),
-    radial-gradient(820px 460px at 100% 0%,#e8e9ff 0%,transparent 58%);}
-  .wrap{max-width:960px;margin:0 auto;padding:28px 24px 72px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 34px}
-  .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
-  .brand img{width:42px;height:42px;border-radius:11px}
-  .brand b{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em}
-  .brand small{display:block;font-size:11px;color:var(--ink3);letter-spacing:.02em}
-  nav{display:flex;gap:18px;font-size:13px;color:var(--ink2)}
-  nav a{text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
-  nav a:hover{color:var(--ink);border-bottom-color:var(--hair)}
-  .hero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.75fr);gap:22px;align-items:end;padding:14px 0 26px;border-bottom:1px solid var(--hair)}
-  .eyebrow{font-size:11px;letter-spacing:.06em;color:var(--ink3);margin-bottom:8px}
-  h1{font-family:var(--serif);font-size:clamp(34px,4.4vw,52px);line-height:1.08;letter-spacing:-.03em;margin:0 0 12px;font-weight:600}
-  .lede{max-width:52ch;color:var(--ink2);font-size:15px;margin:0}
-  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);border:1px solid var(--hair);border-radius:999px;padding:3px 10px;background:var(--card)}
-  .badge i{width:6px;height:6px;border-radius:50%;background:#d19a2a}
-  .hero-side{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-  .hero-side b{display:block;font-size:12px;color:var(--ink3);font-weight:500;margin-bottom:6px}
-  .hero-side p{margin:0;font-size:13px;color:var(--ink2)}
-  .downloads{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0 8px}
-  .dl{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
-  .dl h2{font-size:16px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .glow{position:fixed;inset:0;z-index:-2;background:
+    radial-gradient(900px 520px at 50% -12%,rgba(91,140,255,.26),transparent 62%),
+    radial-gradient(700px 420px at 85% 8%,rgba(139,124,255,.14),transparent 60%),
+    radial-gradient(800px 520px at 8% 22%,rgba(56,217,208,.10),transparent 62%),
+    var(--bg);}
+  .grid{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 72%);
+            mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 72%);}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  /* nav */
+  .nav{position:sticky;top:0;z-index:50;padding:14px 0;backdrop-filter:blur(14px);background:rgba(7,11,18,.55);border-bottom:1px solid rgba(255,255,255,.06)}
+  .nav-in{display:flex;align-items:center;gap:26px;max-width:1120px;margin:0 auto;padding:0 24px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em}
+  .brand img{width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.14)}
+  .nav-links{display:flex;gap:22px;margin-left:auto;font-size:13.5px;color:var(--ink2)}
+  .nav-links a:hover{color:#fff}
+  .nav .btn{margin-left:6px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:var(--ink);font-size:13.5px;font-weight:500;cursor:pointer;transition:background .18s,border-color .18s,color .18s,transform .12s}
+  .btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.28)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{border:0;background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;box-shadow:0 10px 30px rgba(91,140,255,.28)}
+  .btn.primary:hover{background:linear-gradient(135deg,#6d99ff,#9a8cff)}
+  .btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
+  .btn.small{height:34px;padding:0 14px;font-size:12.5px}
+  /* hero */
+  .hero{padding:88px 0 0;text-align:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);border-radius:999px;padding:6px 14px;margin-bottom:26px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 4px rgba(56,217,208,.12)}
+  h1{font-family:var(--serif);font-size:clamp(40px,6vw,68px);line-height:1.08;letter-spacing:-.035em;margin:0 0 22px;font-weight:600}
+  h1 .grad{background:linear-gradient(100deg,#8fb4ff 10%,#8b7cff 55%,#38d9d0 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{max-width:600px;margin:0 auto;color:var(--ink2);font-size:16px;line-height:1.85}
+  .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:32px 0 14px}
+  .hero-note{font-size:12.5px;color:var(--ink3)}
+  .hero-note b{color:var(--ink2);font-weight:500}
+  /* product shot */
+  .shot{position:relative;margin:54px auto 0;max-width:980px;padding:10px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 120px rgba(0,0,0,.55),0 0 0 1px rgba(91,140,255,.08)}
+  .shot::before{content:"";position:absolute;inset:-40px -80px -80px;z-index:-1;background:radial-gradient(60% 60% at 50% 20%,rgba(91,140,255,.18),transparent 70%);filter:blur(20px)}
+  .shot img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,.08)}
+  .shot .bar{display:flex;gap:6px;padding:0 0 10px 4px}
+  .shot .bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18)}
+  /* sections */
+  section{padding:88px 0 0}
+  .sec-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:30px}
+  .sec-head h2{font-family:var(--serif);font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;margin:0;font-weight:600}
+  .sec-head p{margin:0;color:var(--ink3);font-size:13px;max-width:360px;text-align:right}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:34px}
+  .stat{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);border-radius:14px;padding:18px 20px}
+  .stat b{display:block;font-family:var(--serif);font-size:28px;letter-spacing:-.02em;line-height:1.1}
+  .stat span{font-size:12px;color:var(--ink3)}
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{border:1px solid rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border-radius:var(--radius);padding:22px;transition:border-color .2s,transform .2s}
+  .card:hover{border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+  .card .ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(91,140,255,.12);border:1px solid rgba(91,140,255,.22);margin-bottom:14px}
+  .card .ico svg{width:17px;height:17px;stroke:#9db8ff;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .card h3{font-size:15px;margin:0 0 6px;font-weight:600}
+  .card p{font-size:13px;color:var(--ink3);margin:0;line-height:1.75}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;counter-reset:s}
+  .step{border:1px solid rgba(255,255,255,.09);border-radius:var(--radius);padding:22px;background:rgba(255,255,255,.03);position:relative}
+  .step::before{counter-increment:s;content:"0" counter(s);font-family:var(--mono);font-size:12px;color:var(--blue);letter-spacing:.08em}
+  .step h3{font-size:15px;margin:10px 0 6px;font-weight:600}
+  .step p{font-size:13px;color:var(--ink3);margin:0}
+  .previews{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+  .previews figure{margin:0;border:1px solid rgba(255,255,255,.09);border-radius:var(--radius);overflow:hidden;background:rgba(255,255,255,.03)}
+  .previews img{display:block;width:100%;height:auto}
+  .previews figcaption{padding:12px 16px;font-size:12.5px;color:var(--ink3);border-top:1px solid rgba(255,255,255,.07)}
+  .download{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .dl{border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:24px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));display:flex;flex-direction:column;gap:8px}
+  .dl h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
   .dl .req{font-size:12px;color:var(--ink3)}
-  .dl .status{font-size:12px;color:var(--ink2);min-height:20px}
-  .dl .actions{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap;padding-top:6px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:10px;font-size:13px;font-weight:500;text-decoration:none;border:1px solid var(--hair);color:var(--ink);background:transparent;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
-  .btn:hover{border-color:var(--ink3)}
-  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
-  .btn.primary:hover{background:#000;color:#dfff4b}
-  .btn[aria-disabled="true"]{opacity:.55;pointer-events:none}
-  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
-  .card{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:18px 20px}
-  .card h3{font-size:14px;margin:0 0 8px;font-weight:600}
-  .card p,.card li{font-size:13px;color:var(--ink2);margin:0}
-  .card ul,.card ol{margin:6px 0 0;padding-left:20px}
-  .card li{margin:4px 0}
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#eef3f9;border:1px solid var(--hair);border-radius:5px;padding:1px 5px}
-  .note{border-left:3px solid var(--teal);background:var(--teal-soft);border-radius:0 10px 10px 0;padding:12px 14px;font-size:13px;color:#124c4a;margin:14px 0}
-  .section-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:34px 0 12px;border-bottom:1px solid var(--hair);padding-bottom:8px}
-  .section-title h2{font-size:17px;margin:0;font-weight:600}
-  .section-title span{font-size:12px;color:var(--ink3)}
-  footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--hair);font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  footer a{color:var(--ink2)}
-  @media(max-width:760px){
-    .hero{grid-template-columns:1fr;align-items:start}
-    .downloads,.grid{grid-template-columns:1fr}
-    nav{display:none}
-    h1{font-size:36px}
+  .dl .status{font-size:12.5px;color:var(--ink2);min-height:20px}
+  .dl .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:10px}
+  .trust{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .trust .card p{font-size:13px}
+  .trust b{color:var(--ink)}
+  .faq{display:grid;gap:10px}
+  details{border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.03);padding:0 18px}
+  summary{cursor:pointer;list-style:none;padding:16px 0;font-size:14px;font-weight:500;display:flex;justify-content:space-between;gap:10px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--ink3);font-family:var(--mono)}
+  details[open] summary::after{content:"−"}
+  details p{margin:0 0 16px;font-size:13px;color:var(--ink3)}
+  details a{color:#a9c2ff;border-bottom:1px solid rgba(169,194,255,.3)}
+  footer{margin-top:96px;border-top:1px solid rgba(255,255,255,.07);padding:34px 0 56px;color:var(--ink3);font-size:12.5px}
+  .foot-in{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  footer a:hover{color:#fff}
+  .foot-links{display:flex;gap:18px;flex-wrap:wrap}
+  .fine{font-size:11.5px;color:var(--ink3);margin-top:10px}
+  @media(max-width:900px){
+    .features,.steps{grid-template-columns:1fr 1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .previews,.trust{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+  @media(max-width:600px){
+    .features,.steps,.download{grid-template-columns:1fr}
+    .hero{padding-top:60px}
+    .sec-head{display:block}
+    .sec-head p{text-align:left;margin-top:8px}
+    .nav-in{padding:0 16px}
+    .wrap{padding:0 16px}
   }
 </style>
 </head>
 <body>
-<div class="bg"></div>
-<div class="wrap">
-  <header>
-    <a class="brand" href="https://github.com/Shuai-Lin2006/TermFinale">
-      <img src="assets/logo-mark.svg" alt="TermFinale">
-      <span><b>TermFinale</b><small>学习台 · 期末复习工作台</small></span>
-    </a>
-    <nav>
+<div class="glow"></div><div class="grid"></div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="./"><img src="assets/logo-mark.svg" alt="TermFinale">TermFinale</a>
+    <div class="nav-links">
+      <a href="#features">功能</a>
+      <a href="#how">使用方法</a>
       <a href="#download">下载</a>
-      <a href="#install">安装说明</a>
-      <a href="#keys">API Key</a>
+      <a href="#faq">常见问题</a>
       <a href="https://github.com/Shuai-Lin2006/TermFinale">GitHub</a>
-    </nav>
+    </div>
+    <a class="btn small primary" href="#download">下载</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>Local-first · Beta 内测中</div>
+    <h1>把教材变成<br><span class="grad">能读、能核对、能打印</span>的讲义</h1>
+    <p class="lede">导入 PDF、PPT、Word 或图片，按页生成带原书页码的讲义，再出练习题、错题复习和模拟卷。资料与笔记保存在本机，模型调用使用你自己的 API Key。</p>
+    <div class="hero-actions">
+      <a class="btn primary" id="heroMac" href="https://github.com/Shuai-Lin2006/TermFinale/releases">下载 macOS 版</a>
+      <a class="btn" id="heroWin" href="https://github.com/Shuai-Lin2006/TermFinale/releases">下载 Windows 版</a>
+    </div>
+    <p class="hero-note" id="heroNote">正在检查最新版本… · 当前为 <b>Beta</b>，安装包发布后自动更新链接</p>
+
+    <div class="shot">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <img src="screenshots/readme-dashboard.png" alt="TermFinale 主控台">
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>878</b><span>自动化测试通过</span></div>
+      <div class="stat"><b>1001</b><span>页真实教材实测</span></div>
+      <div class="stat"><b>3</b><span>平台 API Key 可选</span></div>
+      <div class="stat"><b>AGPL-3.0</b><span>开源许可证</span></div>
+    </div>
   </header>
 
-  <section class="hero">
-    <div>
-      <div class="eyebrow">LOCAL-FIRST · BETA</div>
-      <h1>把教材变成<br>能读、能核对、能打印的讲义</h1>
-      <p class="lede">TermFinale 把 PDF、PPT、Word 和图片整理成带原书页码的讲义，出练习题、错题复习和模拟卷。资料和笔记保存在本机，模型调用使用你自己的 API Key。</p>
-      <p style="margin:14px 0 0"><span class="badge"><i></i>Beta 内测中 · 当前版本以 Releases 为准</span></p>
+  <section id="features">
+    <div class="sec-head">
+      <h2>不是聊天框，是一条复习流水线</h2>
+      <p>从资料到讲义、练习、复习、模拟卷，每一步都有出处。</p>
     </div>
-    <aside class="hero-side">
-      <b>适合谁</b>
-      <p>期末时间紧、想先抓住重点，又希望复习有出处、能对着原书核对的人。</p>
-      <b style="margin-top:14px">不适合谁</b>
-      <p>想逐字吃透教材、或追求满绩点的系统学习。这个工具更偏应试。</p>
-    </aside>
+    <div class="features">
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5"/></svg></div>
+        <h3>按页生成，每段有出处</h3>
+        <p>讲义正文对应原书页码，能直接翻回教材核对；缺出处的段落会被拦下。</p>
+      </article>
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-5 3 3 5-7"/></svg></div>
+        <h3>质量门禁</h3>
+        <p>结构、内容、PDF、语言、逐页覆盖都会检查；没讲到的页会标出来，不假装完成。</p>
+      </article>
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 10l7-7 7 7"/></svg></div>
+        <h3>公式页保留原页影像</h3>
+        <p>扫描件和公式密集页不硬转文字，避免识别错误；文字版 PDF 正常提取。</p>
+      </article>
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div>
+        <h3>练习与错题复习</h3>
+        <p>从讲义或资料页出题，判分带解析和页码；答错自动进错题本，按记忆曲线排期。</p>
+      </article>
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+        <h3>模拟卷</h3>
+        <p>按题型和总分组卷；答案审计冲突时整卷退回，不带着错误交付。</p>
+      </article>
+      <article class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg></div>
+        <h3>AI 助教</h3>
+        <p>基于当前讲义提问，回答带页码引用；简单问题快答，推导类自动深想。</p>
+      </article>
+    </div>
   </section>
 
-  <div id="download" class="downloads">
-    <article class="dl">
-      <h2>macOS</h2>
-      <div class="req">macOS 11+ · Apple Silicon / Intel</div>
-      <div class="status" id="macStatus">正在检查最新版本…</div>
-      <div class="actions">
-        <a class="btn primary" id="macBtn" href="https://github.com/Shuai-Lin2006/TermFinale/releases" aria-disabled="true">Mac 下载</a>
-        <a class="btn" href="https://github.com/Shuai-Lin2006/TermFinale/releases">全部版本</a>
+  <section id="how">
+    <div class="sec-head">
+      <h2>三步开始复习</h2>
+      <p>第一次使用大约 5 分钟，之后每次只需选页和生成。</p>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <h3>填一个 Key</h3>
+        <p>设置 → 模型 → 粘贴 DeepSeek Key → 测试连接。另两个 Key 可选。</p>
+      </article>
+      <article class="step">
+        <h3>导入资料，选页预览</h3>
+        <p>新建课程、上传 PDF/PPT，选几页先看 2 页预览，满意再生成整份。</p>
+      </article>
+      <article class="step">
+        <h3>读、练、复习</h3>
+        <p>讲义带页码可导出；练习判分进错题本；需要整卷复习时再出模拟卷。</p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>看看实际界面</h2>
+      <p>课程页、质量报告、阅读器，都是真实生成的讲义。</p>
+    </div>
+    <div class="previews">
+      <figure>
+        <img src="screenshots/readme-course.png" alt="课程页">
+        <figcaption>课程页：资料、讲义、质量、练习、出卷收在一门课里</figcaption>
+      </figure>
+      <figure>
+        <img src="screenshots/readme-artifact.png" alt="质量报告">
+        <figcaption>质量报告：覆盖、依据、配图、重复与套话</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="sec-head">
+      <h2>下载</h2>
+      <p>Beta 安装包发布在 GitHub Releases，页面会自动指向最新版本。</p>
+    </div>
+    <div class="download">
+      <article class="dl">
+        <h3>macOS</h3>
+        <div class="req">macOS 11+ · Apple Silicon / Intel</div>
+        <div class="status" id="macStatus">正在检查最新版本…</div>
+        <div class="acts">
+          <a class="btn primary" id="macBtn" href="https://github.com/Shuai-Lin2006/TermFinale/releases" aria-disabled="true">Mac 下载</a>
+          <a class="btn" href="https://github.com/Shuai-Lin2006/TermFinale/releases">全部版本</a>
+        </div>
+      </article>
+      <article class="dl">
+        <h3>Windows</h3>
+        <div class="req">Windows 10 / 11 · x64</div>
+        <div class="status" id="winStatus">正在检查最新版本…</div>
+        <div class="acts">
+          <a class="btn primary" id="winBtn" href="https://github.com/Shuai-Lin2006/TermFinale/releases" aria-disabled="true">Windows 下载</a>
+          <a class="btn" href="https://github.com/Shuai-Lin2006/TermFinale/releases">全部版本</a>
+        </div>
+      </article>
+    </div>
+    <div class="trust">
+      <div class="card">
+        <h3>安装提示</h3>
+        <p><b>macOS</b>：Beta 未签名，首次打开需右键 →「打开」。<br><b>Windows</b>：SmartScreen 提示时选「更多信息 → 仍要运行」。</p>
       </div>
-    </article>
-    <article class="dl">
-      <h2>Windows</h2>
-      <div class="req">Windows 10 / 11 · x64</div>
-      <div class="status" id="winStatus">正在检查最新版本…</div>
-      <div class="actions">
-        <a class="btn primary" id="winBtn" href="https://github.com/Shuai-Lin2006/TermFinale/releases" aria-disabled="true">Windows 下载</a>
-        <a class="btn" href="https://github.com/Shuai-Lin2006/TermFinale/releases">全部版本</a>
+      <div class="card">
+        <h3>关于费用</h3>
+        <p>软件永久免费，无会员制；模型按量计费，用你自己的 Key。一章约几毛钱，整本教材十几到几十元。</p>
       </div>
-    </article>
-  </div>
-  <div class="note" id="releaseNote">Beta 安装包制作中。发布后这里会自动指向 GitHub Release 里的最新文件，不需要手动改网页。</div>
+    </div>
+  </section>
 
-  <div class="section-title" id="install"><h2>安装说明</h2><span>首次打开可能需要放行</span></div>
-  <div class="grid">
-    <div class="card">
-      <h3>macOS</h3>
-      <ul>
-        <li>打开下载的 <code>.dmg</code>，把 TermFinale 拖进「应用程序」</li>
-        <li>首次打开若提示“无法验证开发者”：右键点图标 →「打开」→ 再点「打开」</li>
-        <li>或到「系统设置 → 隐私与安全性」底部选择“仍要打开”</li>
-      </ul>
+  <section id="faq">
+    <div class="sec-head">
+      <h2>常见问题</h2>
+      <p>还有问题，去 GitHub 提 Issue 或进群。</p>
     </div>
-    <div class="card">
-      <h3>Windows</h3>
-      <ul>
-        <li>解压下载的 <code>.zip</code>，运行其中的 <code>TermFinale.exe</code></li>
-        <li>SmartScreen 提示“未知发布者”时：更多信息 → 仍要运行</li>
-        <li>建议把整个解压目录保留完整，不要只复制 exe</li>
-      </ul>
+    <div class="faq">
+      <details open>
+        <summary>需要自己准备 API Key 吗？</summary>
+        <p>需要。DeepSeek Key 必填，用于生成、出题和对话；阿里云百炼与 Kimi 选填。Key 只写入本机 <code>.env</code>，不上传，随时可删。</p>
+      </details>
+      <details>
+        <summary>生成一份讲义要多久？</summary>
+        <p>8 页左右约几分钟，页数越多越久；扫描件还要做 OCR。可以先「快速保存」，把识别推迟到第一次生成。</p>
+      </details>
+      <details>
+        <summary>为什么公式页是图片？</summary>
+        <p>公式识别可能出错，保留原页影像比强行转文字更可靠；文字版 PDF 不受影响。</p>
+      </details>
+      <details>
+        <summary>能离线用吗？</summary>
+        <p>资料、笔记、讲义都在本机，但生成和问答需要联网调用模型。</p>
+      </details>
+      <details>
+        <summary>更新会丢数据吗？</summary>
+        <p>不会。覆盖安装不会动用户数据目录，课程、讲义、笔记和 Key 都保留。</p>
+      </details>
     </div>
-  </div>
+  </section>
+</main>
 
-  <div class="section-title" id="keys"><h2>关于 API Key</h2><span>软件免费，模型按量计费</span></div>
-  <div class="grid">
-    <div class="card">
-      <h3>需要准备什么</h3>
-      <ul>
-        <li><b>DeepSeek Key（必填）</b>：讲义生成、出题、对话</li>
-        <li>阿里云百炼（选填）：内容复核、图片理解</li>
-        <li>Kimi（选填）：复核备用</li>
-      </ul>
-      <p style="margin-top:10px">Key 只写入本机 <code>.env</code>，不上传；随时可删。</p>
+<footer>
+  <div class="wrap foot-in">
+    <div>
+      <div>© 2026 TermFinale · 个人项目，与任何学校或考试机构无关</div>
+      <div class="fine">生成内容由模型产生，可能存在错误，请以课程资料和教师要求为准。</div>
     </div>
-    <div class="card">
-      <h3>费用大概多少</h3>
-      <ul>
-        <li>10 页左右一章：约几毛钱</li>
-        <li>整本 1000 页：约十几到几十元</li>
-        <li>具体取决于模型价格、页数与复核次数</li>
-      </ul>
-      <p style="margin-top:10px">软件本身永久免费，不存在会员制，也不代收费用。</p>
-    </div>
-  </div>
-
-  <div class="section-title"><h2>进一步了解</h2><span>源码与文档</span></div>
-  <div class="grid">
-    <div class="card">
-      <h3>文档</h3>
-      <ul>
-        <li><a href="https://github.com/Shuai-Lin2006/TermFinale/blob/main/docs/使用说明书.md">使用说明书</a></li>
-        <li><a href="https://github.com/Shuai-Lin2006/TermFinale/blob/main/docs/产品介绍.md">产品介绍</a></li>
-        <li><a href="https://github.com/Shuai-Lin2006/TermFinale#readme">GitHub README</a></li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>反馈</h3>
-      <ul>
-        <li>提交 <a href="https://github.com/Shuai-Lin2006/TermFinale/issues">Issue</a>（bug / 建议）</li>
-        <li>邮箱：ls2006at@outlook.com</li>
-        <li>QQ 交流群：1134219836</li>
-      </ul>
+    <div class="foot-links">
+      <a href="https://github.com/Shuai-Lin2006/TermFinale">源码</a>
+      <a href="https://github.com/Shuai-Lin2006/TermFinale/blob/main/LICENSE">AGPL-3.0</a>
+      <a href="https://github.com/Shuai-Lin2006/TermFinale/blob/main/docs/使用说明书.md">使用说明</a>
+      <a href="https://github.com/Shuai-Lin2006/TermFinale/issues">反馈</a>
     </div>
   </div>
-
-  <footer>
-    <span>© 2026 TermFinale · 以 AGPL-3.0 开源</span>
-    <span>
-      <a href="https://github.com/Shuai-Lin2006/TermFinale">源码</a> ·
-      <a href="https://github.com/Shuai-Lin2006/TermFinale/blob/main/LICENSE">许可证</a> ·
-      <a href="https://github.com/Shuai-Lin2006/TermFinale/releases">Releases</a>
-    </span>
-  </footer>
-</div>
+</footer>
 
 <script>
 (function () {
   var API = "https://api.github.com/repos/Shuai-Lin2006/TermFinale/releases/latest";
-  var macBtn = document.getElementById("macBtn");
-  var winBtn = document.getElementById("winBtn");
-  var macStatus = document.getElementById("macStatus");
-  var winStatus = document.getElementById("winStatus");
-  var note = document.getElementById("releaseNote");
-  function pick(assets, tests) {
+  var els = {
+    macBtn: document.getElementById("macBtn"), winBtn: document.getElementById("winBtn"),
+    heroMac: document.getElementById("heroMac"), heroWin: document.getElementById("heroWin"),
+    macStatus: document.getElementById("macStatus"), winStatus: document.getElementById("winStatus"),
+    note: document.getElementById("heroNote")
+  };
+  function pick(assets, words) {
     for (var i = 0; i < assets.length; i++) {
-      var name = (assets[i].name || "").toLowerCase();
-      var ok = tests.every(function (t) { return name.indexOf(t) !== -1; });
-      if (ok && /\.(dmg|zip|exe)$/.test(name)) return assets[i];
+      var n = (assets[i].name || "").toLowerCase();
+      if (words.every(function (w) { return n.indexOf(w) > -1; }) && /\.(dmg|zip|exe)$/.test(n)) return assets[i];
     }
     return null;
+  }
+  function setBtn(btn, asset, label, fallbackLabel) {
+    if (!btn) return;
+    if (asset) {
+      btn.href = asset.browser_download_url;
+      btn.removeAttribute("aria-disabled");
+      btn.textContent = label;
+    } else {
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.textContent = fallbackLabel;
+    }
   }
   fetch(API, { headers: { Accept: "application/vnd.github+json" } })
     .then(function (r) { if (!r.ok) throw new Error("no release"); return r.json(); })
@@ -218,16 +362,21 @@
       var assets = rel.assets || [];
       var mac = pick(assets, ["mac"]) || pick(assets, ["darwin"]);
       var win = pick(assets, ["win"]) || pick(assets, ["windows"]);
-      note.textContent = "最新版本：" + (rel.tag_name || rel.name || "") + " · 发布于 " + (rel.published_at || "").slice(0, 10);
-      if (mac) { macBtn.href = mac.browser_download_url; macBtn.removeAttribute("aria-disabled"); macStatus.textContent = mac.name + " · " + (Math.round(mac.size / 1048576)) + " MB"; }
-      else { macStatus.textContent = "当前版本还没有 Mac 安装包"; macBtn.removeAttribute("href"); macBtn.setAttribute("aria-disabled", "true"); macBtn.textContent = "Mac 构建中"; }
-      if (win) { winBtn.href = win.browser_download_url; winBtn.removeAttribute("aria-disabled"); winStatus.textContent = win.name + " · " + (Math.round(win.size / 1048576)) + " MB"; }
-      else { winStatus.textContent = "当前版本还没有 Windows 安装包"; winBtn.removeAttribute("href"); winBtn.setAttribute("aria-disabled", "true"); winBtn.textContent = "Windows 构建中"; }
+      var tag = rel.tag_name || rel.name || "";
+      if (els.note) els.note.innerHTML = "最新版本 <b>" + tag + "</b> · 发布于 " + String(rel.published_at || "").slice(0, 10) + " · 安装包自动更新链接";
+      setBtn(els.macBtn, mac, "Mac 下载", "Mac 构建中");
+      setBtn(els.heroMac, mac, "下载 macOS 版", "macOS 构建中");
+      setBtn(els.winBtn, win, "Windows 下载", "Windows 构建中");
+      setBtn(els.heroWin, win, "下载 Windows 版", "Windows 构建中");
+      if (els.macStatus) els.macStatus.textContent = mac ? mac.name + " · " + Math.round(mac.size / 1048576) + " MB" : "当前版本还没有 Mac 安装包";
+      if (els.winStatus) els.winStatus.textContent = win ? win.name + " · " + Math.round(win.size / 1048576) + " MB" : "当前版本还没有 Windows 安装包";
     })
     .catch(function () {
-      macStatus.textContent = "还没有发布版本，先去 Releases 看看";
-      winStatus.textContent = "还没有发布版本，先去 Releases 看看";
-      note.textContent = "Beta 安装包制作中。发布后会显示在这里。";
+      if (els.note) els.note.innerHTML = "Beta 内测中 · 安装包发布后这里会自动更新";
+      if (els.macStatus) els.macStatus.textContent = "还没有发布版本，先去 Releases 看看";
+      if (els.winStatus) els.winStatus.textContent = "还没有发布版本，先去 Releases 看看";
+      [els.macBtn, els.heroMac].forEach(function (b) { if (b) { b.textContent = "查看 Releases"; b.removeAttribute("aria-disabled"); } });
+      [els.winBtn, els.heroWin].forEach(function (b) { if (b) { b.textContent = "查看 Releases"; b.removeAttribute("aria-disabled"); } });
     });
 })();
 </script>
