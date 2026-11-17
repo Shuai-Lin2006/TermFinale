@@ -28,7 +28,7 @@ def _clean_explain(text: str, bans: list[str]) -> str:
 
 
 def _math_ok(q: str) -> bool:
-    """残缺公式不进卡：未闭合 $ / \begin...\end / \(...\) 会在 KaTeX 报错。"""
+    r"""残缺公式不进卡：未闭合 $ / \begin...\end / \(...\) 会在 KaTeX 报错。"""
     q = q or ""
     if q.count("$") % 2 != 0:
         return False

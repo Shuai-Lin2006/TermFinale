@@ -216,10 +216,7 @@ def export_to_html(markdown_text: str, output_file: str = "讲义.html", course=
     html_content = re.sub(r'<p>\[出处：(.*?)\]</p>', r'<div class="meta-info">[出处：\1]</div>', html_content)
     html_content = re.sub(r'\[出处：(.*?)\]', r'<span class="meta-info">[出处：\1]</span>', html_content)
 
-    custom_info = ""
-
     course_name = course.name if course else ""
-    target_score = getattr(course, "target_score", None) if course else None
     cover_title = course_name or doc_type
     cover_desc = "" if doc_type in ("全量讲义", "讲义") else doc_type
 

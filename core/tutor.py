@@ -7,15 +7,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
-from pathlib import Path
 
 from loguru import logger
 from openai import OpenAI
 
 from core import paths
 from core.config import get_key, load_env, max_tokens, model_extra, text_model
-from core.database import Course, Material, get_db_session
+from core.database import Material, get_db_session
 from core.parser import PARSER_VERSION, extract_text_from_file
 from core.retrieval import build_index, search
 

@@ -17,7 +17,6 @@ import time
 
 from loguru import logger
 
-from core.ai_engine import generate_super_guide
 from core.database import GeneratedFile as DBGeneratedFile, Material as DBMaterial, get_db_session
 from core.exam_engine import call_ai_with_retry
 from core.exporter import export_to_html
