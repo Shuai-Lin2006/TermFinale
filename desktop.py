@@ -278,11 +278,26 @@ class SplashBridge:
 
 def _find_edge() -> str | None:
     if sys.platform == "win32":
-        candidates = [
-            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
-            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
-            shutil.which("msedge"),
+        roots = [
+            os.environ.get("ProgramFiles(x86)"),
+            os.environ.get("ProgramFiles"),
+            os.environ.get("LOCALAPPDATA"),
+            r"C:\Program Files (x86)",
+            r"C:\Program Files",
         ]
+        candidates = []
+        for root in roots:
+            if root:
+                candidates.append(str(Path(root) / "Microsoft" / "Edge" / "Application" / "msedge.exe"))
+        candidates += [shutil.which("msedge"), shutil.which("msedge.exe")]
+        try:
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                                 r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe")
+            candidates.append(winreg.QueryValue(key, None))
+            winreg.CloseKey(key)
+        except Exception:
+            pass
     elif sys.platform == "darwin":
         candidates = ["/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"]
     else:
@@ -302,6 +317,11 @@ def _open_edge_app(url: str) -> int:
     profile = os.path.join(tempfile.gettempdir(), "termfinale-edge-profile")
     args = [edge, f"--app={url}", "--window-size=1440,920",
             f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check"]
+    try:
+        with open(Path(tempfile.gettempdir()) / "termfinale_boot.log", "a", encoding="utf-8") as f:
+            f.write(f"edge fallback url={url} edge={edge}\n")
+    except Exception:
+        pass
     proc = subprocess.Popen(args)
     proc.wait()
     return 0
@@ -377,8 +397,12 @@ def main() -> int:
     import webview
 
     splash_bridge = SplashBridge()
+    try:
+        from core.build_info import VERSION as _VERSION
+    except Exception:
+        _VERSION = "0.4.2"
     main_window = webview.create_window(
-        "TermFinale",
+        f"TermFinale {_VERSION}",
         f"http://127.0.0.1:{PRODUCT_PORT}/",
         width=1440, height=920, min_size=(1080, 700),
         background_color="#FAFAF8",

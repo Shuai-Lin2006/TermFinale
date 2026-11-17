@@ -85,6 +85,7 @@ def main() -> None:
 
                 if edge_main() == 0:
                     return
+                raise RuntimeError("Edge 窗口也启动失败，见 termfinale_boot.log / logs")
 
         import main as app_main
 
