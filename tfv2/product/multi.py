@@ -15,6 +15,7 @@ from pathlib import Path
 
 from core.platform_utils import find_soffice
 from tfv2.ingest.pptx_pdf import pptx_to_pdf
+from tfv2.ingest.docx_pdf import docx_to_pdf
 from tfv2.authoring.lecture import AuthoringError, author_section, author_wrapup, fallback_wrapup, normalize_lecture_sections
 from tfv2.build import build_project
 from tfv2.domain.lecture import (
@@ -51,6 +52,11 @@ def _to_pdf(source: Path, out_dir: Path) -> Path:
         # LibreOffice (Windows builds do not ship it).
         try:
             return pptx_to_pdf(source, out_dir)
+        except Exception:
+            pass
+    if suffix == ".docx":
+        try:
+            return docx_to_pdf(source, out_dir)
         except Exception:
             pass
     if suffix in (".pptx", ".docx", ".ppt", ".doc"):
