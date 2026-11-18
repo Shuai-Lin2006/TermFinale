@@ -77,7 +77,20 @@ def main() -> None:
         from core.single_instance import acquire
 
         if not acquire():
-            _notify("TermFinale 已经在运行，请先退出旧窗口再重新打开。", None)
+            # 已有实例：尝试直接打开它的界面，而不是只弹“正在运行”
+            try:
+                import urllib.request
+                for port in (8907, 8905, 8900, 8906, 8910):
+                    try:
+                        urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=0.5)
+                    except Exception:
+                        continue
+                    from desktop import _open_edge_app
+                    _open_edge_app(f"http://127.0.0.1:{port}/", wait=False)
+                    return
+            except Exception:
+                pass
+            _notify("TermFinale 已经在运行，但窗口没有找到。请先在任务管理器结束 TermFinale，再重新打开。", None)
             return
     except Exception:
         pass

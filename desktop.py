@@ -330,7 +330,7 @@ def _find_edge() -> str | None:
     return None
 
 
-def _open_edge_app(url: str) -> int:
+def _open_edge_app(url: str, wait: bool = True) -> int:
     """WebView 不可用时的兜底：用系统 Edge 的 app 模式打开同一个本地页面。"""
     edge = _find_edge()
     if not edge:
@@ -345,7 +345,8 @@ def _open_edge_app(url: str) -> int:
     except Exception:
         pass
     proc = subprocess.Popen(args)
-    proc.wait()
+    if wait:
+        proc.wait()
     return 0
 
 def main() -> int:
@@ -423,7 +424,7 @@ def main() -> int:
     try:
         from core.build_info import VERSION as _VERSION
     except Exception:
-        _VERSION = "0.4.4"
+        _VERSION = "0.4.5"
     main_window = webview.create_window(
         f"TermFinale {_VERSION}",
         f"http://127.0.0.1:{PRODUCT_PORT}/",
@@ -442,6 +443,16 @@ def main() -> int:
     )
     splash_bridge.splash = splash_window
     splash_bridge.main = main_window
+
+    def _quit_on_close() -> None:
+        try:
+            os._exit(0)
+        except Exception:
+            pass
+    try:
+        main_window.events.closed += _quit_on_close
+    except Exception:
+        pass
     window = main_window
 
     def _show_splash():
