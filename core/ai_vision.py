@@ -14,7 +14,7 @@ VISION_FAIL_LIMIT = 2
 
 
 def reset_vision_breaker() -> None:
-    global _VISION_FAILS, _VISION_OFF
+    global _VISION_FAILS
     _VISION_FAILS = 0
     _VISION_OFF = False
 
