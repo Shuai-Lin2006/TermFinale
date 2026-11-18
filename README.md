@@ -1,11 +1,5 @@
 <p align="center">
-  <img src="docs/assets/app-icon.png" width="96" alt="TermFinale">
-</p>
-
-<h1 align="center">TermFinale</h1>
-
-<p align="center">
-  面向大学生的本地期末复习工作台：把教材和课件变成可读、可核对、可打印的讲义。
+  <img src="docs/assets/banner.png" alt="TermFinale — 把教材变成可读、可核对、可打印的期末讲义">
 </p>
 
 <p align="center">
@@ -44,6 +38,15 @@ TermFinale 是一个**本地优先**的桌面应用：导入 PDF / PPT / Word / 
 | ![质量报告](docs/screenshots/readme-artifact.png) | ![阅读器](docs/screenshots/readme-reader.png) |
 
 ---
+
+## 工程亮点
+
+- **页级溯源**：讲义正文对应原书页码，审计会检查覆盖与出处
+- **质量门禁**：结构、内容、PDF、语言、覆盖任一不通过，任务不标“完成”
+- **并行分块**：4–8 页一块、最多 4 路并发，13 页约 3 分钟
+- **无 LibreOffice 也能读 PPTX/DOCX**：Windows 安装版开箱可用
+- **图片型资料**：Qwen-VL 逐页 OCR，再接正常写作管线
+- **本地优先**：SQLite、资料、笔记都在本机；模型用用户自己的 Key
 
 ## 功能
 
