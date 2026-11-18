@@ -56,6 +56,21 @@ def _ensure_ocr(src: Path, progress=None) -> None:
             (src / "source_pages.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
         else:
             (src / "source_pages.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        # MinerU 不可用/识别不到时，用云 OCR 补空页
+        try:
+            from tfv2.product import cloud_ocr
+            raw2 = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
+            rows2 = raw2.get("pages") if isinstance(raw2, dict) else raw2
+            empty = [i + 1 for i, row in enumerate(rows2) if not str(row.get("text") or "").strip()]
+            pdfs = [src / "lecture.pdf"] + list((src / "source_pdf").glob("*.pdf")) + list((src / "source").glob("*.pdf"))
+            pdf = next((x for x in pdfs if x.is_file()), None)
+            if empty and pdf is not None:
+                if progress:
+                    progress(10, f"云 OCR 补齐 {len(empty)} 页")
+                texts = cloud_ocr.ocr_empty_pages(pdf, empty, progress=progress)
+                filled += cloud_ocr.patch_source_pages(src, texts)
+        except Exception:
+            pass
         marker.unlink(missing_ok=True)
         if progress:
             progress(10, f"扫描件识别完成（补了 {filled} 页）")

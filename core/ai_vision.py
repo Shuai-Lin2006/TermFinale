@@ -248,3 +248,44 @@ def read_table_markdown(image_path: str) -> str:
     except Exception as exc:
         logger.error("表格识别失败: " + str(exc))
         return ""
+
+
+def ocr_page_text(image_path: str) -> str:
+    """用视觉模型把整页图片转成可检索文字（公式保留 LaTeX，表格保留 Markdown）。"""
+    global _VISION_FAILS, _VISION_OFF
+    if _VISION_OFF:
+        return ""
+    try:
+        import io
+        from PIL import Image
+        img = Image.open(image_path).convert("RGB")
+        if max(img.size) > 1600:
+            img.thumbnail((1600, 1600), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=88)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        resp = client.chat.completions.create(
+            model=vision_model(),
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                    {"type": "text", "text": """你是 OCR 引擎。逐行转录这张页面上的全部文字，要求：
+1. 保留原有阅读顺序和段落；
+2. 公式用 LaTeX（行内 $...$，独立公式 $$...$$）；
+3. 表格用 Markdown 表格；
+4. 不要总结、不要解释、不要编造页面上没有的内容；
+5. 如果页面几乎没有文字，只输出空字符串。
+直接输出转录结果。"""},
+                ],
+            }],
+            temperature=0,
+            timeout=60,
+        )
+        text = (resp.choices[0].message.content or "").strip()
+        _VISION_FAILS = 0
+        return text
+    except Exception as e:
+        logger.error(f"页面 OCR 失败: {e}")
+        _note_vision_failure()
+        return ""
