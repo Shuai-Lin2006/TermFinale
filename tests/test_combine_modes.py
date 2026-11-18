@@ -29,7 +29,7 @@ class CombineModeTests(unittest.TestCase):
                 patch("tfv2.product.combine.service.artifact_path", return_value=None):
             result = combine_materials("out", MATERIALS, merge=True, mode="append")
         self.assertEqual(result["mode"], "append")
-        self.assertEqual(result["pdf"], "/tmp/x.pdf")
+        self.assertEqual(Path(result["pdf"]), Path("/tmp/x.pdf"))
         merge.assert_called_once()
 
     def test_fuse_calls_fusion_module(self) -> None:

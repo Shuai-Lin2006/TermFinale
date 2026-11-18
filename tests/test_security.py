@@ -55,4 +55,5 @@ class TokenPersistenceTest(unittest.TestCase):
         self.assertTrue(token_file.is_file())
         self.assertEqual(token_file.read_text(encoding="utf-8").strip(), _AUTH_TOKEN)
         mode = token_file.stat().st_mode & 0o777
-        self.assertEqual(mode, 0o600)
+        if os.name != "nt":
+            self.assertEqual(mode, 0o600)

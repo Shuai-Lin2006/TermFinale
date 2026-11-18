@@ -1,3 +1,4 @@
+import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,11 @@ from tfv2.product import service
 from tfv2.render import diagram, figure_compiler, figure_router
 
 
+def _has(mod: str) -> bool:
+    return importlib.util.find_spec(mod) is not None
+
+
+@unittest.skipUnless(_has("rdkit") and _has("mujoco"), "可选图形依赖（rdkit/mujoco）未安装")
 class FigureRouterTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

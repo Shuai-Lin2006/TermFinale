@@ -34,7 +34,7 @@ class ModuleRunnerTests(unittest.TestCase):
                 for m in ids:
                     path = root / "outputs" / module / f"{m}.json"
                     self.assertTrue(path.is_file())
-                    data = json.loads(path.read_text())
+                    data = json.loads(path.read_text(encoding="utf-8"))
                     self.assertEqual(data["module"], module)
                     self.assertEqual(data["material_id"], m)
 
