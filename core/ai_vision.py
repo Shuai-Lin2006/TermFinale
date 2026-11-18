@@ -14,7 +14,7 @@ VISION_FAIL_LIMIT = 2
 
 
 def reset_vision_breaker() -> None:
-    global _VISION_FAILS
+    global _VISION_FAILS, _VISION_OFF
     _VISION_FAILS = 0
     _VISION_OFF = False
 
@@ -252,7 +252,7 @@ def read_table_markdown(image_path: str) -> str:
 
 def ocr_page_text(image_path: str) -> str:
     """用视觉模型把整页图片转成可检索文字（公式保留 LaTeX，表格保留 Markdown）。"""
-    global _VISION_FAILS, _VISION_OFF
+    global _VISION_FAILS
     if _VISION_OFF:
         return ""
     try:
