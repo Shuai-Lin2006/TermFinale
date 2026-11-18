@@ -424,7 +424,7 @@ def main() -> int:
     try:
         from core.build_info import VERSION as _VERSION
     except Exception:
-        _VERSION = "0.4.5"
+        _VERSION = "0.4.6"
     main_window = webview.create_window(
         f"TermFinale {_VERSION}",
         f"http://127.0.0.1:{PRODUCT_PORT}/",

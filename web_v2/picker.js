@@ -99,6 +99,13 @@
     if (!tiers.length) {
       html += '<p style="margin:0 0 10px;color:#8a4a35;font-size:13px">这些页暂时没有可用档位；请调整选页后重试。</p>';
     }
+    var personas = ["老师", "温柔小姐姐", "学术AI", "阳光小哥哥", "暴力极客"];
+    var curPersona = localStorage.getItem("tf-persona-" + key + "-" + artId) || "老师";
+    var curPrompt = localStorage.getItem("tf-prompt-" + key + "-" + artId) || "";
+    html += '<div style="margin:10px 0 8px"><label style="font-size:12.5px;color:#4a5666">讲课人设</label><select id="tfPersona" style="width:100%;height:36px;margin-top:4px;border:1px solid rgba(20,26,36,.16);border-radius:8px;padding:0 10px;background:#fff">';
+    personas.forEach(function (p) { html += '<option' + (p === curPersona ? ' selected' : '') + '>' + p + '</option>'; });
+    html += '</select></div>';
+    html += '<div style="margin:0 0 10px"><label style="font-size:12.5px;color:#4a5666">补充要求（选填）</label><textarea id="tfCustomPrompt" rows="2" placeholder="例如：多举例子、公式推导写慢一点、不要口语化" style="width:100%;margin-top:4px;border:1px solid rgba(20,26,36,.16);border-radius:8px;padding:8px 10px;font:inherit;resize:vertical">' + esc(curPrompt) + '</textarea></div>';
     var textMode = localStorage.getItem("tf-textmode-" + key + "-" + artId) === "1";
     html += '<label style="display:flex;gap:8px;align-items:flex-start;margin:10px 0 4px;padding:10px 12px;border:1px solid rgba(20,26,36,.12);border-radius:10px;background:#fbfaf6;font-size:13px;cursor:pointer"><input type="checkbox" id="tfTextMode"' + (textMode ? " checked" : "") + ' style="margin-top:3px"><span><strong>文字版（可搜索）</strong><span style="display:block;color:#4a5666;font-size:12px;margin-top:2px">扫描件用本地 OCR 的文字排版，能全文搜索、能出题；代价是公式和版式不如原页清楚。</span></span></label>';
     tiers.forEach(function (t) {
@@ -120,6 +127,10 @@
         localStorage.setItem("tf-tier-" + key + "-" + artId, b.getAttribute("data-tier"));
         var tm = root.querySelector("#tfTextMode");
         localStorage.setItem("tf-textmode-" + key + "-" + artId, tm && tm.checked ? "1" : "0");
+        var personaEl = root.querySelector("#tfPersona");
+        var promptEl = root.querySelector("#tfCustomPrompt");
+        localStorage.setItem("tf-persona-" + key + "-" + artId, personaEl ? personaEl.value : "老师");
+        localStorage.setItem("tf-prompt-" + key + "-" + artId, promptEl ? promptEl.value : "");
         root.remove();
         window.dispatchEvent(new CustomEvent("tf-pages-saved", { detail: { key: key, artifact: artId, tier: b.getAttribute("data-tier") } }));
         // 选完风格直接生成 2 页预览，确认后再生成全部。
@@ -146,7 +157,7 @@
       var res;
       try {
         res = await fetch("/api/artifacts/" + encodeURIComponent(art.id) + "/preview-selected", {
-          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pages: previewPages, tier: localStorage.getItem("tf-tier-" + key + "-" + art.id) || "" }),
+          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pages: previewPages, tier: localStorage.getItem("tf-tier-" + key + "-" + art.id) || "", persona: localStorage.getItem("tf-persona-" + key + "-" + art.id) || "老师", custom_prompt: localStorage.getItem("tf-prompt-" + key + "-" + art.id) || "" }),
           signal: ctrl ? ctrl.signal : undefined,
         });
       } catch (err) {
@@ -182,6 +193,8 @@
           pages: pages,
           tier: localStorage.getItem("tf-tier-" + key + "-" + art.id) || "",
           text_mode: localStorage.getItem("tf-textmode-" + key + "-" + art.id) === "1",
+          persona: localStorage.getItem("tf-persona-" + key + "-" + art.id) || "老师",
+          custom_prompt: localStorage.getItem("tf-prompt-" + key + "-" + art.id) || "",
         })
       });
       var data = await res.json();

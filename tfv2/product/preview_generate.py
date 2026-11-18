@@ -64,7 +64,8 @@ def _ensure_ocr(src: Path, progress=None) -> None:
         marker.unlink(missing_ok=True)
 
 
-def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numbers: list[int] | None = None, progress=None) -> Path:
+def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numbers: list[int] | None = None,
+                     persona: str = "老师", custom_prompt: str = "", progress=None) -> Path:
     from tfv2.product import service
     src = service.artifact_path(artifact_id)
     if src is None:
@@ -102,8 +103,10 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                 author_client, local_ledger, chapter_title="预览",
                 section_title=f"第 {offset + 1}–{offset + len(chunk)} 页",
                 pages=list(local_texts), target_score=80, days_left=7,
-                foundation="基础较弱", persona="老师", gen_lang="zh",
-                extra_note=f"这是预览，只写这 {len(chunk)} 页；不要扩展到其他页。", clamp_pages=True,
+                foundation="基础较弱", persona=(persona or "老师"), gen_lang="zh",
+                extra_note=("这是预览，只写这 " + str(len(chunk)) + " 页；不要扩展到其他页。"
+                            + (("\n用户补充：" + custom_prompt) if (custom_prompt or "").strip() else "")),
+                clamp_pages=True,
             )
         try:
             sec = _author(client)

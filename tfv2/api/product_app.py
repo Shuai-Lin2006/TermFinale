@@ -1039,6 +1039,8 @@ class SelectedPreviewPayload(BaseModel):
     tier: str = ""
     # 扫描件默认放原页影像；要“文字版”（可搜索）就显式打开，不要偷偷替换。
     text_mode: bool = False
+    persona: str = "老师"
+    custom_prompt: str = ""
 
 
 @app.post("/api/artifacts/{aid}/preview-selected")
@@ -1048,7 +1050,8 @@ def artifact_preview_selected(aid: str, payload: SelectedPreviewPayload) -> dict
         raise HTTPException(status_code=422, detail="至少选一页")
     job_id = "sel-" + uuid.uuid4().hex[:12]
     try:
-        out = generate_preview(aid, job_id, page_numbers=payload.pages)
+        out = generate_preview(aid, job_id, page_numbers=payload.pages,
+                               persona=payload.persona, custom_prompt=payload.custom_prompt)
     except Exception as exc:  # noqa: BLE001
         # 预览只是试看；失败时给出下一步，不让用户停在报错上。
         raise HTTPException(
@@ -1109,6 +1112,7 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
                 try:
                     out = generate_preview(
                         aid, job_id, page_numbers=pages,
+                        persona=payload.persona, custom_prompt=payload.custom_prompt,
                         progress=lambda pct, step: store.update_job(job_id, progress=int(pct), step=step),
                     )
                     import shutil
