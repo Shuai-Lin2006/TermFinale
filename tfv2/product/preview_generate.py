@@ -153,7 +153,10 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     dst.mkdir(parents=True)
     (dst / "source").mkdir()
     (dst / "source_assets").mkdir()
-    sp = next((src / "source").glob("*.pdf"))
+    candidates = list((src / "source").glob("*.pdf")) + list((src / "source_pdf").glob("*.pdf"))
+    if not candidates:
+        raise FileNotFoundError("找不到资料 PDF（source/source_pdf）")
+    sp = candidates[0]
     d = pymupdf.open(str(sp)); n = pymupdf.open()
     for idx in indices:
         n.insert_pdf(d, from_page=idx, to_page=idx)
