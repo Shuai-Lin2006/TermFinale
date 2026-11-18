@@ -90,8 +90,8 @@ def main() -> None:
                     return
             except Exception:
                 pass
-            _notify("TermFinale 已经在运行，但窗口没有找到。请先在任务管理器结束 TermFinale，再重新打开。", None)
-            return
+            # 锁被占但没有可用服务：不再把用户挡在门外，继续启动（多实例风险由端口隔离兜底）
+            write_crash("检测到旧实例锁，但服务不可用；继续启动新实例。")
     except Exception:
         pass
     try:
