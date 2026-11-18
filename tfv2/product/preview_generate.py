@@ -114,12 +114,23 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     else:
         rows = [dict(x, page=i + 1) for i, x in enumerate(all_rows[:max(1, min(pages, len(all_rows)))])]
         indices = list(range(len(rows)))
-    sections = []
-    client = DeepSeekClient(model="deepseek-flash")
-    chunk_size = 2
+    sections: list = []
+    chunk_size = 8 if len(rows) > 10 else (6 if len(rows) > 8 else (4 if len(rows) > 4 else 2))
     chunks = [rows[i:i + chunk_size] for i in range(0, len(rows), chunk_size)]
-    for ci, chunk in enumerate(chunks, 1):
-        offset = (ci - 1) * chunk_size
+    import threading
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    progress_lock = threading.Lock()
+
+    def _progress(pct: int, step: str) -> None:
+        if not progress:
+            return
+        with progress_lock:
+            try:
+                progress(pct, step)
+            except Exception:
+                pass
+
+    def _build(ci: int, chunk: list, offset: int):
         local_texts = {j + 1: (row.get("text") or "") for j, row in enumerate(chunk)}
         local_ledger = PageLedger(
             material=artifact_id, page_count=len(chunk), source_hash="preview",
@@ -128,8 +139,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                    for j in local_texts],
         )
         local_facts = facts_for_pages(local_texts, list(local_texts), per_page=8)
-        if progress:
-            progress(12 + int(46 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：规划")
+        _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：规划")
         def _author(author_client):
             return author_section(
                 author_client, local_ledger, chapter_title="预览",
@@ -140,11 +150,11 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                             + (("\n用户补充：" + custom_prompt) if (custom_prompt or "").strip() else "")),
                 clamp_pages=True,
             )
+        client = DeepSeekClient(model="deepseek-flash")
         try:
             sec = _author(client)
         except Exception:
-            if progress:
-                progress(12 + int(46 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：Qwen 重试")
+            _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：Qwen 重试")
             from tfv2.llm.qwen_text import QwenTextClient
             sec = _author(QwenTextClient(model=os.getenv("TERMFINALE_QWEN_TEXT_MODEL", "qwen-max")))
         mapped = map_facts(local_facts, [sec])
@@ -171,7 +181,20 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                 sec.blocks.append(LectureBlock(
                     id=f"table-{ci}-{j}", kind=BlockKind.TABLE, text=table_text.strip()[:8000],
                     source_refs=[SourceRef(material=artifact_id, page_start=offset + j, page_end=offset + j)]))
-        sections.append(sec)
+        return sec
+
+    results: dict[int, object] = {}
+    workers = min(4, max(1, len(chunks)))
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = {ex.submit(_build, ci, chunk, (ci - 1) * chunk_size): ci
+                for ci, chunk in enumerate(chunks, 1)}
+        done = 0
+        for fut in as_completed(futs):
+            ci = futs[fut]
+            results[ci] = fut.result()
+            done += 1
+            _progress(12 + int(40 * done / max(1, len(chunks))), f"已完成 {done}/{len(chunks)} 单元")
+    sections = [results[i] for i in sorted(results)]
     from tfv2.quality.text_clean import clean_sections, is_generic
     kept = clean_sections(sections)
     if kept == 0:

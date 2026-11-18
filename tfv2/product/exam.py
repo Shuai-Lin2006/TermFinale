@@ -807,7 +807,7 @@ def _relabel_question_pages(bp, pages, page_text) -> None:
 
 def _top_up_sections(bp: dict, pages: list[int], page_text: dict[int, str], mode: str, subject: str,
                      figure_map, gen_client, *, difficulty: int = 3, gen_lang: str = "zh",
-                     custom_prompt: str = "", rounds: int = 2) -> dict:
+                     custom_prompt: str = "", rounds: int = 1) -> dict:
     """题型没凑够题时补一轮：把缺口补上，补不上就如实留缺口。
 
     主生成流程已经试过批量 + 单题；这里再做一轮“只补这点缺口”的针对性重试，

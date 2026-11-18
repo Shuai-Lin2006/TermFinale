@@ -1157,7 +1157,7 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
                 (dest / "coverage_audit.json").write_text(
                     json.dumps(structural, ensure_ascii=False, indent=2), encoding="utf-8")
                 service.refresh_artifact_gate(art_id)
-            elif len(pages) <= 32:
+            elif len(pages) <= 8:
                 try:
                     store.update_job(job_id, progress=96, step="质量复核 / 覆盖审计")
                     from tfv2.quality.artifact_audit import audit_artifact_dir
@@ -1509,7 +1509,11 @@ async def course_generate_edit(
     cname = course.get("name") or key
 
     def run() -> None:
+        import time as _time
+        _started = _time.monotonic()
         def prog(pct: int, step: str) -> None:
+            if _time.monotonic() - _started > 360:
+                raise exam.ExamError("出卷超时（6 分钟）。请减少页数或拆分资料后重试")
             current = store.get_job(job_id)
             if current and current.get("status") == "cancelled":
                 raise RuntimeError("已取消")
