@@ -221,8 +221,19 @@
     document.body.appendChild(root);
     var bar = root.querySelector("#tfGenBar"), pctEl = root.querySelector("#tfGenPct"), stepEl = root.querySelector("#tfGenStep"), timeEl = root.querySelector("#tfGenTime"), resultEl = root.querySelector("#tfGenResult"), openEl = root.querySelector("#tfGenOpen");
     var timer = null;
+    var doneArtifact = "";
 
-    function close() { if (timer) clearInterval(timer); root.remove(); }
+    function goReader() {
+      if (!doneArtifact) return;
+      try { location.hash = "#/read/" + encodeURIComponent(doneArtifact); } catch (e) {}
+      root.remove();
+    }
+    function close() {
+      if (timer) clearInterval(timer);
+      if (doneArtifact) { goReader(); return; }
+      root.remove();
+      try { if ((location.hash || "").indexOf("#/course/") !== 0) location.hash = "#/library"; } catch (e) {}
+    }
     root.querySelector("#tfGenBack").onclick = close;
     root.querySelector("#tfGenCancel").onclick = async function () {
       try { await fetch("/api/jobs/" + encodeURIComponent(jobId) + "/cancel", { method: "POST" }); } catch (e) {}
@@ -242,14 +253,20 @@
           var result = job.result;
           try { result = typeof result === "string" ? JSON.parse(result) : result; } catch (e) {}
           resultEl.style.display = "block";
-          var href = "";
-          if (result) {
-            if (result.pdf_url) href = result.pdf_url;
-            else if (result.id) href = "/artifact/" + encodeURIComponent(result.id) + "/lecture.pdf";
+          if (result) doneArtifact = result.artifact_id || result.id || "";
+          if (doneArtifact) {
+            openEl.href = "#/read/" + encodeURIComponent(doneArtifact);
+            openEl.textContent = "正在进入阅读页…";
+            stepEl.textContent = "生成完成，正在进入阅读页";
+            openEl.onclick = function (ev) { ev.preventDefault(); goReader(); };
+            setTimeout(goReader, 1200);
+          } else if (result && result.pdf_url) {
+            openEl.href = result.pdf_url;
+            openEl.textContent = "打开 PDF";
+            stepEl.textContent = "生成完成";
+          } else {
+            stepEl.textContent = "生成完成";
           }
-          if (href) openEl.href = href;
-          openEl.textContent = "打开 PDF";
-          stepEl.textContent = "生成完成";
           return;
         }
         if (job.status === "failed") {
