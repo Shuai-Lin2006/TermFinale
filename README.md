@@ -188,6 +188,22 @@ pip install -r requirements.txt
 
 ---
 
+## 架构
+
+```mermaid
+flowchart LR
+    A[PDF / PPTX / DOCX] --> B[解析]
+    B --> C[页账本]
+    C --> D[选页 / 档位 / 人设]
+    D --> E[并行分块写作]
+    E --> F[清洗与规范化]
+    F --> G[质量门禁]
+    G --> H[HTML / PDF / Word]
+    H --> I[阅读 / 练习 / 错题 / 模拟卷]
+```
+
+更完整的模块说明和设计取舍见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+
 ## 技术栈
 
 | 层 | 技术 |
