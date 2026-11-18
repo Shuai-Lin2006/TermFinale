@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.platform_utils import find_soffice
+from tfv2.ingest.pptx_pdf import pptx_to_pdf
 from tfv2.authoring.lecture import AuthoringError, author_section, author_wrapup, fallback_wrapup, normalize_lecture_sections
 from tfv2.build import build_project
 from tfv2.domain.lecture import (
@@ -45,6 +46,13 @@ def _to_pdf(source: Path, out_dir: Path) -> Path:
         return target
     if suffix in (".png", ".jpg", ".jpeg", ".webp"):
         return generate._image_to_pdf(source, out_dir)
+    if suffix == ".pptx":
+        # Normal PPTX with text boxes: render directly instead of requiring
+        # LibreOffice (Windows builds do not ship it).
+        try:
+            return pptx_to_pdf(source, out_dir)
+        except Exception:
+            pass
     if suffix in (".pptx", ".docx", ".ppt", ".doc"):
         exe = find_soffice()
         if not exe:
