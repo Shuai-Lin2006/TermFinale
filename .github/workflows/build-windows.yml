@@ -42,6 +42,8 @@ jobs:
               if ($r.StatusCode -eq 200) { $ok = $true; break }
             } catch {}
           }
+          $proc = Get-Process TermFinale -ErrorAction SilentlyContinue | Select-Object -First 1
+          Write-Host "== window title ==" $proc.MainWindowTitle
           Write-Host "== server_error.log =="
           Get-Content "$env:LOCALAPPDATA\TermFinale\logs\server_error.log" -ErrorAction SilentlyContinue
           Write-Host "== boot log =="
