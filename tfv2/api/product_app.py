@@ -1103,6 +1103,19 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
             art_id = "sel-" + job_id
             dest = generate.ARTIFACT_ROOT / art_id
             use_digest = len(pages) > 16 or payload.tier in ("normal", "broad") or payload.text_mode
+
+            def _finalize_gate() -> None:
+                try:
+                    au = json.loads((dest / "coverage_audit.json").read_text(encoding="utf-8"))
+                    bad = [x for x in au if x.get("status") in ("missing", "partial", "unverified")]
+                    mf_path = dest / "manifest.json"
+                    mf = json.loads(mf_path.read_text(encoding="utf-8"))
+                    mf["gate"] = {"passed": not bad,
+                                  "issues": [] if not bad else [{"message": f"覆盖检查：{len(bad)} 页待复核或缺页"}]}
+                    mf_path.write_text(json.dumps(mf, ensure_ascii=False, indent=2), encoding="utf-8")
+                    service.refresh_artifact_gate(art_id)
+                except Exception:
+                    pass
             if use_digest:
                 from tfv2.product.source_digest import build_source_digest
                 build_source_digest(aid, pages, art_id, text_from_ocr=payload.text_mode,
@@ -1162,10 +1175,32 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
                     store.update_job(job_id, progress=96, step="质量复核 / 覆盖审计")
                     from tfv2.quality.artifact_audit import audit_artifact_dir
                     audit_artifact_dir(dest)
-                    service.refresh_artifact_gate(art_id)
+                    _finalize_gate()
                 except Exception as exc:
                     print(f"AUDIT_ERR {type(exc).__name__}: {exc}", flush=True)
                     store.update_job(job_id, step=f"审计失败，保留待复核：{type(exc).__name__}")
+            else:
+                # 长文档用确定性覆盖审计，避免再跑一轮模型把时间拖回 10 分钟。
+                try:
+                    store.update_job(job_id, progress=96, step="逐页覆盖检查")
+                    cited = set()
+                    for sec in sections:
+                        for b in sec.get("blocks") or []:
+                            for r in b.get("source_refs") or []:
+                                try:
+                                    a = int(r.get("page_start") or 0); z = int(r.get("page_end") or a)
+                                except Exception:
+                                    continue
+                                cited.update(range(a, z + 1))
+                    rows = [{"page_no": p,
+                             "status": "covered" if p in cited else "missing",
+                             "points": [], "missing": [] if p in cited else [str(p)],
+                             "note": "确定性覆盖检查（长文档）"} for p in pages]
+                    (dest / "coverage_audit.json").write_text(
+                        json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+                    _finalize_gate()
+                except Exception as exc:
+                    print(f"QUICK_AUDIT_ERR {type(exc).__name__}: {exc}", flush=True)
 
             store.update_job(job_id, status="done", progress=100, step="完成",
                              result=json.dumps({"preview": False, "artifact_id": art_id,
