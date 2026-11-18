@@ -30,6 +30,20 @@
     });
     return Array.from(new Set(out)).sort(function (a, b) { return a - b; });
   }
+  function showBusy(msg) {
+    var old = document.getElementById("tfBusy");
+    if (old) old.remove();
+    var root = document.createElement("div");
+    root.id = "tfBusy";
+    root.style.cssText = "position:fixed;inset:0;z-index:10003;background:rgba(242,246,251,.96);display:flex;align-items:center;justify-content:center;padding:24px";
+    root.innerHTML = '<div style="max-width:460px;text-align:center"><div style="width:34px;height:34px;border:3px solid rgba(20,26,36,.15);border-top-color:#0e8f8d;border-radius:50%;margin:0 auto 16px;animation:tfspin .8s linear infinite"></div><div style="font-size:15px;font-weight:600;margin-bottom:6px">' + esc(msg || "处理中…") + '</div><div style="font-size:12.5px;color:#78869a">请先不要关闭窗口；首次生成可能需要 1–3 分钟。</div></div><style>@keyframes tfspin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(root);
+  }
+  function hideBusy() {
+    var el = document.getElementById("tfBusy");
+    if (el) el.remove();
+  }
+
   function showPreview(data, key, pages, art) {
     var old = document.getElementById("tfPreviewModal");
     if (old) old.remove();
@@ -126,13 +140,25 @@
       var previewPages = pages.slice(0, 2);
       var btn = document.getElementById("tfPreviewSelected");
       if (btn) { btn.disabled = true; btn.textContent = "生成预览中…"; }
-      var res = await fetch("/api/artifacts/" + encodeURIComponent(art.id) + "/preview-selected", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pages: previewPages, tier: localStorage.getItem("tf-tier-" + key + "-" + art.id) || "" })
-      });
+      showBusy("正在生成前 " + previewPages.length + " 页预览…");
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 240000) : null;
+      var res;
+      try {
+        res = await fetch("/api/artifacts/" + encodeURIComponent(art.id) + "/preview-selected", {
+          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pages: previewPages, tier: localStorage.getItem("tf-tier-" + key + "-" + art.id) || "" }),
+          signal: ctrl ? ctrl.signal : undefined,
+        });
+      } catch (err) {
+        if (err && err.name === "AbortError") throw new Error("预览超时（4 分钟），请检查 API Key 或减少页数");
+        throw err;
+      } finally { if (timer) clearTimeout(timer); }
       var data = await res.json();
       if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+      hideBusy();
       showPreview(data, key, previewPages, art);
     } catch (e) {
+      hideBusy();
       toast("预览失败：" + e.message);
     } finally {
       var btn2 = document.getElementById("tfPreviewSelected");
