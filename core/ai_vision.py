@@ -270,9 +270,10 @@ def ocr_page_text(image_path: str) -> str:
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
-                    {"type": "text", "text": """你是 OCR 引擎。逐行转录这张页面上的全部文字，要求：
-1. 保留原有阅读顺序和段落；
-2. 公式用 LaTeX（行内 $...$，独立公式 $$...$$）；
+                    {"type": "text", "text": """你是 OCR 引擎。逐行转录这张页面上的**全部**文字，要求：
+1. 保留原有阅读顺序、标题、段落、例题和答案，不要漏行；
+2. 公式用**可读的普通写法**，不要输出 LaTeX 命令或反斜杠：
+   例如 F=kma，k=1，[F]=kg·m/s²=N；上下标用 ^ 和 _；
 3. 表格用 Markdown 表格；
 4. 不要总结、不要解释、不要编造页面上没有的内容；
 5. 如果页面几乎没有文字，只输出空字符串。

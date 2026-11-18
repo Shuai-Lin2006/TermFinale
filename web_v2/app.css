@@ -2258,3 +2258,28 @@ html[data-theme="dark"] .course-hero .course-back{color:var(--u-ink-3) !importan
 .guide-table a{color:var(--u-ink,var(--ink));text-decoration:underline;text-underline-offset:2px;}
 .guide-contact{margin:6px 0 0;padding-left:0;list-style:none;}
 .guide-contact li{margin:4px 0;}
+/* 生成中：全屏沉浸式进度（所有模块统一） */
+.gen-ring{
+  position:fixed!important; inset:0!important; right:auto!important; top:auto!important;
+  width:100vw!important; height:100vh!important; transform:none!important;
+  display:flex!important; flex-direction:column!important; align-items:center!important; justify-content:center!important;
+  gap:18px!important; padding:clamp(24px,6vw,72px)!important;
+  border:0!important; border-radius:0!important; box-shadow:none!important;
+  background:
+    radial-gradient(900px 520px at 50% 0%,rgba(14,143,141,.10),transparent 62%),
+    radial-gradient(700px 420px at 80% 90%,rgba(91,108,255,.08),transparent 60%),
+    #f2f6fb!important;
+  backdrop-filter:none!important; z-index:9998!important; pointer-events:auto!important; text-align:center!important;
+}
+.gen-ring svg{width:min(34vh,280px)!important;height:min(34vh,280px)!important;margin:0!important}
+.gen-ring circle{stroke-width:5!important}
+.gen-ring-track{stroke:rgba(20,26,36,.10)!important}
+.gen-ring-arc{stroke:#0e8f8d!important}
+.gen-ring-copy{position:static!important;margin-top:-6px!important}
+.gen-ring-copy strong{font:600 clamp(44px,7vw,76px)/1 var(--serif)!important;letter-spacing:-.05em!important;color:#141a24!important}
+.gen-ring-copy small{font:12px/1.6 var(--mono)!important;color:#78869a!important;margin-top:8px!important;white-space:normal!important}
+.gen-ring-label{font:600 clamp(15px,1.8vw,19px)/1.6 var(--sans)!important;color:#141a24!important;margin-top:10px!important;white-space:normal!important;max-width:min(720px,86vw)!important}
+.gen-ring::after{content:"生成期间可以离开这个页面，任务会继续";font:12px/1.6 var(--sans);color:#78869a;margin-top:4px}
+html[data-theme="dark"] .gen-ring{background:radial-gradient(900px 520px at 50% 0%,rgba(56,217,208,.12),transparent 62%),#0b1220!important}
+html[data-theme="dark"] .gen-ring-copy strong,html[data-theme="dark"] .gen-ring-label{color:#eef3fb!important}
+@media(max-width:700px){.gen-ring svg{width:170px!important;height:170px!important}.gen-ring-copy strong{font-size:46px!important}}

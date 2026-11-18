@@ -66,7 +66,13 @@ def _ensure_ocr(src: Path, progress=None) -> None:
         from tfv2.product import cloud_ocr
         raw2 = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
         rows2 = raw2.get("pages") if isinstance(raw2, dict) else raw2
-        empty = [i + 1 for i, row in enumerate(rows2) if not str(row.get("text") or "").strip()]
+        def _bad(text: str) -> bool:
+            t = str(text or "").strip()
+            if len(t) < 30:
+                return True
+            bad = sum(1 for ch in t if 0xE000 <= ord(ch) <= 0xF8FF or ch in "\ufffc\ufffd")
+            return bad / max(1, len(t)) > 0.01
+        empty = [i + 1 for i, row in enumerate(rows2) if _bad(row.get("text"))]
         pdfs = [src / "lecture.pdf"] + list((src / "source_pdf").glob("*.pdf")) + list((src / "source").glob("*.pdf"))
         pdf = next((x for x in pdfs if x.is_file()), None)
         if empty and pdf is not None:
@@ -90,6 +96,15 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     _ensure_ocr(src, progress)
     raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
     all_rows = raw.get("pages") or raw
+    # 扫描件/文字层可能把 LaTeX 命令原样带进来；生成前降级成可读文本。
+    try:
+        from tfv2.render.docx import _latex_to_text
+        for row in all_rows:
+            t = str(row.get("text") or "")
+            if "\\" in t or "$" in t:
+                row["text"] = _latex_to_text(t)
+    except Exception:
+        pass
     if page_numbers:
         chosen = sorted({int(p) for p in page_numbers if 1 <= int(p) <= len(all_rows)})[:16]
         if not chosen:
@@ -157,6 +172,10 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                     id=f"table-{ci}-{j}", kind=BlockKind.TABLE, text=table_text.strip()[:8000],
                     source_refs=[SourceRef(material=artifact_id, page_start=offset + j, page_end=offset + j)]))
         sections.append(sec)
+    from tfv2.quality.text_clean import clean_sections, is_generic
+    kept = clean_sections(sections)
+    if kept == 0:
+        raise ValueError("资料文字不足或模型只输出了模板内容，无法生成可靠讲义；请换文字版资料或重新生成")
     for sec in sections:
         sanitize_math(sec)
     if progress:

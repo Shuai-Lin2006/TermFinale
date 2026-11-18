@@ -156,9 +156,16 @@ def normalize_section(section: LectureSection, pages: list[int]) -> LectureSecti
     correct_block_kinds(section)
     sanitize_math(section)
     section.source_refs = section.source_refs or [SourceRef(material="source", page_start=start, page_end=end)]
-    section.objectives = section.objectives or ["理解本节核心概念"]
-    section.key_terms = section.key_terms or ["核心概念"]
-    section.self_test = section.self_test or ["能否用自己的话复述本节？"]
+    # 不用模板填空：没有真实目标/术语/自测就留空，渲染层会跳过空块。
+    try:
+        from tfv2.quality.text_clean import is_generic
+        section.objectives = [x for x in (section.objectives or []) if not is_generic(x)]
+        section.key_terms = [x for x in (section.key_terms or []) if not is_generic(x)]
+        section.self_test = [x for x in (section.self_test or []) if not is_generic(x)]
+    except Exception:
+        section.objectives = section.objectives or []
+        section.key_terms = section.key_terms or []
+        section.self_test = section.self_test or []
 
     cited = set()
     for b in section.blocks:
