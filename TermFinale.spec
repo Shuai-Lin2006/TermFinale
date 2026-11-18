@@ -126,7 +126,7 @@ if _sys.platform == "darwin":
         bundle_identifier="com.termfinale.desktop",
         info_plist={
             "NSHighResolutionCapable": True,
-            "CFBundleShortVersionString": "0.5.1",
+            "CFBundleShortVersionString": "0.6.0",
             "LSMinimumSystemVersion": "11.0",
         },
     )
