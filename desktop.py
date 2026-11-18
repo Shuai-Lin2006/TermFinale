@@ -420,7 +420,6 @@ def main() -> int:
 
     import webview
 
-    splash_bridge = SplashBridge()
     try:
         from core.build_info import VERSION as _VERSION
     except Exception:
@@ -430,44 +429,11 @@ def main() -> int:
         f"http://127.0.0.1:{PRODUCT_PORT}/",
         width=1440, height=920, min_size=(1080, 700),
         background_color="#FAFAF8",
-        hidden=True,
+        hidden=False,
     )
-    splash_window = webview.create_window(
-        "TermFinale",
-        html=SPLASH_HTML,
-        width=760, height=430,
-        frameless=True, on_top=True, resizable=False, easy_drag=False,
-        background_color="#0f1a13",
-        js_api=splash_bridge,
-        hidden=True,
-    )
-    splash_bridge.splash = splash_window
-    splash_bridge.main = main_window
-
-    def _quit_on_close() -> None:
-        try:
-            os._exit(0)
-        except Exception:
-            pass
-    try:
-        main_window.events.closed += _quit_on_close
-    except Exception:
-        pass
     window = main_window
 
-    def _show_splash():
-        try:
-            splash_window.show()
-            splash_window.evaluate_js("document.querySelector('.splash').classList.add('run')")
-        except Exception:
-            pass
-        # Safety net: never leave the main window hidden if the JS bridge fails.
-        try:
-            threading.Timer(2.6, splash_bridge.done).start()
-        except Exception:
-            pass
 
-    splash_window.events.loaded += _show_splash
 
     def _disable_swipe_back():
         """macOS：关闭 WKWebView 横向滑动返回，避免输入框拖选误触。"""
