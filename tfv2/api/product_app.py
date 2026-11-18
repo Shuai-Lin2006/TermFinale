@@ -502,8 +502,12 @@ def health() -> dict:
         typst = None
         typst_error = repr(exc)
     docling_py = Path.home() / "Library/Application Support/TermFinale/docling/venv/bin/python"
+    try:
+        from core.build_info import VERSION as _APP_VERSION
+    except Exception:
+        _APP_VERSION = "0.0.0"
     return {
-        "ok": True, "app": "product", "version": "3.0",
+        "ok": True, "app": "product", "version": "3.0", "app_version": _APP_VERSION,
         "backends": {
             "typst": bool(typst), "typst_path": typst, "typst_error": typst_error,
             "docling": docling_py.is_file(),

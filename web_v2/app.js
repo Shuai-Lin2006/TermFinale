@@ -7727,7 +7727,48 @@
     await route();
   }
 
+
+  function _verTuple(v) {
+    return String(v || "").replace(/^v/i, "").split(".").map((x) => parseInt(x, 10) || 0);
+  }
+  function _verGt(a, b) {
+    const x = _verTuple(a), y = _verTuple(b);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] || 0) > (y[i] || 0)) return true;
+      if ((x[i] || 0) < (y[i] || 0)) return false;
+    }
+    return false;
+  }
+  async function checkUpdate() {
+    try {
+      const health = await api("/api/health");
+      const local = String(health.app_version || "");
+      if (!local || local === "0.0.0") return;
+      const urls = [
+        "https://cdn.jsdelivr.net/gh/Shuai-Lin2006/TermFinale@main/docs/version.json",
+        "https://raw.githubusercontent.com/Shuai-Lin2006/TermFinale/main/docs/version.json",
+      ];
+      let remote = null;
+      for (const u of urls) {
+        try {
+          const r = await fetch(u, { cache: "no-store" });
+          if (r.ok) { remote = await r.json(); break; }
+        } catch (e) { /* try next */ }
+      }
+      if (!remote || !_verGt(remote.version, local)) return;
+      const key = "tf-update-dismissed-" + remote.version;
+      if (localStorage.getItem(key) === "1") return;
+      const box = document.createElement("div");
+      box.id = "tfUpdateBanner";
+      box.innerHTML = `<div><strong>发现新版本 v${remote.version}</strong><div class="tf-update-note">${remote.notes || "建议更新到最新版"}</div></div>
+        <div class="tf-update-actions"><a href="${remote.url || "https://shuai-lin2006.github.io/TermFinale/"}" target="_blank" rel="noreferrer">查看更新</a><button type="button" id="tfUpdateClose">×</button></div>`;
+      document.body.appendChild(box);
+      box.querySelector("#tfUpdateClose").onclick = () => { localStorage.setItem(key, "1"); box.remove(); };
+    } catch (e) { /* 更新检查失败不影响使用 */ }
+  }
+
   setInterval(() => refreshCountdowns(document), 60000);
+  setTimeout(checkUpdate, 1800);
 
   window.addEventListener("hashchange", () => {
     route();

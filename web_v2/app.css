@@ -2283,3 +2283,12 @@ html[data-theme="dark"] .course-hero .course-back{color:var(--u-ink-3) !importan
 html[data-theme="dark"] .gen-ring{background:radial-gradient(900px 520px at 50% 0%,rgba(56,217,208,.12),transparent 62%),#0b1220!important}
 html[data-theme="dark"] .gen-ring-copy strong,html[data-theme="dark"] .gen-ring-label{color:#eef3fb!important}
 @media(max-width:700px){.gen-ring svg{width:170px!important;height:170px!important}.gen-ring-copy strong{font-size:46px!important}}
+/* 新版本提示 */
+#tfUpdateBanner{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:360px;display:flex;gap:14px;align-items:flex-start;justify-content:space-between;padding:14px 16px;border:1px solid rgba(20,26,36,.12);border-radius:14px;background:#fff;box-shadow:0 16px 44px rgba(20,26,36,.16);font:13px/1.6 var(--sans)}
+#tfUpdateBanner strong{font-size:13.5px;color:#141a24}
+#tfUpdateBanner .tf-update-note{font-size:12px;color:#78869a;margin-top:4px}
+#tfUpdateBanner .tf-update-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#tfUpdateBanner a{color:#0e8f8d;text-decoration:none;font-weight:600;white-space:nowrap}
+#tfUpdateBanner button{border:0;background:transparent;font-size:16px;color:#78869a;cursor:pointer;line-height:1}
+html[data-theme="dark"] #tfUpdateBanner{background:#141a24;border-color:rgba(255,255,255,.14)}
+html[data-theme="dark"] #tfUpdateBanner strong{color:#eef3fb}
