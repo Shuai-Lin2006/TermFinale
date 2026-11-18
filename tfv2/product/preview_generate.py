@@ -33,10 +33,15 @@ def _mark_preview(dir_path: Path) -> None:
 
 
 def _ensure_ocr(src: Path, progress=None) -> None:
-    """快速保存留下的 OCR 欠账：第一次生成时补识别，再写回页数据。"""
+    """快速保存留下的 OCR 欠账：第一次生成时补识别，再写回页数据。
+
+    先试本地 MinerU；它不可用（Windows 默认没装）或识别不到时，用云 OCR
+    （DashScope Qwen-VL）补齐空页。任何一步失败都不阻断生成。
+    """
     marker = src / "ocr_pending.json"
     if not marker.is_file():
         return
+    filled = 0
     try:
         from tfv2.ingest.backends import parse_pdf
         if progress:
@@ -44,7 +49,6 @@ def _ensure_ocr(src: Path, progress=None) -> None:
         parsed = parse_pdf(src / "lecture.pdf", backend="mineru")
         raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
         rows = raw.get("pages") or raw
-        filled = 0
         for i, row in enumerate(rows):
             text = str(parsed["pages"].get(i + 1) or "").strip()
             if text and not str(row.get("text") or "").strip():
@@ -53,30 +57,28 @@ def _ensure_ocr(src: Path, progress=None) -> None:
                 filled += 1
         if isinstance(raw, dict):
             raw["pages"] = rows
-            (src / "source_pages.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
-        else:
-            (src / "source_pages.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-        # MinerU 不可用/识别不到时，用云 OCR 补空页
-        try:
-            from tfv2.product import cloud_ocr
-            raw2 = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
-            rows2 = raw2.get("pages") if isinstance(raw2, dict) else raw2
-            empty = [i + 1 for i, row in enumerate(rows2) if not str(row.get("text") or "").strip()]
-            pdfs = [src / "lecture.pdf"] + list((src / "source_pdf").glob("*.pdf")) + list((src / "source").glob("*.pdf"))
-            pdf = next((x for x in pdfs if x.is_file()), None)
-            if empty and pdf is not None:
-                if progress:
-                    progress(10, f"云 OCR 补齐 {len(empty)} 页")
-                texts = cloud_ocr.ocr_empty_pages(pdf, empty, progress=progress)
-                filled += cloud_ocr.patch_source_pages(src, texts)
-        except Exception:
-            pass
-        marker.unlink(missing_ok=True)
-        if progress:
-            progress(10, f"扫描件识别完成（补了 {filled} 页）")
+        (src / "source_pages.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
-        # 识别失败不阻断生成：后续按公式/图片页处理即可。
-        marker.unlink(missing_ok=True)
+        pass
+
+    # 本地 OCR 不可用/没补全：云 OCR 兜底
+    try:
+        from tfv2.product import cloud_ocr
+        raw2 = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
+        rows2 = raw2.get("pages") if isinstance(raw2, dict) else raw2
+        empty = [i + 1 for i, row in enumerate(rows2) if not str(row.get("text") or "").strip()]
+        pdfs = [src / "lecture.pdf"] + list((src / "source_pdf").glob("*.pdf")) + list((src / "source").glob("*.pdf"))
+        pdf = next((x for x in pdfs if x.is_file()), None)
+        if empty and pdf is not None:
+            if progress:
+                progress(10, f"云 OCR 补齐 {len(empty)} 页")
+            texts = cloud_ocr.ocr_empty_pages(pdf, empty, progress=progress)
+            filled += cloud_ocr.patch_source_pages(src, texts)
+    except Exception:
+        pass
+    marker.unlink(missing_ok=True)
+    if progress:
+        progress(10, f"扫描件识别完成（补了 {filled} 页）")
 
 
 def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numbers: list[int] | None = None,
