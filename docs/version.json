@@ -1,6 +1,6 @@
 {
-  "version": "0.6.8",
-  "notes": "公式很多的试卷页也能出题/提取；扫描件先 OCR 再出卷。",
+  "version": "0.6.9",
+  "notes": "课程/讲义/试卷显示区分；公式试卷可出题；扫描件先 OCR。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
