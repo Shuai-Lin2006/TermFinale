@@ -52,7 +52,7 @@ def ocr_empty_pages(pdf: Path, empty_pages: list[int], *, dpi: int = 150, limit:
                     out[p] = text
                 if progress:
                     try:
-                        progress(10 + int(30 * done / total), f"云 OCR 第 {done}/{total} 页")
+                        progress(10 + int(30 * done / total), f"Qwen-VL 正在识别第 {done}/{total} 页")
                     except Exception:
                         pass
     finally:

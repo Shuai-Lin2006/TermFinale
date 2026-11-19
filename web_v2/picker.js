@@ -151,7 +151,7 @@
       var previewPages = pages.slice(0, 2);
       var btn = document.getElementById("tfPreviewSelected");
       if (btn) { btn.disabled = true; btn.textContent = "生成预览中…"; }
-      showBusy("正在生成前 " + previewPages.length + " 页预览…");
+      showBusy("Qwen-VL 识别 → DeepSeek 写作：正在生成前 " + previewPages.length + " 页预览…");
       var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
       var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 240000) : null;
       var res;
@@ -213,7 +213,7 @@
     root.innerHTML = '<div style="width:min(880px,94vw)">' +
       '<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;letter-spacing:.12em;color:#78869a">正在生成</div><div><button id="tfGenBack" style="height:36px;padding:0 14px;border:1px solid rgba(20,26,36,.18);background:transparent;border-radius:8px;margin-right:8px;cursor:pointer">返回</button><button id="tfGenCancel" style="height:36px;padding:0 14px;border:0;background:#141a24;color:#ffffff;border-radius:8px;cursor:pointer">取消</button></div></div>' +
       '<h2 style="margin:22px 0 6px;font-size:26px">' + esc(title) + '</h2>' +
-      '<p id="tfGenStep" style="margin:0;color:#4a5666;font-size:14px">准备中</p>' +
+      '<p id="tfGenStep" style="margin:0;color:#4a5666;font-size:14px">Qwen-VL / DeepSeek 准备中</p><p style="margin:4px 0 0;color:#0e8f8d;font-size:12px">模型：Qwen-VL 识别 · DeepSeek 写作 · 本地排版</p>' +
       '<div style="height:8px;background:rgba(20,26,36,.12);border-radius:99px;margin:26px 0 12px;overflow:hidden"><i id="tfGenBar" style="display:block;height:100%;width:0;background:#141a24;border-radius:99px;transition:width .4s"></i></div>' +
       '<div style="display:flex;justify-content:space-between;color:#4a5666;font-size:13px"><span id="tfGenPct">0%</span><span id="tfGenTime"></span></div>' +
       '<div id="tfGenResult" style="margin-top:32px;display:none"><a id="tfGenOpen" style="display:inline-block;background:#141a24;color:#ffffff;padding:12px 22px;border-radius:9px;text-decoration:none">打开 PDF</a></div>' +

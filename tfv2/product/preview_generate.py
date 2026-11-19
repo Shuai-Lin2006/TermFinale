@@ -49,7 +49,7 @@ def _ensure_ocr(src: Path, progress=None, page_numbers: list[int] | None = None)
         try:
             from tfv2.ingest.backends import parse_pdf
             if progress:
-                progress(4, "识别扫描件（首次生成）")
+                progress(4, "Qwen-VL 正在识别选中页")
             parsed = parse_pdf(src / "lecture.pdf", backend="mineru")
             raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
             rows = raw.get("pages") or raw
@@ -91,7 +91,7 @@ def _ensure_ocr(src: Path, progress=None, page_numbers: list[int] | None = None)
         pass
     marker.unlink(missing_ok=True)
     if progress:
-        progress(10, f"扫描件识别完成（补了 {filled} 页）")
+        progress(10, f"Qwen-VL 识别完成（补了 {filled} 页）")
 
 
 def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numbers: list[int] | None = None,
@@ -146,7 +146,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
                    for j in local_texts],
         )
         local_facts = facts_for_pages(local_texts, list(local_texts), per_page=8)
-        _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：规划")
+        _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"DeepSeek 正在规划（{ci}/{len(chunks)}）")
         def _author(author_client):
             return author_section(
                 author_client, local_ledger, chapter_title="预览",
@@ -161,7 +161,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
         try:
             sec = _author(client)
         except Exception:
-            _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"第 {ci}/{len(chunks)} 单元：Qwen 重试")
+            _progress(12 + int(40 * (ci - 1) / max(1, len(chunks))), f"Qwen 正在重试（{ci}/{len(chunks)}）")
             from tfv2.llm.qwen_text import QwenTextClient
             sec = _author(QwenTextClient(model=os.getenv("TERMFINALE_QWEN_TEXT_MODEL", "qwen-max")))
         mapped = map_facts(local_facts, [sec])
@@ -209,7 +209,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     for sec in sections:
         sanitize_math(sec)
     if progress:
-        progress(58, "正文生成 / 结构整理")
+        progress(58, "DeepSeek 正在写作 / 结构整理")
 
     dst = service.artifact_path(job_id)
     if dst is None:
@@ -263,7 +263,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     (dst / "project.json").write_text(json.dumps(pr, ensure_ascii=False, indent=2), encoding="utf-8")
     (dst / "sections.json").write_text(json.dumps([x.model_dump(mode="json") for x in sections], ensure_ascii=False, indent=2), encoding="utf-8")
     if progress:
-        progress(82, "排版 / 生成 PDF")
+        progress(82, "本地排版 / 生成 PDF")
     fallback_pages = sorted(chosen) if page_numbers else list(range(1, len(rows) + 1))
     try:
         build_project(dst / "project.json", pdf=True)

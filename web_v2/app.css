@@ -2294,3 +2294,4 @@ html[data-theme="dark"] #tfUpdateBanner{background:#141a24;border-color:rgba(255
 html[data-theme="dark"] #tfUpdateBanner strong{color:#eef3fb}
 /* hidden 必须能覆盖上面的 display:flex!important，否则全屏进度会一直挡着 */
 .gen-ring[hidden]{display:none!important}
+#genRing .gen-ring-model{font:11px/1.6 var(--mono);color:#0e8f8d;letter-spacing:.02em;margin-top:2px}

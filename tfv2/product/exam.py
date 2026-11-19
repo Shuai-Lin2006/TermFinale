@@ -1124,7 +1124,7 @@ def run_exam(aid: str, *, mode: str = "mock", subject: str = "其他", difficult
     if not pages:
         raise ExamError("这份讲义的内容被用户全部排除")
     if progress:
-        progress(15, "设计试卷蓝图")
+        progress(15, "DeepSeek 正在设计试卷蓝图")
     audit_warnings: list[str] = []
     bp = _blueprint(client, subject=subject, types=chosen_types, difficulty=difficulty,
                     reference=ref_text, user_blueprint=(blueprint_text + ("\n" + exclusion_note if exclusion_note else "")), mode=mode, gen_lang=gen_lang)
@@ -1396,7 +1396,7 @@ def run_exam(aid: str, *, mode: str = "mock", subject: str = "其他", difficult
     else:
         _repair_exam_coverage(bp, pages, page_text, mode, subject, figure_map, coverage_client, active_specs)
     if progress:
-        progress(82, "答案审计 / 冲突复核")
+        progress(82, "DeepSeek 正在审计答案 / 冲突复核")
     # 选择题答案审计
     choice = [q for q in all_questions if q["qtype"] == "choice"]
     audit = {"checked": False, "conflicts": [], "manual": len(all_questions) - len(choice) > 0}
@@ -1567,7 +1567,7 @@ def run_exam(aid: str, *, mode: str = "mock", subject: str = "其他", difficult
         if msg not in issues:
             issues.append(msg)
     if progress:
-        progress(96, "整理试卷 / 生成结果")
+        progress(96, "本地整理试卷 / 生成结果")
     if not issues and not audit["conflicts"]:
         status = "validated" if audit["checked"] else "review"
     else:

@@ -1195,7 +1195,7 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
                 service.refresh_artifact_gate(art_id)
             elif len(pages) <= 8:
                 try:
-                    store.update_job(job_id, progress=96, step="质量复核 / 覆盖审计")
+                    store.update_job(job_id, progress=96, step="DeepSeek 正在复核 / 覆盖审计")
                     from tfv2.quality.artifact_audit import audit_artifact_dir
                     audit_artifact_dir(dest)
                     _finalize_gate()
