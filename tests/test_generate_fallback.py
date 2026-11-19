@@ -78,7 +78,7 @@ class GenerateFallbackTests(unittest.TestCase):
                     time.sleep(0.05)
                 self.assertTrue((dest / "manifest.json").is_file(), "失败后没有交付物")
             self.assertIn("fallback_reason", manifest)
-            self.assertIn("按资料原页组织", manifest["fallback_reason"])
+            self.assertIn("按资料原文页整理", manifest["fallback_reason"])
             self.assertIn("模型超时", manifest["fallback_reason"])
             steps = [str(item.get("step") or "") for history in jobs.values() for item in history]
             self.assertTrue(any("模型成文没成功" in step for step in steps), steps)

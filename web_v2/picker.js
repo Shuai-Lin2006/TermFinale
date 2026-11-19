@@ -246,8 +246,7 @@
         bar.style.width = pct + "%"; pctEl.textContent = pct + "%";
         stepEl.textContent = job.step || "生成中";
         var elapsed = Math.round((Date.now() - started) / 1000);
-        var eta = pct > 2 ? Math.round(elapsed * (100 - pct) / pct) : null;
-        timeEl.textContent = "已用 " + elapsed + " 秒" + (eta != null ? " · 约剩 " + eta + " 秒" : "");
+        timeEl.textContent = "已用 " + elapsed + " 秒";
         if (job.status === "done") {
           clearInterval(timer);
           var result = job.result;

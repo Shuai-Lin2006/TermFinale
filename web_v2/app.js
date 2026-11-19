@@ -1041,7 +1041,7 @@
       "new.cancelled": "已取消",
       "new.jobReadFailed": "任务状态读取失败",
       "ring.generating": "生成中",
-      "ring.estimating": "估算剩余…",
+      "ring.estimating": "处理中，请稍候",
       "ring.eta": "还剩 {eta}",
       "gen.locked": "生成中",
       "gen.navLocked": "生成进行中，请完成或取消后再切换页面",
@@ -2014,7 +2014,7 @@
       "new.cancelled": "已取消",
       "new.jobReadFailed": "任務狀態讀取失敗",
       "ring.generating": "生成中",
-      "ring.estimating": "估算剩餘…",
+      "ring.estimating": "處理中，請稍候",
       "ring.eta": "還剩 {eta}",
       "gen.locked": "生成中",
       "gen.navLocked": "生成進行中，請完成或取消後再切換頁面",
@@ -6461,26 +6461,8 @@
   const RING_CIRC = 2 * Math.PI * 52;
 
   function estimateJobEta(job, key) {
-    const pct = Math.max(0, Math.min(100, Number(job.progress) || 0));
-    const elapsed = Number(job.elapsed_s) || 0;
-    if (pct >= 100) return 0;
-    const now = Date.now();
-    const prev = genEtaStates.get(key);
-    let rate = null;
-    if (prev && pct > prev.pct && now > prev.at) {
-      rate = (pct - prev.pct) / ((now - prev.at) / 1000);
-      if (prev.rate) rate = prev.rate * 0.55 + rate * 0.45;
-    } else if (prev && prev.rate) {
-      rate = prev.rate;
-    }
-    genEtaStates.set(key, { pct, at: now, rate });
-    // Early progress jumps are noisy. Until 35% use elapsed/progress, with a floor;
-    // only use a smoothed rate once enough real progress has accumulated.
-    if (pct >= 35 && rate && rate > 0.05) return Math.max(20, Math.round((100 - pct) / rate));
-    if (elapsed > 1 && pct > 0.5) {
-      const linear = Math.round((elapsed / pct) * (100 - pct));
-      return Math.max(pct < 35 ? 45 : 20, Math.min(900, linear));
-    }
+    // 不再用进度反推剩余时间：进度非线性时会从 5 秒涨到几分钟。
+    // 只显示已用时间，避免“预计时间无限增长”。
     return null;
   }
 
@@ -6525,16 +6507,7 @@
     const step = String(job.step || "");
     const m = step.match(/(\d+)\s*\/\s*(\d+)\s*段/);
     const progress = Number(job.progress) || 0;
-    let eta = null;
-    if (m) {
-      const current = Math.max(1, Number(m[1]));
-      const total = Math.max(1, Number(m[2]));
-      const done = Math.max(0, current - 1);
-      if (done > 0) eta = Math.round((elapsed / done) * (total - done) + 25);
-      else eta = Math.max(20, 35 * total + 25 - elapsed);
-    } else if (progress > 2 && progress < 100) {
-      eta = Math.round((elapsed / progress) * (100 - progress) + 20);
-    }
+    const eta = null;
     showGenerationRing(progress, eta, step || t("ring.generating"));
     if (job.status === "done") {
       el.hidden = true;
@@ -6544,7 +6517,7 @@
     el.hidden = false;
     el.textContent = eta == null
       ? t("new.elapsedOnly", { elapsed: formatDuration(elapsed) })
-      : t("new.elapsedEta", { elapsed: formatDuration(elapsed), eta: formatDuration(eta) });
+      : t("new.elapsedEta", { elapsed: formatDuration(elapsed), eta: "" });
     el.dataset.eta = eta == null ? "" : String(eta);
   }
 

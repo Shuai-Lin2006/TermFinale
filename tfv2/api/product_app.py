@@ -1106,7 +1106,22 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
         try:
             art_id = "sel-" + job_id
             dest = generate.ARTIFACT_ROOT / art_id
-            use_digest = len(pages) > 16 or payload.tier in ("normal", "broad") or payload.text_mode
+            # 只有用户显式勾选“文字版”才走原文页整理；
+            # 普通/高范围讲义必须是 AI 成文，不能把原页影像当讲义交付。
+            use_digest = bool(payload.text_mode)
+            _has_text_info = False
+            try:
+                _raw = json.loads((service.artifact_path(aid) / "source_pages.json").read_text(encoding="utf-8"))
+                _rows = _raw.get("pages") or _raw
+                _chars = sum(len(str(_rows[p - 1].get("text") or "")) for p in pages
+                             if 1 <= p <= len(_rows))
+                _has_text_info = True
+            except Exception:
+                _chars = 0
+            if use_digest and _has_text_info and _chars < 20 * max(1, len(pages)):
+                raise RuntimeError(
+                    "文字版不可用：选中页没有可提取的文字层。请取消“文字版”，或先对扫描件做 OCR。"
+                )
 
             def _finalize_gate() -> None:
                 try:
@@ -1137,15 +1152,19 @@ def artifact_generate_selected(aid: str, payload: SelectedPreviewPayload) -> dic
                         shutil.rmtree(dest)
                     shutil.copytree(out.parent, dest)
                 except Exception as exc:  # noqa: BLE001
+                    if _has_text_info and _chars < 20 * max(1, len(pages)):
+                        raise RuntimeError(
+                            f"模型成文失败（{type(exc).__name__}: {str(exc)[:120]}），"
+                            "且选中页没有文字层，不能用原页影像冒充讲义。请换文字版资料或先 OCR。"
+                        ) from exc
                     fallback_reason = (
                         f"模型成文没成功（{type(exc).__name__}: {str(exc)[:120]}），"
-                        "已改为按资料原页组织讲义，内容仍可读、可检索"
+                        "已改为按资料原文页整理；这不是完整讲义，请核对原文"
                     )
                     store.update_job(job_id, step=fallback_reason)
                     from tfv2.product.source_digest import build_source_digest
-                    build_source_digest(aid, pages, art_id, text_from_ocr=payload.text_mode,
+                    build_source_digest(aid, pages, art_id, text_from_ocr=False,
                                         progress=lambda pct, step: store.update_job(job_id, progress=int(pct), step=step))
-                    fallback_reason = fallback_reason
             import pymupdf
             pdf_doc = pymupdf.open(str(dest / "lecture.pdf"))
             pdf_pages = len(pdf_doc)
