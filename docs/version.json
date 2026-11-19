@@ -1,6 +1,6 @@
 {
-  "version": "0.6.3",
-  "notes": "修复启动时全屏进度遮挡界面的问题。",
+  "version": "0.6.4",
+  "notes": "修复重复双击启动导致本地服务端口冲突、页面提示无法连接的问题。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
