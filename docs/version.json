@@ -1,6 +1,6 @@
 {
-  "version": "0.6.9",
-  "notes": "课程/讲义/试卷显示区分；公式试卷可出题；扫描件先 OCR。",
+  "version": "0.7.0",
+  "notes": "所有生成界面显示当前模型与阶段；扫描件/试卷流程修复。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
