@@ -64,10 +64,19 @@ class GenerateFallbackTests(unittest.TestCase):
                 job_id = resp.json()["job_id"]
                 dest = root / "artifacts" / ("sel-" + job_id)
                 deadline = time.time() + 10
-                while time.time() < deadline and not (dest / "manifest.json").is_file():
+                manifest = {}
+                # 服务端会先写临时 manifest，再写最终 manifest；必须等 fallback_reason 出现，
+                # 否则在慢速 CI 上会把中间文件当成最终交付物。
+                while time.time() < deadline:
+                    if (dest / "manifest.json").is_file():
+                        try:
+                            manifest = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))
+                        except Exception:
+                            manifest = {}
+                        if "fallback_reason" in manifest:
+                            break
                     time.sleep(0.05)
                 self.assertTrue((dest / "manifest.json").is_file(), "失败后没有交付物")
-                manifest = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))
             self.assertIn("fallback_reason", manifest)
             self.assertIn("按资料原页组织", manifest["fallback_reason"])
             self.assertIn("模型超时", manifest["fallback_reason"])
