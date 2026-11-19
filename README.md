@@ -39,6 +39,10 @@ TermFinale 是一个**本地优先**的桌面应用：导入 PDF / PPT / Word / 
 
 ---
 
+## 更新记录
+
+见 [CHANGELOG.md](CHANGELOG.md) 或 [Releases](https://github.com/Shuai-Lin2006/TermFinale/releases)。
+
 ## 工程亮点
 
 - **页级溯源**：讲义正文对应原书页码，审计会检查覆盖与出处
