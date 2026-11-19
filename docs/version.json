@@ -1,6 +1,6 @@
 {
-  "version": "0.6.5",
-  "notes": "修复扫描件文字版退化成原页影像、剩余时间无限增长、重复启动端口冲突。",
+  "version": "0.6.6",
+  "notes": "修复大 PDF 预览时 OCR 整本、文字版扫描件退化、剩余时间虚增。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
