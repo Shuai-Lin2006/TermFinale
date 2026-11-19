@@ -1,6 +1,6 @@
 {
-  "version": "0.6.6",
-  "notes": "修复大 PDF 预览时 OCR 整本、文字版扫描件退化、剩余时间虚增。",
+  "version": "0.6.7",
+  "notes": "扫描件出题/提取前自动 OCR 选中页；修复文字版退化和进度虚增。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
