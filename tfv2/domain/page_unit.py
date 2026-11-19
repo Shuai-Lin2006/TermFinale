@@ -44,9 +44,23 @@ class PageUnit:
     formulas: list[str] = field(default_factory=list)
 
 
+QUESTION_HINTS = ("选择题", "填空题", "判断题", "解答题", "计算题", "证明题", "简答题", "一、", "二、", "三、", "四、")
+
+
+def looks_like_questions(text: str) -> bool:
+    clean = clean_text(text)
+    if len(clean) < 80:
+        return False
+    hits = sum(1 for x in QUESTION_HINTS if x in clean)
+    return hits >= 1 and ("？" in clean or "?" in clean or "求" in clean or "已知" in clean or hits >= 2)
+
+
 def build_page_unit(page_no: int, text: str, image: str | None = None) -> PageUnit:
     kind = classify_page(text)
     cleaned = clean_text(text)
+    # 公式很多的试卷页仍要能出题/提取；否则会被当成纯公式页直接跳过。
+    if kind == "formula" and looks_like_questions(cleaned):
+        kind = "text"
     if kind == "image":
         return PageUnit(page_no=page_no, kind="image", text="", image=image)
     if kind == "formula":
