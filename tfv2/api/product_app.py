@@ -3373,6 +3373,12 @@ def create_fuse_job(payload: CombineRequest) -> dict:
 def exam_units(payload: UnitExamRequest) -> dict:
     from tfv2.product.exam_units import exam_from_units
     try:
+        # 图片/扫描页先补选中页 OCR，否则会被当成“公式/图片页”直接拒绝。
+        from tfv2.product import service as _svc
+        from tfv2.product.preview_generate import _ensure_ocr as _ocr
+        _src = _svc.artifact_path(payload.artifact_id)
+        if _src is not None:
+            _ocr(_src, page_numbers=payload.pages)
         doc = exam_from_units(payload.artifact_id, payload.pages, payload.count, payload.subject)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -3387,6 +3393,11 @@ def exam_units(payload: UnitExamRequest) -> dict:
 def run_units_task(payload: UnitTaskRequest) -> dict:
     try:
         from tfv2.product import tasks
+        from tfv2.product import service as _svc
+        from tfv2.product.preview_generate import _ensure_ocr as _ocr
+        _src = _svc.artifact_path(payload.artifact_id)
+        if _src is not None:
+            _ocr(_src, page_numbers=payload.pages)
         doc = tasks.run_units_task(payload.kind, payload.artifact_id, payload.pages,
                                    mode=payload.mode, gen_lang=payload.gen_lang)
         did = store.save_document(doc)
