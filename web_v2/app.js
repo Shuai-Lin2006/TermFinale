@@ -511,6 +511,8 @@
       "library.emptyTitle": "还没有课程",
       "library.emptyText": "先新建一门课程，填入资料和课程信息，再生成首份讲义。",
       "library.cta": "新建课程",
+      "course.badgeLecture": "课程 · 有讲义",
+      "course.badgeSource": "课程 · 仅资料",
       "course.readableBadge": "{n} 份可读",
       "course.meta": "{n} 份讲义 · {pages} 页 · {figures} 图",
       "course.foot": "{delivered} 可读 · {review} 已生成",
@@ -3946,9 +3948,9 @@
     if (c.target_score) facts.push(`${t("course.target")} ${c.target_score}`);
     if (cd) facts.push(cd.expired ? t("course.ended") : `${t("course.days")} ${cd.days}`);
     const meta = facts.join(" · ");
-    const badge = c.source_only && !c.delivered
-      ? t("course.sourceSaved")
-      : c.delivered ? t("course.readableBadge", { n: c.delivered }) : t("status.review");
+    const badge = c.delivered
+      ? t("course.badgeLecture")
+      : t("course.badgeSource");
     return `<a class="course-card course-${esc(c.color || "slate")} ${editing ? "course-card-editing" : ""}" data-spotlight href="${href}">
       <div class="course-top"><span class="course-icon"><svg viewBox="0 0 24 24">${icon}</svg></span>
         <span class="course-top-actions">${editing ? "" : `<span class="course-badge">${esc(badge)}</span>`}${editing ? `<button class="course-delete" type="button" title="${t("course.archive")}" onclick="event.preventDefault();event.stopPropagation();act.archiveCourse('${esc(c.key)}')">${t("course.deleteLecture")}</button>` : ""}</span></div>
