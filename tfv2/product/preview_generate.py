@@ -32,7 +32,7 @@ def _mark_preview(dir_path: Path) -> None:
         pass
 
 
-def _ensure_ocr(src: Path, progress=None) -> None:
+def _ensure_ocr(src: Path, progress=None, page_numbers: list[int] | None = None) -> None:
     """快速保存留下的 OCR 欠账：第一次生成时补识别，再写回页数据。
 
     先试本地 MinerU；它不可用（Windows 默认没装）或识别不到时，用云 OCR
@@ -42,24 +42,28 @@ def _ensure_ocr(src: Path, progress=None) -> None:
     if not marker.is_file():
         return
     filled = 0
-    try:
-        from tfv2.ingest.backends import parse_pdf
-        if progress:
-            progress(4, "识别扫描件（首次生成）")
-        parsed = parse_pdf(src / "lecture.pdf", backend="mineru")
-        raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
-        rows = raw.get("pages") or raw
-        for i, row in enumerate(rows):
-            text = str(parsed["pages"].get(i + 1) or "").strip()
-            if text and not str(row.get("text") or "").strip():
-                row["text"] = text
-                row["ocr_used"] = True
-                filled += 1
-        if isinstance(raw, dict):
-            raw["pages"] = rows
-        (src / "source_pages.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+    selected = sorted({int(p) for p in (page_numbers or []) if int(p) > 0})
+    # 选页生成时绝不能跑整本 MinerU/整本 OCR：273 页的教材会把 10 页预览拖到十几分钟。
+    # 只有全量调用（没有选页）才尝试本地 MinerU。
+    if not selected:
+        try:
+            from tfv2.ingest.backends import parse_pdf
+            if progress:
+                progress(4, "识别扫描件（首次生成）")
+            parsed = parse_pdf(src / "lecture.pdf", backend="mineru")
+            raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
+            rows = raw.get("pages") or raw
+            for i, row in enumerate(rows):
+                text = str(parsed["pages"].get(i + 1) or "").strip()
+                if text and not str(row.get("text") or "").strip():
+                    row["text"] = text
+                    row["ocr_used"] = True
+                    filled += 1
+            if isinstance(raw, dict):
+                raw["pages"] = rows
+            (src / "source_pages.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
 
     # 本地 OCR 不可用/没补全：云 OCR 兜底
     try:
@@ -72,7 +76,10 @@ def _ensure_ocr(src: Path, progress=None) -> None:
                 return True
             bad = sum(1 for ch in t if 0xE000 <= ord(ch) <= 0xF8FF or ch in "\ufffc\ufffd")
             return bad / max(1, len(t)) > 0.01
-        empty = [i + 1 for i, row in enumerate(rows2) if _bad(row.get("text"))]
+        if selected:
+            empty = [p for p in selected if 1 <= p <= len(rows2) and _bad(rows2[p - 1].get("text"))]
+        else:
+            empty = [i + 1 for i, row in enumerate(rows2) if _bad(row.get("text"))][:16]
         pdfs = [src / "lecture.pdf"] + list((src / "source_pdf").glob("*.pdf")) + list((src / "source").glob("*.pdf"))
         pdf = next((x for x in pdfs if x.is_file()), None)
         if empty and pdf is not None:
@@ -93,7 +100,7 @@ def generate_preview(artifact_id: str, job_id: str, *, pages: int = 2, page_numb
     src = service.artifact_path(artifact_id)
     if src is None:
         raise FileNotFoundError("artifact not found")
-    _ensure_ocr(src, progress)
+    _ensure_ocr(src, progress, page_numbers or list(range(1, max(1, pages) + 1)))
     raw = json.loads((src / "source_pages.json").read_text(encoding="utf-8"))
     all_rows = raw.get("pages") or raw
     # 扫描件/文字层可能把 LaTeX 命令原样带进来；生成前降级成可读文本。
