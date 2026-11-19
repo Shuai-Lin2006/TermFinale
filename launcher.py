@@ -85,13 +85,23 @@ def main() -> None:
                         urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=0.5)
                     except Exception:
                         continue
-                    from desktop import _open_edge_app
-                    _open_edge_app(f"http://127.0.0.1:{port}/", wait=False)
+                    # 已有原生窗口在跑，静默退出即可，不要另开浏览器窗口。
                     return
             except Exception:
                 pass
-            # 锁被占但没有可用服务：不再把用户挡在门外，继续启动（多实例风险由端口隔离兜底）
-            write_crash("检测到旧实例锁，但服务不可用；继续启动新实例。")
+            # 锁被占说明另一个进程还活着（OS 会随进程退出释放锁）。
+            # 它可能还在启动：等它把服务拉起来，绝不再起第二个实例抢 8907。
+            import time
+            for _ in range(60):
+                for port in (8907, 8905, 8900, 8906, 8910):
+                    try:
+                        urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=0.5)
+                        return
+                    except Exception:
+                        continue
+                time.sleep(0.5)
+            write_crash("已有实例正在启动但服务未就绪；已退出，避免重复实例。")
+            return
     except Exception:
         pass
     try:
