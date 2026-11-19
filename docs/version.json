@@ -1,6 +1,6 @@
 {
-  "version": "0.6.2",
-  "notes": "新增启动时检查更新；修复长文档覆盖门禁与生成稳定性。",
+  "version": "0.6.3",
+  "notes": "修复启动时全屏进度遮挡界面的问题。",
   "url": "https://shuai-lin2006.github.io/TermFinale/",
   "released": "2026-11-18"
 }
