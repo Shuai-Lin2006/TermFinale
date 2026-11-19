@@ -2292,3 +2292,5 @@ html[data-theme="dark"] .gen-ring-copy strong,html[data-theme="dark"] .gen-ring-
 #tfUpdateBanner button{border:0;background:transparent;font-size:16px;color:#78869a;cursor:pointer;line-height:1}
 html[data-theme="dark"] #tfUpdateBanner{background:#141a24;border-color:rgba(255,255,255,.14)}
 html[data-theme="dark"] #tfUpdateBanner strong{color:#eef3fb}
+/* hidden 必须能覆盖上面的 display:flex!important，否则全屏进度会一直挡着 */
+.gen-ring[hidden]{display:none!important}
